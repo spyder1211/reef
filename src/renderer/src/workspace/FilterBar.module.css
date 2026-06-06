@@ -36,6 +36,9 @@
 .val:focus {
   border-color: var(--accent);
 }
+.valPlaceholder {
+  flex: 1;
+}
 .twoVals {
   flex: 1;
   display: flex;

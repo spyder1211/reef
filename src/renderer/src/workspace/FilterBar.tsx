@@ -58,7 +58,7 @@ export default function FilterBar(): JSX.Element | null {
                 ))}
               </select>
               {valueKind === 'none' ? (
-                <span className={styles.val} />
+                <span className={styles.valPlaceholder} />
               ) : valueKind === 'two' ? (
                 <span className={styles.twoVals}>
                   <input
