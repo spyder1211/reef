@@ -11,6 +11,9 @@ function inItems(value: string): string[] {
     .filter((s) => s.length > 0)
 }
 
+// SQL に直接埋め込む比較演算子の許可リスト（型システムを回避したキャストへの実行時防御）
+const COMPARISON_OPS: ReadonlySet<string> = new Set(['=', '<>', '<', '>', '<=', '>='])
+
 function isUsable(c: FilterCondition, columns: string[]): boolean {
   if (!c.enabled) return false
   if (!columns.includes(c.column)) return false
@@ -45,11 +48,20 @@ function clauseFor(c: FilterCondition): { clause: string; params: unknown[] } {
     case 'between':
       return { clause: `${col} BETWEEN ? AND ?`, params: [c.value, c.value2] }
     default:
-      // '=', '<>', '<', '>', '<=', '>='
+      // '=', '<>', '<', '>', '<=', '>='。演算子は SQL に直接埋め込むため許可リストで実行時検証する。
+      if (!COMPARISON_OPS.has(c.operator)) {
+        throw new Error(`Unexpected filter operator: ${c.operator}`)
+      }
       return { clause: `${col} ${c.operator} ?`, params: [c.value] }
   }
 }
 
+/**
+ * フィルター条件からパラメータ化された SELECT を組み立てる。値は必ず `?` プレースホルダに入り、
+ * 識別子（table/column）はバッククォートで囲み内部のバッククォートを2重化してエスケープする。
+ * @param table スキーマ由来の信頼できるテーブル名（ユーザー入力をそのまま渡さないこと）。
+ * @param columns フィルター可能なカラムのホワイトリスト（このいずれでもないカラムの条件は無視される）。
+ */
 export function buildFilteredQuery(
   table: string,
   columns: string[],

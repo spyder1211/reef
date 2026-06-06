@@ -46,6 +46,18 @@ describe('buildFilteredQuery', () => {
     expect(r.params).toEqual([])
   })
 
+  it('IS NOT NULL は値なし', () => {
+    const r = buildFilteredQuery('t', cols, [{ ...base, column: 'name', operator: 'is_not_null' }])
+    expect(r.sql).toContain('`name` IS NOT NULL')
+    expect(r.params).toEqual([])
+  })
+
+  it('<> も default 分岐で ? を生成', () => {
+    const r = buildFilteredQuery('t', cols, [{ ...base, column: 'id', operator: '<>', value: '3' }])
+    expect(r.sql).toBe('SELECT * FROM `t` WHERE `id` <> ? LIMIT 100')
+    expect(r.params).toEqual(['3'])
+  })
+
   it('IN はカンマ分割で複数 ?（空要素除去）', () => {
     const r = buildFilteredQuery('t', cols, [
       { ...base, column: 'id', operator: 'in', value: '1, 2 , ,3' }
