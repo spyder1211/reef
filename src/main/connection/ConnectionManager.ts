@@ -1,5 +1,6 @@
 import mysql from 'mysql2/promise'
 import type { ConnectionConfig, QueryResult } from '../../shared/types'
+import { extractTableNames } from './extractTableNames'
 
 export class ConnectionManager {
   private pool: mysql.Pool | null = null
@@ -27,6 +28,11 @@ export class ConnectionManager {
     const dataRows = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
     const columns = (fields ?? []).map((f) => ({ name: (f as { name: string }).name }))
     return { columns, rows: dataRows, rowCount: dataRows.length, durationMs }
+  }
+
+  async listTables(): Promise<string[]> {
+    const { rows } = await this.query('SHOW TABLES')
+    return extractTableNames(rows)
   }
 
   isConnected(): boolean {

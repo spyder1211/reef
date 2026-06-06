@@ -28,4 +28,10 @@ describe.skipIf(!hasDb)('ConnectionManager (integration)', () => {
       code: 'ER_NO_SUCH_TABLE'
     })
   })
+
+  it('listTables でテーブル名一覧が返る', async () => {
+    await mgr.query('CREATE TABLE IF NOT EXISTS lt_demo (id INT)')
+    const tables = await mgr.listTables()
+    expect(tables).toContain('lt_demo')
+  })
 })
