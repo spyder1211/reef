@@ -27,3 +27,29 @@ export interface AppError {
 export type ApiResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: AppError }
+
+// 接続プロファイル（保存済み接続）
+export type ConnectionTag = 'production' | 'staging' | 'development' | 'local' | 'none'
+
+// レンダラに渡す形（パスワードは含めない）
+export interface ConnectionProfile {
+  id: string
+  name: string
+  tag: ConnectionTag
+  host: string
+  port: number
+  user: string
+  database?: string
+}
+
+// 保存・更新の入力（パスワードを含む。保存後はメインのみが暗号化保持）
+export interface ConnectionProfileInput {
+  id?: string
+  name: string
+  tag: ConnectionTag
+  host: string
+  port: number
+  user: string
+  password: string
+  database?: string
+}
