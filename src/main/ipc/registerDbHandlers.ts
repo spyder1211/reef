@@ -37,4 +37,12 @@ export function registerDbHandlers(manager: ConnectionManager): void {
       return { ok: false, error: normalizeDbError(err) }
     }
   })
+
+  ipcMain.handle('db:listTables', async (): Promise<ApiResult<string[]>> => {
+    try {
+      return { ok: true, data: await manager.listTables() }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
+    }
+  })
 }

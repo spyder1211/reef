@@ -1,0 +1,53 @@
+import { ipcMain } from 'electron'
+import { ConnectionManager } from '../connection/ConnectionManager'
+import { ProfileStore } from '../connection/ProfileStore'
+import { validateConnectionConfig } from '../connection/validateConnectionConfig'
+import { normalizeDbError } from '../connection/normalizeDbError'
+import type { ApiResult, ConnectionProfile, ConnectionProfileInput } from '../../shared/types'
+
+export function registerConnectionHandlers(manager: ConnectionManager, store: ProfileStore): void {
+  ipcMain.handle('connections:list', async (): Promise<ApiResult<ConnectionProfile[]>> => {
+    try {
+      return { ok: true, data: store.list() }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
+    }
+  })
+
+  ipcMain.handle(
+    'connections:save',
+    async (_e, input: ConnectionProfileInput): Promise<ApiResult<ConnectionProfile>> => {
+      if (!input.name) {
+        return { ok: false, error: { code: 'INVALID_CONFIG', message: 'name は必須です' } }
+      }
+      const errors = validateConnectionConfig(input)
+      if (errors.length > 0) {
+        return { ok: false, error: { code: 'INVALID_CONFIG', message: errors.join(', ') } }
+      }
+      try {
+        return { ok: true, data: store.save(input) }
+      } catch (err) {
+        return { ok: false, error: normalizeDbError(err) }
+      }
+    }
+  )
+
+  ipcMain.handle('connections:delete', async (_e, id: string): Promise<ApiResult<null>> => {
+    try {
+      store.delete(id)
+      return { ok: true, data: null }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
+    }
+  })
+
+  ipcMain.handle('connections:connect', async (_e, id: string): Promise<ApiResult<null>> => {
+    try {
+      const config = store.getConnectConfig(id)
+      await manager.connect(config)
+      return { ok: true, data: null }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
+    }
+  })
+}
