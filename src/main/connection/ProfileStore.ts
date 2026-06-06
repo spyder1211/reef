@@ -26,6 +26,13 @@ export class ProfileStore {
   save(input: ConnectionProfileInput): ConnectionProfile {
     const profiles = this.deps.load()
     const id = input.id ?? this.deps.genId()
+    const idx = profiles.findIndex((p) => p.id === id)
+    // 更新時にパスワードが空なら既存の暗号化パスワードを保持する。
+    // （編集フォームはパスワードを伏せて空で開くため、未入力＝変更なしと解釈する）
+    const encryptedPassword =
+      input.password === '' && idx >= 0
+        ? profiles[idx].encryptedPassword
+        : this.deps.secret.encrypt(input.password)
     const stored: StoredProfile = {
       id,
       name: input.name,
@@ -34,9 +41,8 @@ export class ProfileStore {
       port: input.port,
       user: input.user,
       database: input.database,
-      encryptedPassword: this.deps.secret.encrypt(input.password)
+      encryptedPassword
     }
-    const idx = profiles.findIndex((p) => p.id === id)
     if (idx >= 0) profiles[idx] = stored
     else profiles.push(stored)
     this.deps.persist(profiles)

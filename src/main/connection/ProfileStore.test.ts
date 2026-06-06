@@ -37,6 +37,18 @@ describe('ProfileStore', () => {
     expect(list[0].tag).toBe('staging')
   })
 
+  it('更新時に password が空なら既存の暗号化パスワードを保持する', () => {
+    const a = s.save({ name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'secret' })
+    s.save({ id: a.id, name: 'a2', tag: 'staging', host: 'h', port: 3306, user: 'u', password: '' })
+    expect(s.getConnectConfig(a.id).password).toBe('secret')
+  })
+
+  it('更新時に password を入力すれば差し替わる', () => {
+    const a = s.save({ name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'old' })
+    s.save({ id: a.id, name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'new' })
+    expect(s.getConnectConfig(a.id).password).toBe('new')
+  })
+
   it('delete で消える', () => {
     const a = s.save({ name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'p' })
     s.delete(a.id)
