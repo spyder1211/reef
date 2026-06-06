@@ -56,7 +56,8 @@ function makeTableTab(name: string): TableTab {
     filters: [],
     result: null,
     error: null,
-    running: false
+    // 開いた直後は初回クエリ実行中とみなし、結果ペインのプレースホルダ点滅を防ぐ
+    running: true
   }
 }
 

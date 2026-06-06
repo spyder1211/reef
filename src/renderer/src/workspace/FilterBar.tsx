@@ -22,7 +22,7 @@ export default function FilterBar(): JSX.Element | null {
   return (
     <div className={styles.bar}>
       {tab.filters.length === 0 ? (
-        <div className={styles.empty}>フィルターなし（先頭100行）</div>
+        <div className={styles.empty}>フィルターなし（全件先頭100行）</div>
       ) : (
         tab.filters.map((f) => {
           const valueKind = OPERATOR_VALUE_KIND[f.operator]
@@ -104,7 +104,11 @@ export default function FilterBar(): JSX.Element | null {
         <button className={styles.clear} onClick={() => clearFilters(tab.id)}>
           Clear
         </button>
-        <button className={styles.apply} onClick={() => void applyFilters(tab.id)}>
+        <button
+          className={styles.apply}
+          disabled={tab.running}
+          onClick={() => void applyFilters(tab.id)}
+        >
           Apply
         </button>
       </div>

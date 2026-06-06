@@ -108,6 +108,10 @@
 .apply:hover {
   background: #0060e0;
 }
+.apply:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 .preview {
   margin-top: 6px;
   font-family: var(--font-mono);
