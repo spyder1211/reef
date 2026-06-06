@@ -1,0 +1,10 @@
+.shell {
+  display: flex;
+  height: 100%;
+}
+.mainCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
