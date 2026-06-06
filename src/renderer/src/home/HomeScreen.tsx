@@ -1,5 +1,6 @@
 import { useAppStore } from '../store/useAppStore'
 import AppRail from './AppRail'
+import ConnectionList from './ConnectionList'
 import styles from './HomeScreen.module.css'
 
 export default function HomeScreen(): JSX.Element {
@@ -22,8 +23,7 @@ export default function HomeScreen(): JSX.Element {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        {/* Task 15 で <ConnectionList /> に置き換える */}
-        <div style={{ flex: 1 }} />
+        <ConnectionList />
       </div>
     </div>
   )
