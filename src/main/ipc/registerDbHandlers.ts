@@ -21,13 +21,16 @@ export function registerDbHandlers(manager: ConnectionManager): void {
     }
   )
 
-  ipcMain.handle('db:query', async (_e, sql: string): Promise<ApiResult<QueryResult>> => {
-    try {
-      return { ok: true, data: await manager.query(sql) }
-    } catch (err) {
-      return { ok: false, error: normalizeDbError(err) }
+  ipcMain.handle(
+    'db:query',
+    async (_e, sql: string, params?: unknown[]): Promise<ApiResult<QueryResult>> => {
+      try {
+        return { ok: true, data: await manager.query(sql, params) }
+      } catch (err) {
+        return { ok: false, error: normalizeDbError(err) }
+      }
     }
-  })
+  )
 
   ipcMain.handle('db:disconnect', async (): Promise<ApiResult<null>> => {
     try {

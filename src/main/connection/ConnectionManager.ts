@@ -20,10 +20,10 @@ export class ConnectionManager {
     conn.release()
   }
 
-  async query(sql: string): Promise<QueryResult> {
+  async query(sql: string, params?: unknown[]): Promise<QueryResult> {
     if (!this.pool) throw new Error('Not connected')
     const start = Date.now()
-    const [rows, fields] = await this.pool.query(sql)
+    const [rows, fields] = await this.pool.query(sql, params)
     const durationMs = Date.now() - start
     const dataRows = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
     const columns = (fields ?? []).map((f) => ({ name: (f as { name: string }).name }))
