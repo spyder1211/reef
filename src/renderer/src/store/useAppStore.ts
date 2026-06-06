@@ -176,8 +176,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   async selectTable(name) {
     let id = get().activeTabId
     if (!id) {
-      const tab = makeTab(1)
-      set({ tabs: [tab], activeTabId: tab.id })
+      const tab = makeTab(get().tabs.length + 1)
+      set({ tabs: [...get().tabs, tab], activeTabId: tab.id })
       id = tab.id
     }
     set({ tabs: get().tabs.map((t) => (t.id === id ? { ...t, sql: buildSelectQuery(name) } : t)) })
