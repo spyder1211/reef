@@ -1,12 +1,14 @@
 import { useAppStore } from '../store/useAppStore'
 import AppRail from './AppRail'
 import ConnectionList from './ConnectionList'
+import ConnectionFormModal from './ConnectionFormModal'
 import styles from './HomeScreen.module.css'
 
 export default function HomeScreen(): JSX.Element {
   const search = useAppStore((s) => s.search)
   const setSearch = useAppStore((s) => s.setSearch)
   const openForm = useAppStore((s) => s.openForm)
+  const formOpen = useAppStore((s) => s.formOpen)
 
   return (
     <div className={styles.home}>
@@ -25,6 +27,7 @@ export default function HomeScreen(): JSX.Element {
         </div>
         <ConnectionList />
       </div>
+      {formOpen && <ConnectionFormModal />}
     </div>
   )
 }
