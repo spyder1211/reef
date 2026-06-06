@@ -16,6 +16,7 @@
   border-right: 1px solid var(--border);
   color: var(--text-muted);
   max-width: 180px;
+  cursor: pointer;
 }
 .tabActive {
   background: var(--bg);

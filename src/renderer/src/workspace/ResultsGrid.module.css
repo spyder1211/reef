@@ -12,6 +12,7 @@
 .grid th {
   position: sticky;
   top: 0;
+  z-index: 1;
   background: var(--bg-sidebar);
   color: var(--text-muted);
   font-weight: 600;
