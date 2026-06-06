@@ -53,3 +53,19 @@ export interface ConnectionProfileInput {
   password: string
   database?: string
 }
+
+// フィルター条件
+export type FilterOperator =
+  | '=' | '<>' | '<' | '>' | '<=' | '>='
+  | 'is_null' | 'is_not_null'
+  | 'contains' | 'not_contains'
+  | 'in' | 'between'
+
+export interface FilterCondition {
+  id: string
+  enabled: boolean
+  column: string
+  operator: FilterOperator
+  value: string // 主値（between は下限 / in はカンマ区切りリスト）
+  value2: string // between の上限のみ使用
+}
