@@ -1,0 +1,52 @@
+.gridWrap {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+.grid {
+  border-collapse: collapse;
+  font-size: 12px;
+  width: max-content;
+  min-width: 100%;
+}
+.grid th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-sidebar);
+  color: var(--text-muted);
+  font-weight: 600;
+  text-align: left;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border-soft);
+  white-space: nowrap;
+}
+.grid td {
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  border-right: 1px solid var(--border-soft);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.grid tbody tr:nth-child(even) {
+  background: var(--row-alt);
+}
+.null {
+  color: var(--text-faint);
+  font-style: italic;
+}
+.placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+.errorBox {
+  flex: 1;
+  padding: 16px;
+  color: #b91c1c;
+  font-size: 13px;
+  overflow: auto;
+}
