@@ -1,5 +1,7 @@
 import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { ConnectionManager } from './connection/ConnectionManager'
+import { registerDbHandlers } from './ipc/registerDbHandlers'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -24,6 +26,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  registerDbHandlers(new ConnectionManager())
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
