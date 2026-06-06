@@ -7,7 +7,10 @@ import styles from './QueryEditor.module.css'
 
 export default function QueryEditor(): JSX.Element | null {
   const activeTabId = useAppStore((s) => s.activeTabId)
-  const tab = useAppStore((s) => s.tabs.find((t) => t.id === s.activeTabId) ?? null)
+  const tab = useAppStore((s) => {
+    const t = s.tabs.find((t) => t.id === s.activeTabId)
+    return t && t.kind === 'sql' ? t : null
+  })
   const setTabSql = useAppStore((s) => s.setTabSql)
   const runActiveTab = useAppStore((s) => s.runActiveTab)
 
