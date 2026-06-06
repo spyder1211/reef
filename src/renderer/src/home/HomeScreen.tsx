@@ -9,6 +9,7 @@ export default function HomeScreen(): JSX.Element {
   const setSearch = useAppStore((s) => s.setSearch)
   const openForm = useAppStore((s) => s.openForm)
   const formOpen = useAppStore((s) => s.formOpen)
+  const connectError = useAppStore((s) => s.connectError)
 
   return (
     <div className={styles.home}>
@@ -26,6 +27,11 @@ export default function HomeScreen(): JSX.Element {
           />
         </div>
         <ConnectionList />
+        {connectError && (
+          <div className={styles.connError}>
+            接続失敗 — <b>{connectError.code}</b>: {connectError.message}
+          </div>
+        )}
       </div>
       {formOpen && <ConnectionFormModal />}
     </div>
