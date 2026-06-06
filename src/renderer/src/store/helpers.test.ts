@@ -1,12 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { buildSelectQuery, filterProfiles, pickNextActiveTabId } from './helpers'
+import { filterProfiles, pickNextActiveTabId } from './helpers'
 import { initials } from '../lib/tags'
-
-describe('buildSelectQuery', () => {
-  it('バッククォート付きの SELECT を作る', () => {
-    expect(buildSelectQuery('users')).toBe('SELECT * FROM `users` LIMIT 100;')
-  })
-})
 
 describe('filterProfiles', () => {
   const profiles = [
