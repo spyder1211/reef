@@ -1,0 +1,8 @@
+# ブレインストーミングのモックアップ（ローカル作業用）
+.superpowers/
+
+# 依存・ビルド成果物
+node_modules/
+dist/
+out/
+*.dmg
