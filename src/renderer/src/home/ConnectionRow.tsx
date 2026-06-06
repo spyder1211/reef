@@ -20,7 +20,7 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
         </div>
         <div className={styles.sub}>{sub}</div>
       </div>
-      <div className={styles.actions}>
+      <div className={styles.actions} onDoubleClick={(e) => e.stopPropagation()}>
         <button
           className={styles.action}
           onClick={(e) => {

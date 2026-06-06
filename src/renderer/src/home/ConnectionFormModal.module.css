@@ -109,3 +109,6 @@
   font-size: 12px;
   font-weight: 600;
 }
+.btnPrimary:hover {
+  background: #0060e0;
+}
