@@ -62,3 +62,38 @@
   margin-left: 4px;
   font-size: 10px;
 }
+.pkIcon {
+  font-size: 10px;
+  opacity: 0.8;
+}
+.dirty {
+  background: #fff3cd !important;
+  box-shadow: inset 0 0 0 1px #ffcf33;
+}
+.editing {
+  background: #fff !important;
+  box-shadow: inset 0 0 0 2px #2f7bf6;
+  padding: 2px 8px;
+}
+.editWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.editInput {
+  font: inherit;
+  border: none;
+  outline: none;
+  min-width: 80px;
+  background: transparent;
+  color: inherit;
+}
+.nullBtn {
+  font-size: 9px;
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-sidebar);
+  color: var(--text-muted);
+  cursor: pointer;
+}
