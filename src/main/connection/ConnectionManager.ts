@@ -13,17 +13,19 @@ export class ConnectionManager {
       password: config.password,
       database: config.database,
       waitForConnections: true,
-      connectionLimit: 5
+      connectionLimit: 5,
+      // DATE/DATETIME/TIMESTAMP を Date ではなく保存文字列のまま返す（例: "2025-09-26 16:17:05"）
+      dateStrings: true
     })
     // 実際に1本取得して疎通を確認（認証エラー等をここで顕在化）
     const conn = await this.pool.getConnection()
     conn.release()
   }
 
-  async query(sql: string): Promise<QueryResult> {
+  async query(sql: string, params?: unknown[]): Promise<QueryResult> {
     if (!this.pool) throw new Error('Not connected')
     const start = Date.now()
-    const [rows, fields] = await this.pool.query(sql)
+    const [rows, fields] = await this.pool.query(sql, params)
     const durationMs = Date.now() - start
     const dataRows = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
     const columns = (fields ?? []).map((f) => ({ name: (f as { name: string }).name }))

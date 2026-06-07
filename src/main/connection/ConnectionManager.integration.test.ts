@@ -34,4 +34,27 @@ describe.skipIf(!hasDb)('ConnectionManager (integration)', () => {
     const tables = await mgr.listTables()
     expect(tables).toContain('lt_demo')
   })
+
+  it('パラメータ化クエリで ? が値に置換される', async () => {
+    const res = await mgr.query('SELECT ? AS v', ['hello'])
+    expect(res.rows[0]).toEqual({ v: 'hello' })
+  })
+
+  it('フィルタ相当: WHERE のプレースホルダに params を束縛する（ユーザー報告の再現）', async () => {
+    await mgr.query('CREATE TABLE IF NOT EXISTS pq_demo (id INT, car_type INT)')
+    await mgr.query('DELETE FROM pq_demo')
+    await mgr.query('INSERT INTO pq_demo (id, car_type) VALUES (1, 2), (2, 3)')
+    const res = await mgr.query('SELECT * FROM `pq_demo` WHERE `car_type` = ? LIMIT 100', ['2'])
+    expect(res.rowCount).toBe(1)
+    expect(res.rows[0]).toMatchObject({ id: 1, car_type: 2 })
+  })
+
+  it('dateStrings: DATETIME/DATE を保存文字列のまま返す（Date オブジェクトにしない）', async () => {
+    await mgr.query('CREATE TABLE IF NOT EXISTS ts_demo (id INT, created_at DATETIME, d DATE)')
+    await mgr.query('DELETE FROM ts_demo')
+    await mgr.query("INSERT INTO ts_demo (id, created_at, d) VALUES (1, '2025-09-26 16:17:05', '2025-09-26')")
+    const res = await mgr.query('SELECT created_at, d FROM ts_demo WHERE id = 1')
+    expect(res.rows[0].created_at).toBe('2025-09-26 16:17:05')
+    expect(res.rows[0].d).toBe('2025-09-26')
+  })
 })

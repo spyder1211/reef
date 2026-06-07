@@ -11,7 +11,7 @@ declare global {
   interface Window {
     api: {
       connect: (config: ConnectionConfig) => Promise<ApiResult<null>>
-      query: (sql: string) => Promise<ApiResult<QueryResult>>
+      query: (sql: string, params?: unknown[]) => Promise<ApiResult<QueryResult>>
       disconnect: () => Promise<ApiResult<null>>
       listTables: () => Promise<ApiResult<string[]>>
       connections: {

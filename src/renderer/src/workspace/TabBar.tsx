@@ -16,7 +16,8 @@ export default function TabBar(): JSX.Element {
           className={t.id === activeTabId ? styles.tabActive : styles.tab}
           onClick={() => setActiveTab(t.id)}
         >
-          <span className={styles.title}>{t.title}</span>
+          <span className={styles.icon}>{t.kind === 'table' ? '▦' : '⚡'}</span>
+          <span className={styles.title}>{t.kind === 'table' ? t.tableName : t.title}</span>
           <button
             className={styles.close}
             onClick={(e) => {

@@ -1,7 +1,3 @@
-export function buildSelectQuery(table: string): string {
-  return `SELECT * FROM \`${table}\` LIMIT 100;`
-}
-
 export function filterProfiles<T extends { name: string; host: string; database?: string }>(
   profiles: T[],
   search: string

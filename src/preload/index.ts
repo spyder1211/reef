@@ -10,7 +10,8 @@ import type {
 const api = {
   connect: (config: ConnectionConfig): Promise<ApiResult<null>> =>
     ipcRenderer.invoke('db:connect', config),
-  query: (sql: string): Promise<ApiResult<QueryResult>> => ipcRenderer.invoke('db:query', sql),
+  query: (sql: string, params?: unknown[]): Promise<ApiResult<QueryResult>> =>
+    ipcRenderer.invoke('db:query', sql, params),
   disconnect: (): Promise<ApiResult<null>> => ipcRenderer.invoke('db:disconnect'),
   listTables: (): Promise<ApiResult<string[]>> => ipcRenderer.invoke('db:listTables'),
   connections: {
