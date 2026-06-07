@@ -4,6 +4,7 @@ import TabBar from './TabBar'
 import QueryEditor from './QueryEditor'
 import FilterBar from './FilterBar'
 import ResultsGrid from './ResultsGrid'
+import EditBar from './EditBar'
 import Pager from './Pager'
 import StatusBar from './StatusBar'
 import styles from './WorkspaceShell.module.css'
@@ -27,6 +28,7 @@ export default function WorkspaceShell(): JSX.Element {
           <>
             {activeKind === 'table' ? <FilterBar /> : <QueryEditor />}
             <ResultsGrid />
+            {activeKind === 'table' && <EditBar />}
             {activeKind === 'table' && <Pager />}
             <StatusBar />
           </>
