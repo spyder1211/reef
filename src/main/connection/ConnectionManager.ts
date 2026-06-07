@@ -1,5 +1,5 @@
 import mysql from 'mysql2/promise'
-import type { ConnectionConfig, QueryResult } from '../../shared/types'
+import type { ConnectionConfig, QueryResult, SqlStatement } from '../../shared/types'
 import { extractTableNames } from './extractTableNames'
 
 export class ConnectionManager {
@@ -35,6 +35,43 @@ export class ConnectionManager {
   async listTables(): Promise<string[]> {
     const { rows } = await this.query('SHOW TABLES')
     return extractTableNames(rows)
+  }
+
+  // 主キー列名を Seq_in_index 順で返す。主キーがなければ []（複合主キー対応）。
+  async primaryKey(table: string): Promise<string[]> {
+    if (!this.pool) throw new Error('Not connected')
+    const quoted = '`' + table.replace(/`/g, '``') + '`'
+    const [rows] = await this.pool.query(`SHOW KEYS FROM ${quoted} WHERE Key_name = 'PRIMARY'`)
+    const list = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
+    return list
+      .sort((a, b) => Number(a.Seq_in_index) - Number(b.Seq_in_index))
+      .map((r) => String(r.Column_name))
+  }
+
+  // 複数の文を1トランザクションで適用。1つでも失敗したら全ロールバックして再 throw。
+  async applyChanges(statements: SqlStatement[]): Promise<{ affectedRows: number }> {
+    if (!this.pool) throw new Error('Not connected')
+    const conn = await this.pool.getConnection()
+    try {
+      await conn.beginTransaction()
+      let affectedRows = 0
+      for (const s of statements) {
+        const [result] = await conn.query(s.sql, s.params)
+        affectedRows += (result as { affectedRows?: number }).affectedRows ?? 0
+      }
+      await conn.commit()
+      return { affectedRows }
+    } catch (err) {
+      // rollback 自体が投げても元のエラーを優先して返す
+      try {
+        await conn.rollback()
+      } catch {
+        // ignore
+      }
+      throw err
+    } finally {
+      conn.release()
+    }
   }
 
   isConnected(): boolean {

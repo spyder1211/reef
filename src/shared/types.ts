@@ -76,3 +76,15 @@ export interface TableSort {
   column: string
   dir: SortDir
 }
+
+// 1行分のステージング中の編集（UPDATE 用）
+export interface RowEdit {
+  pk: Record<string, unknown> // オリジナル行の主キー列 → 値（WHERE 用）
+  values: Record<string, string | null> // 変更された列 → 新しい値（SET 用）
+}
+
+// パラメータ化された 1 文（IPC で main に渡してトランザクション実行する）
+export interface SqlStatement {
+  sql: string
+  params: unknown[]
+}

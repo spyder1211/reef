@@ -70,4 +70,46 @@ describe.skipIf(!hasDb)('ConnectionManager (integration)', () => {
     const count = await mgr.query('SELECT COUNT(*) AS total FROM `pg_demo`')
     expect(Number(count.rows[0].total)).toBe(5)
   })
+
+  it('primaryKey: 主キー列を返す / 主キーなしは空配列', async () => {
+    await mgr.query('DROP TABLE IF EXISTS pk_demo')
+    await mgr.query('CREATE TABLE pk_demo (id INT PRIMARY KEY, name VARCHAR(50))')
+    expect(await mgr.primaryKey('pk_demo')).toEqual(['id'])
+    await mgr.query('DROP TABLE IF EXISTS nopk_demo')
+    await mgr.query('CREATE TABLE nopk_demo (a INT, b INT)')
+    expect(await mgr.primaryKey('nopk_demo')).toEqual([])
+  })
+
+  it('primaryKey: 複合主キーを Seq_in_index 順で返す', async () => {
+    await mgr.query('DROP TABLE IF EXISTS cpk_demo')
+    await mgr.query('CREATE TABLE cpk_demo (a INT, b INT, PRIMARY KEY (a, b))')
+    expect(await mgr.primaryKey('cpk_demo')).toEqual(['a', 'b'])
+  })
+
+  it('applyChanges: 複数 UPDATE をトランザクションで適用', async () => {
+    await mgr.query('DROP TABLE IF EXISTS ac_demo')
+    await mgr.query('CREATE TABLE ac_demo (id INT PRIMARY KEY, n INT)')
+    await mgr.query('INSERT INTO ac_demo (id, n) VALUES (1,10),(2,20)')
+    const res = await mgr.applyChanges([
+      { sql: 'UPDATE `ac_demo` SET `n` = ? WHERE `id` = ?', params: [11, 1] },
+      { sql: 'UPDATE `ac_demo` SET `n` = ? WHERE `id` = ?', params: [22, 2] }
+    ])
+    expect(res.affectedRows).toBe(2)
+    const after = await mgr.query('SELECT n FROM ac_demo ORDER BY id')
+    expect(after.rows.map((r) => r.n)).toEqual([11, 22])
+  })
+
+  it('applyChanges: 1文でも失敗すると全ロールバック', async () => {
+    await mgr.query('DROP TABLE IF EXISTS ac_rollback')
+    await mgr.query('CREATE TABLE ac_rollback (id INT PRIMARY KEY, n INT NOT NULL)')
+    await mgr.query('INSERT INTO ac_rollback (id, n) VALUES (1,10)')
+    await expect(
+      mgr.applyChanges([
+        { sql: 'UPDATE `ac_rollback` SET `n` = ? WHERE `id` = ?', params: [99, 1] },
+        { sql: 'UPDATE `ac_rollback` SET `n` = ? WHERE `id` = ?', params: [null, 1] }
+      ])
+    ).rejects.toMatchObject({ code: 'ER_BAD_NULL_ERROR' })
+    const after = await mgr.query('SELECT n FROM ac_rollback WHERE id = 1')
+    expect(after.rows[0].n).toBe(10)
+  })
 })
