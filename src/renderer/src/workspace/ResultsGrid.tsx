@@ -1,16 +1,27 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, useEffect, type MouseEvent } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   type ColumnDef
 } from '@tanstack/react-table'
-import type { QueryResult, TableSort, RowEdit } from '../../../shared/types'
+import type { QueryResult, TableSort, RowEdit, PendingInsert } from '../../../shared/types'
 import { useAppStore } from '../store/useAppStore'
-import { rowKeyOf } from '../store/rowKey'
+import { rowKeyOf, pkValuesOf } from '../store/rowKey'
 import styles from './ResultsGrid.module.css'
 
 type Row = Record<string, unknown>
+
+type CtxMenu =
+  | { kind: 'existing'; x: number; y: number; rowKey: string; pkValues: Record<string, unknown> }
+  | {
+      kind: 'delete-staged'
+      x: number
+      y: number
+      rowKey: string
+      pkValues: Record<string, unknown>
+    }
+  | { kind: 'insert'; x: number; y: number; localId: string }
 
 export default function ResultsGrid(): JSX.Element {
   const tab = useAppStore((s) => s.tabs.find((t) => t.id === s.activeTabId) ?? null)
@@ -18,6 +29,9 @@ export default function ResultsGrid(): JSX.Element {
   const setCellEdit = useAppStore((s) => s.setCellEdit)
   const setCellNull = useAppStore((s) => s.setCellNull)
   const selectRow = useAppStore((s) => s.selectRow)
+  const updateInsertCell = useAppStore((s) => s.updateInsertCell)
+  const removeInsertRow = useAppStore((s) => s.removeInsertRow)
+  const stageDelete = useAppStore((s) => s.stageDelete)
 
   if (!tab) return <div className={styles.placeholder} />
   if (tab.running) return <div className={styles.placeholder}>実行中…</div>
@@ -39,6 +53,8 @@ export default function ResultsGrid(): JSX.Element {
   const editable = isTable && tab.primaryKey.length > 0
   const primaryKey = isTable ? tab.primaryKey : []
   const edits = isTable ? tab.edits : {}
+  const inserts = isTable ? tab.inserts : []
+  const deletes = isTable ? tab.deletes : {}
   const selectedRowIndex = isTable ? tab.selectedRowIndex : null
   const onSelectRow = isTable ? (index: number): void => selectRow(tab.id, index) : undefined
 
@@ -50,10 +66,19 @@ export default function ResultsGrid(): JSX.Element {
       editable={editable}
       primaryKey={primaryKey}
       edits={edits}
+      inserts={inserts}
+      deletes={deletes}
       selectedRowIndex={selectedRowIndex}
       onSelectRow={onSelectRow}
       onEdit={editable ? (row, col, val) => setCellEdit(tab.id, row, col, val) : undefined}
       onNull={editable ? (row, col) => setCellNull(tab.id, row, col) : undefined}
+      onUpdateInsert={
+        editable ? (localId, col, val) => updateInsertCell(tab.id, localId, col, val) : undefined
+      }
+      onRemoveInsert={editable ? (localId) => removeInsertRow(tab.id, localId) : undefined}
+      onStageDelete={
+        editable ? (rowKey, pkValues) => stageDelete(tab.id, rowKey, pkValues) : undefined
+      }
     />
   )
 }
@@ -65,10 +90,15 @@ function Grid({
   editable,
   primaryKey,
   edits,
+  inserts,
+  deletes,
   selectedRowIndex,
   onSelectRow,
   onEdit,
-  onNull
+  onNull,
+  onUpdateInsert,
+  onRemoveInsert,
+  onStageDelete
 }: {
   result: QueryResult
   sort: TableSort | null
@@ -76,15 +106,30 @@ function Grid({
   editable: boolean
   primaryKey: string[]
   edits: Record<string, RowEdit>
+  inserts: PendingInsert[]
+  deletes: Record<string, Record<string, unknown>>
   selectedRowIndex: number | null
   onSelectRow?: (index: number) => void
   onEdit?: (row: Row, column: string, value: string) => void
   onNull?: (row: Row, column: string) => void
+  onUpdateInsert?: (localId: string, column: string, value: string) => void
+  onRemoveInsert?: (localId: string) => void
+  onStageDelete?: (rowKey: string, pkValues: Record<string, unknown>) => void
 }): JSX.Element {
   const [editing, setEditing] = useState<{ rowKey: string; column: string } | null>(null)
   const [draft, setDraft] = useState('')
   // Enter/Esc 確定後に trailing blur が再度 confirm するのを防ぐ（編集開始ごとにリセット）
   const committedRef = useRef(false)
+
+  const [ctxMenu, setCtxMenu] = useState<CtxMenu | null>(null)
+
+  // コンテキストメニューをページ外クリックで閉じる
+  useEffect(() => {
+    if (!ctxMenu) return
+    const close = (): void => setCtxMenu(null)
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [ctxMenu])
 
   const columns = useMemo<ColumnDef<Row>[]>(
     () =>
@@ -136,12 +181,33 @@ function Grid({
           {table.getRowModel().rows.map((r) => {
             const original = r.original as Row
             const rowKey = editable ? rowKeyOf(primaryKey, original) : ''
+            const isDeleted = editable && rowKey in deletes
             const rowEdit = editable ? edits[rowKey] : undefined
+
+            const handleContextMenu = (e: MouseEvent): void => {
+              if (!editable) return
+              e.preventDefault()
+              onSelectRow?.(r.index)
+              const pkVals = pkValuesOf(primaryKey, original)
+              setCtxMenu(
+                isDeleted
+                  ? { kind: 'delete-staged', x: e.clientX, y: e.clientY, rowKey, pkValues: pkVals }
+                  : { kind: 'existing', x: e.clientX, y: e.clientY, rowKey, pkValues: pkVals }
+              )
+            }
+
             return (
               <tr
                 key={r.id}
-                className={r.index === selectedRowIndex ? styles.selected : undefined}
+                className={
+                  isDeleted
+                    ? styles.deleteRow
+                    : r.index === selectedRowIndex
+                      ? styles.selected
+                      : undefined
+                }
                 onClick={onSelectRow ? () => onSelectRow(r.index) : undefined}
+                onContextMenu={handleContextMenu}
               >
                 {r.getVisibleCells().map((cell) => {
                   const colId = cell.column.id
@@ -177,7 +243,11 @@ function Grid({
                       .join(' ') || undefined
 
                   return (
-                    <td key={cell.id} className={cls} onDoubleClick={editable ? startEdit : undefined}>
+                    <td
+                      key={cell.id}
+                      className={cls}
+                      onDoubleClick={editable && !isDeleted ? startEdit : undefined}
+                    >
                       {isEditingThis ? (
                         <span className={styles.editWrap}>
                           <input
@@ -213,7 +283,119 @@ function Grid({
             )
           })}
         </tbody>
+        <tbody>
+          {inserts.map((insert, insertIndex) => (
+            <tr
+              key={insert.localId}
+              className={styles.insertRow}
+              onClick={
+                onSelectRow ? () => onSelectRow(result.rows.length + insertIndex) : undefined
+              }
+              onContextMenu={(e) => {
+                e.preventDefault()
+                onSelectRow?.(result.rows.length + insertIndex)
+                setCtxMenu({ kind: 'insert', x: e.clientX, y: e.clientY, localId: insert.localId })
+              }}
+            >
+              {result.columns.map((col) => {
+                const value = insert.values[col.name]
+                const colId = col.name
+                const isEditingThis =
+                  editing?.rowKey === `insert-${insert.localId}` && editing?.column === colId
+
+                const startEdit = (): void => {
+                  if (!editable) return
+                  committedRef.current = false
+                  setEditing({ rowKey: `insert-${insert.localId}`, column: colId })
+                  setDraft(value === null || value === undefined ? '' : String(value))
+                }
+                const confirm = (): void => {
+                  if (committedRef.current) return
+                  committedRef.current = true
+                  onUpdateInsert?.(insert.localId, colId, draft)
+                  setEditing(null)
+                }
+                const cancel = (): void => {
+                  committedRef.current = true
+                  setEditing(null)
+                }
+
+                const cls = isEditingThis ? styles.editing : undefined
+                return (
+                  <td
+                    key={colId}
+                    className={cls}
+                    onDoubleClick={editable ? startEdit : undefined}
+                  >
+                    {isEditingThis ? (
+                      <span className={styles.editWrap}>
+                        <input
+                          autoFocus
+                          className={styles.editInput}
+                          value={draft}
+                          onChange={(e) => setDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') confirm()
+                            else if (e.key === 'Escape') cancel()
+                          }}
+                          onBlur={confirm}
+                        />
+                      </span>
+                    ) : value === null ? (
+                      <span className={styles.null}>NULL</span>
+                    ) : value === undefined || value === '' ? (
+                      <span className={styles.insertAutoCell}>—</span>
+                    ) : (
+                      String(value)
+                    )}
+                  </td>
+                )
+              })}
+            </tr>
+          ))}
+        </tbody>
       </table>
+      {ctxMenu && (
+        <div
+          className={styles.ctxMenu}
+          style={{ top: ctxMenu.y, left: ctxMenu.x }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {ctxMenu.kind === 'existing' && (
+            <div
+              className={`${styles.ctxItem} ${styles.ctxDanger}`}
+              onClick={() => {
+                onStageDelete?.(ctxMenu.rowKey, ctxMenu.pkValues)
+                setCtxMenu(null)
+              }}
+            >
+              行を削除
+            </div>
+          )}
+          {ctxMenu.kind === 'delete-staged' && (
+            <div
+              className={styles.ctxItem}
+              onClick={() => {
+                onStageDelete?.(ctxMenu.rowKey, ctxMenu.pkValues)
+                setCtxMenu(null)
+              }}
+            >
+              削除を取り消す
+            </div>
+          )}
+          {ctxMenu.kind === 'insert' && (
+            <div
+              className={`${styles.ctxItem} ${styles.ctxDanger}`}
+              onClick={() => {
+                onRemoveInsert?.(ctxMenu.localId)
+                setCtxMenu(null)
+              }}
+            >
+              この新規行を破棄
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

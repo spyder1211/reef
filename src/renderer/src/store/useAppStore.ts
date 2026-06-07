@@ -7,10 +7,11 @@ import type {
   ApiResult,
   FilterCondition,
   TableSort,
-  RowEdit
+  RowEdit,
+  PendingInsert
 } from '../../../shared/types'
 import { buildFilteredQuery, buildCountQuery } from './filterBuilder'
-import { buildUpdateStatements } from './editBuilder'
+import { buildUpdateStatements, buildInsertStatements, buildDeleteStatements } from './editBuilder'
 import { rowKeyOf, pkValuesOf } from './rowKey'
 import { pickNextActiveTabId } from './helpers'
 import { cycleSort } from './pager'
@@ -37,6 +38,8 @@ export interface TableTab extends BaseTab {
   total: number | null // COUNT(*) 由来。未取得は null
   primaryKey: string[] // 主キー列（空 = 読み取り専用）
   edits: Record<string, RowEdit> // 行キー → ステージング中の変更。空 = 変更なし
+  inserts: PendingInsert[]                          // INSERT ステージング中の行リスト
+  deletes: Record<string, Record<string, unknown>>  // 行キー → pk値（DELETE ステージング）
   editError: AppError | null // コミット失敗のエラー（EditBar に表示）
   selectedRowIndex: number | null // 現在ページ内で選択中の行インデックス。null = 未選択
 }
@@ -73,6 +76,8 @@ function makeTableTab(name: string): TableTab {
     total: null,
     primaryKey: [],
     edits: {},
+    inserts: [],
+    deletes: {},
     editError: null,
     selectedRowIndex: null,
     result: null,
@@ -125,6 +130,10 @@ interface AppState {
   setCellNull: (tabId: string, row: Record<string, unknown>, column: string) => void
   discardEdits: (tabId: string) => void
   commitEdits: (tabId: string) => Promise<void>
+  addInsertRow: (tabId: string) => void
+  updateInsertCell: (tabId: string, localId: string, column: string, value: string) => void
+  removeInsertRow: (tabId: string, localId: string) => void
+  stageDelete: (tabId: string, rowKey: string, pkValues: Record<string, unknown>) => void
   selectRow: (tabId: string, index: number) => void
   toggleDetail: () => void
 }
@@ -132,7 +141,11 @@ interface AppState {
 export const useAppStore = create<AppState>((set, get) => {
   // 未コミットの変更があるとき、ナビゲーション前に破棄してよいか確認する。
   function confirmDiscard(tab: TableTab): boolean {
-    if (Object.keys(tab.edits).length === 0) return true
+    if (
+      Object.keys(tab.edits).length === 0 &&
+      tab.inserts.length === 0 &&
+      Object.keys(tab.deletes).length === 0
+    ) return true
     return window.confirm('未コミットの変更があります。破棄して移動しますか？')
   }
 
@@ -359,7 +372,7 @@ export const useAppStore = create<AppState>((set, get) => {
     async applyFilters(tabId) {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
       if (!tab || !confirmDiscard(tab)) return
-      patchTableTab(tabId, (t) => ({ ...t, page: 0, edits: {}, editError: null, selectedRowIndex: null }))
+      patchTableTab(tabId, (t) => ({ ...t, page: 0, edits: {}, inserts: [], deletes: {}, editError: null, selectedRowIndex: null }))
       await runTable(tabId, { recount: true })
     },
 
@@ -371,6 +384,8 @@ export const useAppStore = create<AppState>((set, get) => {
         sort: cycleSort(t.sort, column),
         page: 0,
         edits: {},
+        inserts: [],
+        deletes: {},
         editError: null,
         selectedRowIndex: null
       }))
@@ -380,7 +395,7 @@ export const useAppStore = create<AppState>((set, get) => {
     async setPage(tabId, page) {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
       if (!tab || !confirmDiscard(tab)) return
-      patchTableTab(tabId, (t) => ({ ...t, page: Math.max(0, page), edits: {}, editError: null, selectedRowIndex: null }))
+      patchTableTab(tabId, (t) => ({ ...t, page: Math.max(0, page), edits: {}, inserts: [], deletes: {}, editError: null, selectedRowIndex: null }))
       await runTable(tabId, { recount: false })
     },
 
@@ -388,7 +403,7 @@ export const useAppStore = create<AppState>((set, get) => {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
       if (!tab || !confirmDiscard(tab)) return
       const safe = [50, 100, 500].includes(size) ? size : 100
-      patchTableTab(tabId, (t) => ({ ...t, pageSize: safe, page: 0, edits: {}, editError: null, selectedRowIndex: null }))
+      patchTableTab(tabId, (t) => ({ ...t, pageSize: safe, page: 0, edits: {}, inserts: [], deletes: {}, editError: null, selectedRowIndex: null }))
       await runTable(tabId, { recount: false })
     },
 
@@ -429,14 +444,80 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     discardEdits(tabId) {
-      patchTableTab(tabId, (t) => ({ ...t, edits: {}, editError: null }))
+      patchTableTab(tabId, (t) => ({ ...t, edits: {}, inserts: [], deletes: {}, editError: null }))
+    },
+
+    addInsertRow(tabId) {
+      const localId = `ins-${crypto.randomUUID()}`
+      patchTableTab(tabId, (t) => ({
+        ...t,
+        inserts: [...t.inserts, { localId, values: {} }],
+        editError: null,
+      }))
+    },
+
+    updateInsertCell(tabId, localId, column, value) {
+      patchTableTab(tabId, (t) => ({
+        ...t,
+        inserts: t.inserts.map((ins) =>
+          ins.localId === localId
+            ? { ...ins, values: { ...ins.values, [column]: value } }
+            : ins
+        ),
+        editError: null,
+      }))
+    },
+
+    removeInsertRow(tabId, localId) {
+      patchTableTab(tabId, (t) => ({
+        ...t,
+        inserts: t.inserts.filter((ins) => ins.localId !== localId),
+        // 破棄で INSERT 行の数が変わると selectedRowIndex が無効な位置を指すため選択を解除する。
+        selectedRowIndex: null,
+        editError: null,
+      }))
+    },
+
+    stageDelete(tabId, rowKey, pkValues) {
+      patchTableTab(tabId, (t) => {
+        const deletes = { ...t.deletes }
+        const edits = { ...t.edits }
+        if (rowKey in deletes) {
+          delete deletes[rowKey] // トグル：すでに削除ステージング済みなら取り消す
+        } else {
+          deletes[rowKey] = pkValues
+          // 削除する行に対する UPDATE ステージは無意味（DELETE 後の UPDATE は 0 行）なので破棄し、
+          // EditBar の二重カウントや無駄な文の生成を防ぐ。
+          delete edits[rowKey]
+        }
+        return { ...t, deletes, edits, editError: null }
+      })
     },
 
     async commitEdits(tabId) {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
-      if (!tab || tab.running || Object.keys(tab.edits).length === 0) return
-      const statements = buildUpdateStatements(tab.tableName, tab.primaryKey, Object.values(tab.edits))
-      if (statements.length === 0) return
+      const hasChanges =
+        tab &&
+        (Object.keys(tab.edits).length > 0 ||
+          tab.inserts.length > 0 ||
+          Object.keys(tab.deletes).length > 0)
+      if (!tab || tab.running || !hasChanges) return
+
+      // 順序: DELETE → UPDATE → INSERT（FK 制約違反を最小化）
+      const statements = [
+        ...buildDeleteStatements(tab.tableName, tab.primaryKey, tab.deletes),
+        ...buildUpdateStatements(tab.tableName, tab.primaryKey, Object.values(tab.edits)),
+        ...buildInsertStatements(tab.tableName, tab.inserts),
+      ]
+      if (statements.length === 0) {
+        // ステージはあるが実行すべき文が無い（例: 空欄だけの INSERT 行）。
+        // 黙って無反応になると詰むため、入力を促すエラーを表示する。
+        patchTableTab(tabId, (t) => ({
+          ...t,
+          editError: { code: 'CLIENT_ERROR', message: '入力された値がありません。新規行に値を入力してください。' }
+        }))
+        return
+      }
       setTabRunning(tabId)
       try {
         const res = await window.api.applyChanges(statements)
@@ -451,8 +532,10 @@ export const useAppStore = create<AppState>((set, get) => {
           })
           return
         }
-        patchTableTab(tabId, (t) => ({ ...t, edits: {}, editError: null }))
-        await runTable(tabId, { recount: false })
+        patchTableTab(tabId, (t) => ({
+          ...t, edits: {}, inserts: [], deletes: {}, editError: null, selectedRowIndex: null
+        }))
+        await runTable(tabId, { recount: true }) // INSERT/DELETE は行数が変わる
       } catch (err) {
         failTab(tabId, err)
       }

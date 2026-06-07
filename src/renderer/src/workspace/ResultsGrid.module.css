@@ -100,3 +100,42 @@
 .grid tbody tr.selected td {
   background: #e6f0ff;
 }
+.insertRow td {
+  background: #f0fff4 !important;
+  color: #1d1d1f;
+}
+.insertAutoCell {
+  color: #a0a0a6;
+  font-style: italic;
+}
+.deleteRow td {
+  background: #fff0f0 !important;
+  text-decoration: line-through;
+  color: #c0392b;
+}
+.ctxMenu {
+  position: fixed;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  padding: 4px 0;
+  z-index: 1000;
+  min-width: 160px;
+  font-size: 12px;
+}
+.ctxItem {
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.ctxItem:hover {
+  background: #2f7bf6;
+  color: #fff;
+}
+.ctxDanger {
+  color: #ff3b30;
+}
+.ctxDanger:hover {
+  background: #ff3b30 !important;
+  color: #fff !important;
+}

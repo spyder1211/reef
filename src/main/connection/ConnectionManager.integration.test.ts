@@ -122,4 +122,58 @@ describe.skipIf(!hasDb)('ConnectionManager (integration)', () => {
     expect(byName.name).toBe('var_string')
     expect(byName.created_at).toBe('timestamp')
   })
+
+  it('applyChanges: INSERT で行が増える', async () => {
+    await mgr.query('DROP TABLE IF EXISTS ins_demo')
+    await mgr.query('CREATE TABLE ins_demo (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(50))')
+    const res = await mgr.applyChanges([
+      { sql: 'INSERT INTO `ins_demo` (`name`) VALUES (?)', params: ['太郎'] },
+      { sql: 'INSERT INTO `ins_demo` (`name`) VALUES (?)', params: ['花子'] }
+    ])
+    expect(res.affectedRows).toBe(2)
+    const after = await mgr.query('SELECT name FROM ins_demo ORDER BY id')
+    expect(after.rows.map((r) => r.name)).toEqual(['太郎', '花子'])
+  })
+
+  it('applyChanges: DELETE で行が減る', async () => {
+    await mgr.query('DROP TABLE IF EXISTS del_demo')
+    await mgr.query('CREATE TABLE del_demo (id INT PRIMARY KEY, name VARCHAR(50))')
+    await mgr.query('INSERT INTO del_demo (id, name) VALUES (1, "A"), (2, "B"), (3, "C")')
+    const res = await mgr.applyChanges([
+      { sql: 'DELETE FROM `del_demo` WHERE `id` = ?', params: [2] }
+    ])
+    expect(res.affectedRows).toBe(1)
+    const after = await mgr.query('SELECT id FROM del_demo ORDER BY id')
+    expect(after.rows.map((r) => r.id)).toEqual([1, 3])
+  })
+
+  it('applyChanges: DELETE + UPDATE + INSERT の混合が1トランザクションで適用される', async () => {
+    await mgr.query('DROP TABLE IF EXISTS mix_demo')
+    await mgr.query('CREATE TABLE mix_demo (id INT PRIMARY KEY, name VARCHAR(50))')
+    await mgr.query('INSERT INTO mix_demo (id, name) VALUES (1, "A"), (2, "B")')
+    await mgr.applyChanges([
+      { sql: 'DELETE FROM `mix_demo` WHERE `id` = ?', params: [1] },
+      { sql: 'UPDATE `mix_demo` SET `name` = ? WHERE `id` = ?', params: ['BB', 2] },
+      { sql: 'INSERT INTO `mix_demo` (id, name) VALUES (?, ?)', params: [3, 'C'] }
+    ])
+    const after = await mgr.query('SELECT id, name FROM mix_demo ORDER BY id')
+    expect(after.rows).toEqual([
+      { id: 2, name: 'BB' },
+      { id: 3, name: 'C' }
+    ])
+  })
+
+  it('applyChanges: 途中で失敗したら全ロールバック（先行 INSERT も適用されない）', async () => {
+    await mgr.query('DROP TABLE IF EXISTS mix_rb')
+    await mgr.query('CREATE TABLE mix_rb (id INT PRIMARY KEY, n INT NOT NULL)')
+    await mgr.query('INSERT INTO mix_rb (id, n) VALUES (1, 10)')
+    await expect(
+      mgr.applyChanges([
+        { sql: 'INSERT INTO `mix_rb` (id, n) VALUES (?, ?)', params: [2, 20] },
+        { sql: 'UPDATE `mix_rb` SET `n` = ? WHERE `id` = ?', params: [null, 1] }
+      ])
+    ).rejects.toMatchObject({ code: 'ER_BAD_NULL_ERROR' })
+    const after = await mgr.query('SELECT id FROM mix_rb ORDER BY id')
+    expect(after.rows.map((r) => r.id)).toEqual([1])
+  })
 })

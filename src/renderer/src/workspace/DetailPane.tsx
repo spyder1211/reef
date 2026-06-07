@@ -17,10 +17,14 @@ export default function DetailPane(): JSX.Element | null {
 
   const result = tab.result
   const index = tab.selectedRowIndex
-  const row = result && index != null ? (result.rows[index] as Row | undefined) : undefined
+  const isInsertRow = index != null && result != null && index >= result.rows.length
+  const row =
+    result && index != null && !isInsertRow ? (result.rows[index] as Row | undefined) : undefined
   const editable = tab.primaryKey.length > 0
   const rowKey = row && editable ? rowKeyOf(tab.primaryKey, row) : ''
   const rowEdit = row && editable ? tab.edits[rowKey] : undefined
+  // 削除ステージング済みの行はグリッド同様に編集不可（ペインでの編集を抑止）。
+  const isDeleted = !!row && editable && rowKey in tab.deletes
 
   return (
     <div className={styles.pane}>
@@ -30,8 +34,14 @@ export default function DetailPane(): JSX.Element | null {
           ✕
         </button>
       </div>
-      {!row || !result ? (
+      {isInsertRow ? (
+        <div className={styles.placeholder}>新規行はグリッドで編集してください</div>
+      ) : !row || !result ? (
         <div className={styles.placeholder}>行を選択してください</div>
+      ) : isDeleted ? (
+        <div className={styles.placeholder}>
+          削除予定の行です。取り消しはグリッドの右クリックメニューから行えます。
+        </div>
       ) : (
         <div className={styles.body}>
           {result.columns.map((col) => {

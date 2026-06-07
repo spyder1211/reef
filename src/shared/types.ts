@@ -89,3 +89,9 @@ export interface SqlStatement {
   sql: string
   params: unknown[]
 }
+
+// INSERT ステージング中の1行
+export interface PendingInsert {
+  localId: string                       // ローカル一意 ID（"ins-0", "ins-1" …）
+  values: Record<string, string | null> // 列名 → 入力値（空文字は SQL から除外）
+}
