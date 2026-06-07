@@ -69,3 +69,10 @@ export interface FilterCondition {
   value: string // 主値（between は下限 / in はカンマ区切りリスト）
   value2: string // between の上限のみ使用
 }
+
+// テーブルビューのソート状態
+export type SortDir = 'asc' | 'desc'
+export interface TableSort {
+  column: string
+  dir: SortDir
+}

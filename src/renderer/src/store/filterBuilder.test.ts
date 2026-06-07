@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildFilteredQuery } from './filterBuilder'
+import { buildFilteredQuery, buildCountQuery } from './filterBuilder'
 import type { FilterCondition } from '../../../shared/types'
 
 const cols = ['id', 'name', 'date']
@@ -107,5 +107,75 @@ describe('buildFilteredQuery', () => {
       { ...base, column: 'c`ol', operator: 'is_null' }
     ])
     expect(r.sql).toBe('SELECT * FROM `we``ird` WHERE `c``ol` IS NULL LIMIT 100')
+  })
+})
+
+describe('buildFilteredQuery options (sort/limit/offset)', () => {
+  it('sort を渡すと ORDER BY を付ける（asc）', () => {
+    const r = buildFilteredQuery('t', cols, [], { sort: { column: 'name', dir: 'asc' } })
+    expect(r.sql).toBe('SELECT * FROM `t` ORDER BY `name` ASC LIMIT 100')
+  })
+
+  it('sort desc は ORDER BY ... DESC', () => {
+    const r = buildFilteredQuery('t', cols, [], { sort: { column: 'date', dir: 'desc' } })
+    expect(r.sql).toBe('SELECT * FROM `t` ORDER BY `date` DESC LIMIT 100')
+  })
+
+  it('ホワイトリスト外のソート列は ORDER BY を付けない', () => {
+    const r = buildFilteredQuery('t', cols, [], { sort: { column: 'evil', dir: 'asc' } })
+    expect(r.sql).toBe('SELECT * FROM `t` LIMIT 100')
+  })
+
+  it('ソート列の識別子をバッククォートでエスケープ', () => {
+    const r = buildFilteredQuery('t', ['c`ol'], [], { sort: { column: 'c`ol', dir: 'asc' } })
+    expect(r.sql).toBe('SELECT * FROM `t` ORDER BY `c``ol` ASC LIMIT 100')
+  })
+
+  it('limit を反映する', () => {
+    const r = buildFilteredQuery('t', cols, [], { limit: 50 })
+    expect(r.sql).toBe('SELECT * FROM `t` LIMIT 50')
+  })
+
+  it('offset > 0 のとき OFFSET を付ける', () => {
+    const r = buildFilteredQuery('t', cols, [], { limit: 100, offset: 200 })
+    expect(r.sql).toBe('SELECT * FROM `t` LIMIT 100 OFFSET 200')
+  })
+
+  it('offset 0 のときは OFFSET を付けない', () => {
+    const r = buildFilteredQuery('t', cols, [], { limit: 100, offset: 0 })
+    expect(r.sql).toBe('SELECT * FROM `t` LIMIT 100')
+  })
+
+  it('limit/offset が整数でなければ既定値にフォールバック', () => {
+    const r = buildFilteredQuery('t', cols, [], { limit: 1.5, offset: -3 })
+    expect(r.sql).toBe('SELECT * FROM `t` LIMIT 100')
+  })
+
+  it('WHERE + ORDER BY + LIMIT + OFFSET の順で結合する', () => {
+    const r = buildFilteredQuery(
+      't',
+      cols,
+      [{ id: 'x', enabled: true, value: '5', value2: '', column: 'id', operator: '=' }],
+      { sort: { column: 'name', dir: 'asc' }, limit: 100, offset: 100 }
+    )
+    expect(r.sql).toBe('SELECT * FROM `t` WHERE `id` = ? ORDER BY `name` ASC LIMIT 100 OFFSET 100')
+    expect(r.params).toEqual(['5'])
+  })
+})
+
+describe('buildCountQuery', () => {
+  it('フィルタなしは素の COUNT', () => {
+    expect(buildCountQuery('t', cols, [])).toEqual({
+      sql: 'SELECT COUNT(*) AS total FROM `t`',
+      params: []
+    })
+  })
+
+  it('WHERE 付きで params が一致する', () => {
+    const r = buildCountQuery('t', cols, [
+      { id: 'x', enabled: true, value: '5', value2: '', column: 'id', operator: '=' }
+    ])
+    expect(r.sql).toBe('SELECT COUNT(*) AS total FROM `t` WHERE `id` = ?')
+    expect(r.params).toEqual(['5'])
   })
 })
