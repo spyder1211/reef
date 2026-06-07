@@ -17,6 +17,7 @@ export default function ResultsGrid(): JSX.Element {
   const setSort = useAppStore((s) => s.setSort)
   const setCellEdit = useAppStore((s) => s.setCellEdit)
   const setCellNull = useAppStore((s) => s.setCellNull)
+  const selectRow = useAppStore((s) => s.selectRow)
 
   if (!tab) return <div className={styles.placeholder} />
   if (tab.running) return <div className={styles.placeholder}>実行中…</div>
@@ -38,6 +39,8 @@ export default function ResultsGrid(): JSX.Element {
   const editable = isTable && tab.primaryKey.length > 0
   const primaryKey = isTable ? tab.primaryKey : []
   const edits = isTable ? tab.edits : {}
+  const selectedRowIndex = isTable ? tab.selectedRowIndex : null
+  const onSelectRow = isTable ? (index: number): void => selectRow(tab.id, index) : undefined
 
   return (
     <Grid
@@ -47,6 +50,8 @@ export default function ResultsGrid(): JSX.Element {
       editable={editable}
       primaryKey={primaryKey}
       edits={edits}
+      selectedRowIndex={selectedRowIndex}
+      onSelectRow={onSelectRow}
       onEdit={editable ? (row, col, val) => setCellEdit(tab.id, row, col, val) : undefined}
       onNull={editable ? (row, col) => setCellNull(tab.id, row, col) : undefined}
     />
@@ -60,6 +65,8 @@ function Grid({
   editable,
   primaryKey,
   edits,
+  selectedRowIndex,
+  onSelectRow,
   onEdit,
   onNull
 }: {
@@ -69,6 +76,8 @@ function Grid({
   editable: boolean
   primaryKey: string[]
   edits: Record<string, RowEdit>
+  selectedRowIndex: number | null
+  onSelectRow?: (index: number) => void
   onEdit?: (row: Row, column: string, value: string) => void
   onNull?: (row: Row, column: string) => void
 }): JSX.Element {
@@ -129,7 +138,11 @@ function Grid({
             const rowKey = editable ? rowKeyOf(primaryKey, original) : ''
             const rowEdit = editable ? edits[rowKey] : undefined
             return (
-              <tr key={r.id}>
+              <tr
+                key={r.id}
+                className={r.index === selectedRowIndex ? styles.selected : undefined}
+                onClick={onSelectRow ? () => onSelectRow(r.index) : undefined}
+              >
                 {r.getVisibleCells().map((cell) => {
                   const colId = cell.column.id
                   const isDirty = rowEdit ? colId in rowEdit.values : false
