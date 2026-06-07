@@ -20,3 +20,17 @@
   height: 8px;
   border-radius: 50%;
 }
+.toggle {
+  font-size: 11px;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.toggleOn {
+  background: #eef4ff;
+  border-color: #2f7bf6;
+  color: #2f7bf6;
+}
