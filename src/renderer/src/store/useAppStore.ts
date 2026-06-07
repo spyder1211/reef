@@ -139,8 +139,6 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set, get) => {
-  let insertCounter = 0
-
   // 未コミットの変更があるとき、ナビゲーション前に破棄してよいか確認する。
   function confirmDiscard(tab: TableTab): boolean {
     if (
@@ -450,7 +448,7 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     addInsertRow(tabId) {
-      const localId = `ins-${insertCounter++}`
+      const localId = `ins-${crypto.randomUUID()}`
       patchTableTab(tabId, (t) => ({
         ...t,
         inserts: [...t.inserts, { localId, values: {} }],
