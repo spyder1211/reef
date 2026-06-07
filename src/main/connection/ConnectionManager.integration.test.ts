@@ -57,4 +57,17 @@ describe.skipIf(!hasDb)('ConnectionManager (integration)', () => {
     expect(res.rows[0].created_at).toBe('2025-09-26 16:17:05')
     expect(res.rows[0].d).toBe('2025-09-26')
   })
+
+  it('ORDER BY + LIMIT/OFFSET と COUNT(*) がページング用に正しく動く', async () => {
+    await mgr.query('CREATE TABLE IF NOT EXISTS pg_demo (id INT, n INT)')
+    await mgr.query('DELETE FROM pg_demo')
+    await mgr.query('INSERT INTO pg_demo (id, n) VALUES (1,10),(2,20),(3,30),(4,40),(5,50)')
+
+    // n 降順 = 50,40,30,20,10。2 ページ目（OFFSET 2 LIMIT 2）→ 30,20
+    const page = await mgr.query('SELECT n FROM `pg_demo` ORDER BY `n` DESC LIMIT 2 OFFSET 2')
+    expect(page.rows.map((r) => r.n)).toEqual([30, 20])
+
+    const count = await mgr.query('SELECT COUNT(*) AS total FROM `pg_demo`')
+    expect(Number(count.rows[0].total)).toBe(5)
+  })
 })
