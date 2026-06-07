@@ -4,7 +4,8 @@ import type {
   ApiResult,
   QueryResult,
   ConnectionProfile,
-  ConnectionProfileInput
+  ConnectionProfileInput,
+  SqlStatement
 } from '../../shared/types'
 
 declare global {
@@ -14,6 +15,8 @@ declare global {
       query: (sql: string, params?: unknown[]) => Promise<ApiResult<QueryResult>>
       disconnect: () => Promise<ApiResult<null>>
       listTables: () => Promise<ApiResult<string[]>>
+      primaryKey: (table: string) => Promise<ApiResult<string[]>>
+      applyChanges: (statements: SqlStatement[]) => Promise<ApiResult<{ affectedRows: number }>>
       connections: {
         list: () => Promise<ApiResult<ConnectionProfile[]>>
         save: (input: ConnectionProfileInput) => Promise<ApiResult<ConnectionProfile>>

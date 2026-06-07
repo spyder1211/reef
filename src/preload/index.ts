@@ -4,7 +4,8 @@ import type {
   ApiResult,
   QueryResult,
   ConnectionProfile,
-  ConnectionProfileInput
+  ConnectionProfileInput,
+  SqlStatement
 } from '../shared/types'
 
 const api = {
@@ -14,6 +15,10 @@ const api = {
     ipcRenderer.invoke('db:query', sql, params),
   disconnect: (): Promise<ApiResult<null>> => ipcRenderer.invoke('db:disconnect'),
   listTables: (): Promise<ApiResult<string[]>> => ipcRenderer.invoke('db:listTables'),
+  primaryKey: (table: string): Promise<ApiResult<string[]>> =>
+    ipcRenderer.invoke('db:primaryKey', table),
+  applyChanges: (statements: SqlStatement[]): Promise<ApiResult<{ affectedRows: number }>> =>
+    ipcRenderer.invoke('db:applyChanges', statements),
   connections: {
     list: (): Promise<ApiResult<ConnectionProfile[]>> => ipcRenderer.invoke('connections:list'),
     save: (input: ConnectionProfileInput): Promise<ApiResult<ConnectionProfile>> =>

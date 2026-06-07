@@ -2,7 +2,7 @@ import { ipcMain } from 'electron'
 import { ConnectionManager } from '../connection/ConnectionManager'
 import { validateConnectionConfig } from '../connection/validateConnectionConfig'
 import { normalizeDbError } from '../connection/normalizeDbError'
-import type { ConnectionConfig, ApiResult, QueryResult } from '../../shared/types'
+import type { ConnectionConfig, ApiResult, QueryResult, SqlStatement } from '../../shared/types'
 
 export function registerDbHandlers(manager: ConnectionManager): void {
   ipcMain.handle(
@@ -48,4 +48,26 @@ export function registerDbHandlers(manager: ConnectionManager): void {
       return { ok: false, error: normalizeDbError(err) }
     }
   })
+
+  ipcMain.handle(
+    'db:primaryKey',
+    async (_e, table: string): Promise<ApiResult<string[]>> => {
+      try {
+        return { ok: true, data: await manager.primaryKey(table) }
+      } catch (err) {
+        return { ok: false, error: normalizeDbError(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    'db:applyChanges',
+    async (_e, statements: SqlStatement[]): Promise<ApiResult<{ affectedRows: number }>> => {
+      try {
+        return { ok: true, data: await manager.applyChanges(statements) }
+      } catch (err) {
+        return { ok: false, error: normalizeDbError(err) }
+      }
+    }
+  )
 }
