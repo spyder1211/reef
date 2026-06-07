@@ -15,7 +15,6 @@ export default function FilterBar(): JSX.Element | null {
   const updateFilter = useAppStore((s) => s.updateFilter)
   const clearFilters = useAppStore((s) => s.clearFilters)
   const applyFilters = useAppStore((s) => s.applyFilters)
-  const addInsertRow = useAppStore((s) => s.addInsertRow)
 
   // プレビューSQLは tab（filters/columns）が変わったときだけ再計算する。
   const preview = useMemo(
@@ -114,15 +113,6 @@ export default function FilterBar(): JSX.Element | null {
         })
       )}
       <div className={styles.footer}>
-        {tab.primaryKey.length > 0 && (
-          <button
-            className={styles.insertBtn}
-            disabled={tab.running}
-            onClick={() => addInsertRow(tab.id)}
-          >
-            ＋ 行を追加
-          </button>
-        )}
         <button className={styles.addBtn} disabled={!columnsReady} onClick={() => addFilter(tab.id)}>
           ＋ 条件を追加
         </button>
