@@ -112,4 +112,14 @@ describe.skipIf(!hasDb)('ConnectionManager (integration)', () => {
     const after = await mgr.query('SELECT n FROM ac_rollback WHERE id = 1')
     expect(after.rows[0].n).toBe(10)
   })
+
+  it('query は columns に mysql2 の型名を付与する', async () => {
+    await mgr.query('DROP TABLE IF EXISTS type_demo')
+    await mgr.query('CREATE TABLE type_demo (id INT, name VARCHAR(50), created_at TIMESTAMP NULL)')
+    const res = await mgr.query('SELECT id, name, created_at FROM type_demo')
+    const byName = Object.fromEntries(res.columns.map((c) => [c.name, c.type]))
+    expect(byName.id).toBe('long')
+    expect(byName.name).toBe('var_string')
+    expect(byName.created_at).toBe('timestamp')
+  })
 })
