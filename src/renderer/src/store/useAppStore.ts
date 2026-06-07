@@ -99,37 +99,66 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set, get) => {
-  async function runSql(tabId: string, sql: string, params?: unknown[]): Promise<void> {
+  function setTabRunning(tabId: string): void {
     set({ tabs: get().tabs.map((t) => (t.id === tabId ? { ...t, running: true, error: null } : t)) })
-    const res = await window.api.query(sql, params)
+  }
+
+  // TableTab のみを id 一致で書き換える共通ヘルパー。
+  function patchTableTab(tabId: string, fn: (t: TableTab) => TableTab): void {
+    set({
+      tabs: get().tabs.map((t) => (t.id === tabId && t.kind === 'table' ? fn(t) : t))
+    })
+  }
+
+  // 例外（IPC 拒否・クエリ組み立て失敗）でもタブが running のまま固着しないよう error に落とす。
+  function failTab(tabId: string, err: unknown): void {
+    const message = err instanceof Error ? err.message : String(err)
     set({
       tabs: get().tabs.map((t) =>
-        t.id === tabId
-          ? {
-              ...t,
-              running: false,
-              result: res.ok ? res.data : null,
-              error: res.ok ? null : res.error
-            }
-          : t
+        t.id === tabId ? { ...t, running: false, result: null, error: { code: 'CLIENT_ERROR', message } } : t
       )
     })
+  }
+
+  async function runSql(tabId: string, sql: string, params?: unknown[]): Promise<void> {
+    setTabRunning(tabId)
+    try {
+      const res = await window.api.query(sql, params)
+      set({
+        tabs: get().tabs.map((t) =>
+          t.id === tabId
+            ? {
+                ...t,
+                running: false,
+                result: res.ok ? res.data : null,
+                error: res.ok ? null : res.error
+              }
+            : t
+        )
+      })
+    } catch (err) {
+      failTab(tabId, err)
+    }
   }
 
   async function runTable(tabId: string): Promise<void> {
     const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
     if (!tab) return
-    const { sql, params } = buildFilteredQuery(tab.tableName, tab.columns, tab.filters)
-    set({ tabs: get().tabs.map((t) => (t.id === tabId ? { ...t, running: true, error: null } : t)) })
-    const res = await window.api.query(sql, params)
-    set({
-      tabs: get().tabs.map((t) => {
-        if (t.id !== tabId || t.kind !== 'table') return t
-        if (!res.ok) return { ...t, running: false, result: null, error: res.error }
-        const columns = t.columns.length > 0 ? t.columns : res.data.columns.map((c) => c.name)
-        return { ...t, running: false, result: res.data, error: null, columns }
+    setTabRunning(tabId)
+    try {
+      const { sql, params } = buildFilteredQuery(tab.tableName, tab.columns, tab.filters)
+      const res = await window.api.query(sql, params)
+      set({
+        tabs: get().tabs.map((t) => {
+          if (t.id !== tabId || t.kind !== 'table') return t
+          if (!res.ok) return { ...t, running: false, result: null, error: res.error }
+          const columns = t.columns.length > 0 ? t.columns : res.data.columns.map((c) => c.name)
+          return { ...t, running: false, result: res.data, error: null, columns }
+        })
       })
-    })
+    } catch (err) {
+      failTab(tabId, err)
+    }
   }
 
   return {
@@ -244,43 +273,28 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     addFilter(tabId) {
-      set({
-        tabs: get().tabs.map((t) => {
-          if (t.id !== tabId || t.kind !== 'table') return t
-          return { ...t, filters: [...t.filters, makeFilter(t.columns[0] ?? '')] }
-        })
-      })
+      patchTableTab(tabId, (t) => ({
+        ...t,
+        filters: [...t.filters, makeFilter(t.columns[0] ?? '')]
+      }))
     },
 
     removeFilter(tabId, filterId) {
-      set({
-        tabs: get().tabs.map((t) =>
-          t.id === tabId && t.kind === 'table'
-            ? { ...t, filters: t.filters.filter((f) => f.id !== filterId) }
-            : t
-        )
-      })
+      patchTableTab(tabId, (t) => ({
+        ...t,
+        filters: t.filters.filter((f) => f.id !== filterId)
+      }))
     },
 
     updateFilter(tabId, filterId, patch) {
-      set({
-        tabs: get().tabs.map((t) =>
-          t.id === tabId && t.kind === 'table'
-            ? {
-                ...t,
-                filters: t.filters.map((f) => (f.id === filterId ? { ...f, ...patch } : f))
-              }
-            : t
-        )
-      })
+      patchTableTab(tabId, (t) => ({
+        ...t,
+        filters: t.filters.map((f) => (f.id === filterId ? { ...f, ...patch } : f))
+      }))
     },
 
     clearFilters(tabId) {
-      set({
-        tabs: get().tabs.map((t) =>
-          t.id === tabId && t.kind === 'table' ? { ...t, filters: [] } : t
-        )
-      })
+      patchTableTab(tabId, (t) => ({ ...t, filters: [] }))
     },
 
     async applyFilters(tabId) {

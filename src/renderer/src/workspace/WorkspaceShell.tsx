@@ -18,9 +18,17 @@ export default function WorkspaceShell(): JSX.Element {
       <Sidebar />
       <div className={styles.mainCol}>
         <TabBar />
-        {activeKind === 'table' ? <FilterBar /> : <QueryEditor />}
-        <ResultsGrid />
-        <StatusBar />
+        {activeKind === null ? (
+          <div className={styles.empty}>
+            左のテーブルを選ぶか「＋」でクエリタブを開いてください
+          </div>
+        ) : (
+          <>
+            {activeKind === 'table' ? <FilterBar /> : <QueryEditor />}
+            <ResultsGrid />
+            <StatusBar />
+          </>
+        )}
       </div>
     </div>
   )

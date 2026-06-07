@@ -40,6 +40,14 @@ describe('buildFilteredQuery', () => {
     expect(r.params).toEqual(['%ab%'])
   })
 
+  it('含む の値の LIKE メタ文字(% _ \\)をエスケープする', () => {
+    const r = buildFilteredQuery('t', cols, [
+      { ...base, column: 'name', operator: 'contains', value: '50%_a\\b' }
+    ])
+    expect(r.sql).toContain('`name` LIKE ?')
+    expect(r.params).toEqual(['%50\\%\\_a\\\\b%'])
+  })
+
   it('IS NULL は値なし', () => {
     const r = buildFilteredQuery('t', cols, [{ ...base, column: 'name', operator: 'is_null' }])
     expect(r.sql).toContain('`name` IS NULL')

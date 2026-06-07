@@ -8,3 +8,11 @@
   flex-direction: column;
   min-width: 0;
 }
+.empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  font-size: 13px;
+}

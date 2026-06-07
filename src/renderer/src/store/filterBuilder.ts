@@ -11,6 +11,12 @@ function inItems(value: string): string[] {
     .filter((s) => s.length > 0)
 }
 
+// LIKE のメタ文字（% _ とエスケープ文字 \）を打ち消し、ユーザー入力を「リテラルとして含む」検索にする。
+// MySQL 既定のエスケープ文字は \ なので ESCAPE 句は不要。
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (ch) => `\\${ch}`)
+}
+
 // SQL に直接埋め込む比較演算子の許可リスト（型システムを回避したキャストへの実行時防御）
 const COMPARISON_OPS: ReadonlySet<string> = new Set(['=', '<>', '<', '>', '<=', '>='])
 
@@ -38,9 +44,9 @@ function clauseFor(c: FilterCondition): { clause: string; params: unknown[] } {
     case 'is_not_null':
       return { clause: `${col} IS NOT NULL`, params: [] }
     case 'contains':
-      return { clause: `${col} LIKE ?`, params: [`%${c.value}%`] }
+      return { clause: `${col} LIKE ?`, params: [`%${escapeLike(c.value)}%`] }
     case 'not_contains':
-      return { clause: `${col} NOT LIKE ?`, params: [`%${c.value}%`] }
+      return { clause: `${col} NOT LIKE ?`, params: [`%${escapeLike(c.value)}%`] }
     case 'in': {
       const items = inItems(c.value)
       return { clause: `${col} IN (${items.map(() => '?').join(', ')})`, params: items }
