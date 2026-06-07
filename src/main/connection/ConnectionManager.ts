@@ -13,7 +13,9 @@ export class ConnectionManager {
       password: config.password,
       database: config.database,
       waitForConnections: true,
-      connectionLimit: 5
+      connectionLimit: 5,
+      // DATE/DATETIME/TIMESTAMP を Date ではなく保存文字列のまま返す（例: "2025-09-26 16:17:05"）
+      dateStrings: true
     })
     // 実際に1本取得して疎通を確認（認証エラー等をここで顕在化）
     const conn = await this.pool.getConnection()
