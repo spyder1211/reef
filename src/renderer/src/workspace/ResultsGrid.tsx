@@ -12,6 +12,17 @@ import styles from './ResultsGrid.module.css'
 
 type Row = Record<string, unknown>
 
+type CtxMenu =
+  | { kind: 'existing'; x: number; y: number; rowKey: string; pkValues: Record<string, unknown> }
+  | {
+      kind: 'delete-staged'
+      x: number
+      y: number
+      rowKey: string
+      pkValues: Record<string, unknown>
+    }
+  | { kind: 'insert'; x: number; y: number; localId: string }
+
 export default function ResultsGrid(): JSX.Element {
   const tab = useAppStore((s) => s.tabs.find((t) => t.id === s.activeTabId) ?? null)
   const setSort = useAppStore((s) => s.setSort)
@@ -109,17 +120,6 @@ function Grid({
   const [draft, setDraft] = useState('')
   // Enter/Esc 確定後に trailing blur が再度 confirm するのを防ぐ（編集開始ごとにリセット）
   const committedRef = useRef(false)
-
-  type CtxMenu =
-    | { kind: 'existing'; x: number; y: number; rowKey: string; pkValues: Record<string, unknown> }
-    | {
-        kind: 'delete-staged'
-        x: number
-        y: number
-        rowKey: string
-        pkValues: Record<string, unknown>
-      }
-    | { kind: 'insert'; x: number; y: number; localId: string }
 
   const [ctxMenu, setCtxMenu] = useState<CtxMenu | null>(null)
 
@@ -243,7 +243,11 @@ function Grid({
                       .join(' ') || undefined
 
                   return (
-                    <td key={cell.id} className={cls} onDoubleClick={editable ? startEdit : undefined}>
+                    <td
+                      key={cell.id}
+                      className={cls}
+                      onDoubleClick={editable && !isDeleted ? startEdit : undefined}
+                    >
                       {isEditingThis ? (
                         <span className={styles.editWrap}>
                           <input
@@ -279,9 +283,10 @@ function Grid({
             )
           })}
         </tbody>
-        {inserts.map((insert, insertIndex) => (
-          <tbody key={insert.localId}>
+        <tbody>
+          {inserts.map((insert, insertIndex) => (
             <tr
+              key={insert.localId}
               className={styles.insertRow}
               onClick={
                 onSelectRow ? () => onSelectRow(result.rows.length + insertIndex) : undefined
@@ -347,8 +352,8 @@ function Grid({
                 )
               })}
             </tr>
-          </tbody>
-        ))}
+          ))}
+        </tbody>
       </table>
       {ctxMenu && (
         <div
