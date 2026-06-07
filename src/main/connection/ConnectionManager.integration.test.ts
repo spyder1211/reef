@@ -163,7 +163,7 @@ describe.skipIf(!hasDb)('ConnectionManager (integration)', () => {
     ])
   })
 
-  it('applyChanges: 混合の途中で失敗したら全ロールバック（INSERT/DELETE は適用されない）', async () => {
+  it('applyChanges: 途中で失敗したら全ロールバック（先行 INSERT も適用されない）', async () => {
     await mgr.query('DROP TABLE IF EXISTS mix_rb')
     await mgr.query('CREATE TABLE mix_rb (id INT PRIMARY KEY, n INT NOT NULL)')
     await mgr.query('INSERT INTO mix_rb (id, n) VALUES (1, 10)')
