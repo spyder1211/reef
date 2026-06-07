@@ -6,9 +6,12 @@ import type {
   AppError,
   ApiResult,
   FilterCondition,
-  TableSort
+  TableSort,
+  RowEdit
 } from '../../../shared/types'
 import { buildFilteredQuery, buildCountQuery } from './filterBuilder'
+import { buildUpdateStatements } from './editBuilder'
+import { rowKeyOf, pkValuesOf } from './rowKey'
 import { pickNextActiveTabId } from './helpers'
 import { cycleSort } from './pager'
 
@@ -32,6 +35,9 @@ export interface TableTab extends BaseTab {
   pageSize: number // 50 | 100 | 500（既定 100）
   page: number // 0 始まり（UI 表示は 1 始まり）
   total: number | null // COUNT(*) 由来。未取得は null
+  primaryKey: string[] // 主キー列（空 = 読み取り専用）
+  edits: Record<string, RowEdit> // 行キー → ステージング中の変更。空 = 変更なし
+  editError: AppError | null // コミット失敗のエラー（EditBar に表示）
 }
 export type Tab = SqlTab | TableTab
 
@@ -64,6 +70,9 @@ function makeTableTab(name: string): TableTab {
     pageSize: 100,
     page: 0,
     total: null,
+    primaryKey: [],
+    edits: {},
+    editError: null,
     result: null,
     error: null,
     // 開いた直後は初回クエリ実行中とみなし、結果ペインのプレースホルダ点滅を防ぐ
@@ -109,9 +118,19 @@ interface AppState {
   setSort: (tabId: string, column: string) => Promise<void>
   setPage: (tabId: string, page: number) => Promise<void>
   setPageSize: (tabId: string, size: number) => Promise<void>
+  setCellEdit: (tabId: string, row: Record<string, unknown>, column: string, value: string) => void
+  setCellNull: (tabId: string, row: Record<string, unknown>, column: string) => void
+  discardEdits: (tabId: string) => void
+  commitEdits: (tabId: string) => Promise<void>
 }
 
 export const useAppStore = create<AppState>((set, get) => {
+  // 未コミットの変更があるとき、ナビゲーション前に破棄してよいか確認する。
+  function confirmDiscard(tab: TableTab): boolean {
+    if (Object.keys(tab.edits).length === 0) return true
+    return window.confirm('未コミットの変更があります。破棄して移動しますか？')
+  }
+
   function setTabRunning(tabId: string): void {
     set({ tabs: get().tabs.map((t) => (t.id === tabId ? { ...t, running: true, error: null } : t)) })
   }
@@ -298,6 +317,8 @@ export const useAppStore = create<AppState>((set, get) => {
       }
       const tab = makeTableTab(name)
       set({ tabs: [...get().tabs, tab], activeTabId: tab.id })
+      const pk = await window.api.primaryKey(name)
+      patchTableTab(tab.id, (t) => ({ ...t, primaryKey: pk.ok ? pk.data : [] }))
       await runTable(tab.id, { recount: true })
     },
 
@@ -327,24 +348,104 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     async applyFilters(tabId) {
-      patchTableTab(tabId, (t) => ({ ...t, page: 0 }))
+      const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
+      if (!tab || !confirmDiscard(tab)) return
+      patchTableTab(tabId, (t) => ({ ...t, page: 0, edits: {}, editError: null }))
       await runTable(tabId, { recount: true })
     },
 
     async setSort(tabId, column) {
-      patchTableTab(tabId, (t) => ({ ...t, sort: cycleSort(t.sort, column), page: 0 }))
+      const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
+      if (!tab || !confirmDiscard(tab)) return
+      patchTableTab(tabId, (t) => ({
+        ...t,
+        sort: cycleSort(t.sort, column),
+        page: 0,
+        edits: {},
+        editError: null
+      }))
       await runTable(tabId, { recount: false })
     },
 
     async setPage(tabId, page) {
-      patchTableTab(tabId, (t) => ({ ...t, page: Math.max(0, page) }))
+      const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
+      if (!tab || !confirmDiscard(tab)) return
+      patchTableTab(tabId, (t) => ({ ...t, page: Math.max(0, page), edits: {}, editError: null }))
       await runTable(tabId, { recount: false })
     },
 
     async setPageSize(tabId, size) {
+      const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
+      if (!tab || !confirmDiscard(tab)) return
       const safe = [50, 100, 500].includes(size) ? size : 100
-      patchTableTab(tabId, (t) => ({ ...t, pageSize: safe, page: 0 }))
+      patchTableTab(tabId, (t) => ({ ...t, pageSize: safe, page: 0, edits: {}, editError: null }))
       await runTable(tabId, { recount: false })
+    },
+
+    setCellEdit(tabId, row, column, value) {
+      patchTableTab(tabId, (t) => {
+        if (t.primaryKey.length === 0) return t
+        const key = rowKeyOf(t.primaryKey, row)
+        const existing = t.edits[key] ?? { pk: pkValuesOf(t.primaryKey, row), values: {} }
+        const values = { ...existing.values }
+        const original = row[column]
+        // オリジナルと同じ値なら変更扱いしない（ハイライト解除）
+        if (original !== null && original !== undefined && String(original) === value) {
+          delete values[column]
+        } else {
+          values[column] = value
+        }
+        const edits = { ...t.edits }
+        if (Object.keys(values).length === 0) delete edits[key]
+        else edits[key] = { pk: existing.pk, values }
+        return { ...t, edits, editError: null }
+      })
+    },
+
+    setCellNull(tabId, row, column) {
+      patchTableTab(tabId, (t) => {
+        if (t.primaryKey.length === 0) return t
+        const key = rowKeyOf(t.primaryKey, row)
+        const existing = t.edits[key] ?? { pk: pkValuesOf(t.primaryKey, row), values: {} }
+        const values = { ...existing.values }
+        // すでに NULL なら変更扱いしない
+        if (row[column] === null) delete values[column]
+        else values[column] = null
+        const edits = { ...t.edits }
+        if (Object.keys(values).length === 0) delete edits[key]
+        else edits[key] = { pk: existing.pk, values }
+        return { ...t, edits, editError: null }
+      })
+    },
+
+    discardEdits(tabId) {
+      patchTableTab(tabId, (t) => ({ ...t, edits: {}, editError: null }))
+    },
+
+    async commitEdits(tabId) {
+      const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
+      if (!tab || tab.running || Object.keys(tab.edits).length === 0) return
+      const statements = buildUpdateStatements(tab.tableName, tab.primaryKey, Object.values(tab.edits))
+      if (statements.length === 0) return
+      setTabRunning(tabId)
+      try {
+        const res = await window.api.applyChanges(statements)
+        if (!res.ok) {
+          // 失敗時はグリッドを潰さず EditBar にエラー表示。ステージは保持して再試行可能。
+          set({
+            tabs: get().tabs.map((t) =>
+              t.id === tabId && t.kind === 'table'
+                ? { ...t, running: false, editError: res.error }
+                : t
+            )
+          })
+          return
+        }
+        patchTableTab(tabId, (t) => ({ ...t, edits: {}, editError: null }))
+        await runTable(tabId, { recount: false })
+      } catch (err) {
+        failTab(tabId, err)
+      }
     }
   }
 })
