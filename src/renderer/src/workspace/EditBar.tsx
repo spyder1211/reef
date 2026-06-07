@@ -10,15 +10,17 @@ export default function EditBar(): JSX.Element | null {
   const commitEdits = useAppStore((s) => s.commitEdits)
   const discardEdits = useAppStore((s) => s.discardEdits)
 
-  const editCount = tab
+  const updateCount = tab
     ? Object.values(tab.edits).reduce((n, e) => n + Object.keys(e.values).length, 0)
     : 0
-  const rowCount = tab ? Object.keys(tab.edits).length : 0
+  const insertCount = tab ? tab.inserts.length : 0
+  const deleteCount = tab ? Object.keys(tab.deletes).length : 0
+  const hasChanges = updateCount > 0 || insertCount > 0 || deleteCount > 0
   const tabId = tab?.id
 
   // ⌘S / Ctrl+S でコミット（変更がある間だけ購読）。running 中の二重実行は commitEdits 側で防ぐ。
   useEffect(() => {
-    if (!tabId || editCount === 0) return
+    if (!tabId || !hasChanges) return
     const onKey = (e: KeyboardEvent): void => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault()
@@ -27,15 +29,20 @@ export default function EditBar(): JSX.Element | null {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [tabId, editCount, commitEdits])
+  }, [tabId, hasChanges, commitEdits])
 
-  if (!tab || editCount === 0) return null
+  if (!tab || !hasChanges) return null
+
+  // 変更の内訳を組み立てる（0件の種別は省略）
+  const parts: string[] = []
+  if (updateCount > 0) parts.push(`UPDATE ${updateCount} 件`)
+  if (insertCount > 0) parts.push(`INSERT ${insertCount} 行`)
+  if (deleteCount > 0) parts.push(`DELETE ${deleteCount} 行`)
+  const summary = parts.join(' / ')
 
   return (
     <div className={styles.bar}>
-      <span className={styles.count}>
-        ● 未コミットの変更: {editCount} 件（{rowCount} 行）
-      </span>
+      <span className={styles.count}>● 未コミットの変更: {summary}</span>
       {tab.editError && (
         <span className={styles.err}>
           {tab.editError.code}: {tab.editError.message}
