@@ -1,6 +1,7 @@
 import mysql from 'mysql2/promise'
 import type { ConnectionConfig, QueryResult, SqlStatement } from '../../shared/types'
 import { extractTableNames } from './extractTableNames'
+import { fieldTypeName } from './mysqlTypes'
 
 export class ConnectionManager {
   private pool: mysql.Pool | null = null
@@ -28,7 +29,10 @@ export class ConnectionManager {
     const [rows, fields] = await this.pool.query(sql, params)
     const durationMs = Date.now() - start
     const dataRows = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
-    const columns = (fields ?? []).map((f) => ({ name: (f as { name: string }).name }))
+    const columns = (fields ?? []).map((f) => {
+      const ff = f as { name: string; type?: number }
+      return { name: ff.name, type: typeof ff.type === 'number' ? fieldTypeName(ff.type) : undefined }
+    })
     return { columns, rows: dataRows, rowCount: dataRows.length, durationMs }
   }
 

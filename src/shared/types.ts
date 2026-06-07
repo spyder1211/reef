@@ -9,6 +9,7 @@ export interface ConnectionConfig {
 
 export interface QueryColumn {
   name: string
+  type?: string // mysql2 のフィールド型名（例: longlong / var_string / timestamp）。未取得は undefined
 }
 
 export interface QueryResult {
