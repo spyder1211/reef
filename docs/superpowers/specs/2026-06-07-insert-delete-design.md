@@ -140,7 +140,7 @@ Object.keys(tab.edits).length > 0 || tab.inserts.length > 0 || Object.keys(tab.d
 **INSERT 行の表示:**
 - `result.rows`（既存行）の下に `inserts` の各行を追加表示
 - 緑ハイライト（`styles.insertRow`）で区別
-- 主キー列は「auto」（イタリック）で表示（AUTO_INCREMENT 等のデフォルト値）
+- 全列を空欄（placeholder: `NULL`）で表示。未入力列は INSERT 文から除外され DB のデフォルト値が使われる（AUTO_INCREMENT 主キー等を含む）
 - セルのダブルクリックで `updateInsertCell` を呼ぶ（既存のインライン editing と同じ仕組み）
 - INSERT 行をクリック選択可（`selectedRowIndex` は `result.rows.length + insertIndex`）
 
