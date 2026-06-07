@@ -34,4 +34,18 @@ describe.skipIf(!hasDb)('ConnectionManager (integration)', () => {
     const tables = await mgr.listTables()
     expect(tables).toContain('lt_demo')
   })
+
+  it('パラメータ化クエリで ? が値に置換される', async () => {
+    const res = await mgr.query('SELECT ? AS v', ['hello'])
+    expect(res.rows[0]).toEqual({ v: 'hello' })
+  })
+
+  it('フィルタ相当: WHERE のプレースホルダに params を束縛する（ユーザー報告の再現）', async () => {
+    await mgr.query('CREATE TABLE IF NOT EXISTS pq_demo (id INT, car_type INT)')
+    await mgr.query('DELETE FROM pq_demo')
+    await mgr.query('INSERT INTO pq_demo (id, car_type) VALUES (1, 2), (2, 3)')
+    const res = await mgr.query('SELECT * FROM `pq_demo` WHERE `car_type` = ? LIMIT 100', ['2'])
+    expect(res.rowCount).toBe(1)
+    expect(res.rows[0]).toMatchObject({ id: 1, car_type: 2 })
+  })
 })
