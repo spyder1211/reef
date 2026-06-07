@@ -472,6 +472,8 @@ export const useAppStore = create<AppState>((set, get) => {
       patchTableTab(tabId, (t) => ({
         ...t,
         inserts: t.inserts.filter((ins) => ins.localId !== localId),
+        // 破棄で INSERT 行の数が変わると selectedRowIndex が無効な位置を指すため選択を解除する。
+        selectedRowIndex: null,
         editError: null,
       }))
     },
@@ -479,12 +481,16 @@ export const useAppStore = create<AppState>((set, get) => {
     stageDelete(tabId, rowKey, pkValues) {
       patchTableTab(tabId, (t) => {
         const deletes = { ...t.deletes }
+        const edits = { ...t.edits }
         if (rowKey in deletes) {
           delete deletes[rowKey] // トグル：すでに削除ステージング済みなら取り消す
         } else {
           deletes[rowKey] = pkValues
+          // 削除する行に対する UPDATE ステージは無意味（DELETE 後の UPDATE は 0 行）なので破棄し、
+          // EditBar の二重カウントや無駄な文の生成を防ぐ。
+          delete edits[rowKey]
         }
-        return { ...t, deletes, editError: null }
+        return { ...t, deletes, edits, editError: null }
       })
     },
 
@@ -503,7 +509,15 @@ export const useAppStore = create<AppState>((set, get) => {
         ...buildUpdateStatements(tab.tableName, tab.primaryKey, Object.values(tab.edits)),
         ...buildInsertStatements(tab.tableName, tab.inserts),
       ]
-      if (statements.length === 0) return
+      if (statements.length === 0) {
+        // ステージはあるが実行すべき文が無い（例: 空欄だけの INSERT 行）。
+        // 黙って無反応になると詰むため、入力を促すエラーを表示する。
+        patchTableTab(tabId, (t) => ({
+          ...t,
+          editError: { code: 'CLIENT_ERROR', message: '入力された値がありません。新規行に値を入力してください。' }
+        }))
+        return
+      }
       setTabRunning(tabId)
       try {
         const res = await window.api.applyChanges(statements)
