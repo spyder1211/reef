@@ -38,6 +38,7 @@ export interface TableTab extends BaseTab {
   primaryKey: string[] // 主キー列（空 = 読み取り専用）
   edits: Record<string, RowEdit> // 行キー → ステージング中の変更。空 = 変更なし
   editError: AppError | null // コミット失敗のエラー（EditBar に表示）
+  selectedRowIndex: number | null // 現在ページ内で選択中の行インデックス。null = 未選択
 }
 export type Tab = SqlTab | TableTab
 
@@ -73,6 +74,7 @@ function makeTableTab(name: string): TableTab {
     primaryKey: [],
     edits: {},
     editError: null,
+    selectedRowIndex: null,
     result: null,
     error: null,
     // 開いた直後は初回クエリ実行中とみなし、結果ペインのプレースホルダ点滅を防ぐ
@@ -93,6 +95,7 @@ interface AppState {
   tables: string[]
   tabs: Tab[]
   activeTabId: string | null
+  detailOpen: boolean
   formOpen: boolean
   editingId: string | null
 
@@ -122,6 +125,8 @@ interface AppState {
   setCellNull: (tabId: string, row: Record<string, unknown>, column: string) => void
   discardEdits: (tabId: string) => void
   commitEdits: (tabId: string) => Promise<void>
+  selectRow: (tabId: string, index: number) => void
+  toggleDetail: () => void
 }
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -218,6 +223,7 @@ export const useAppStore = create<AppState>((set, get) => {
     tables: [],
     tabs: [],
     activeTabId: null,
+    detailOpen: true,
     formOpen: false,
     editingId: null,
 
@@ -304,7 +310,10 @@ export const useAppStore = create<AppState>((set, get) => {
       const tab = get().tabs.find((t) => t.id === get().activeTabId)
       if (!tab) return
       if (tab.kind === 'sql') await runSql(tab.id, tab.sql)
-      else await runTable(tab.id, { recount: true })
+      else {
+        patchTableTab(tab.id, (t) => ({ ...t, selectedRowIndex: null }))
+        await runTable(tab.id, { recount: true })
+      }
     },
 
     async selectTable(name) {
@@ -350,7 +359,7 @@ export const useAppStore = create<AppState>((set, get) => {
     async applyFilters(tabId) {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
       if (!tab || !confirmDiscard(tab)) return
-      patchTableTab(tabId, (t) => ({ ...t, page: 0, edits: {}, editError: null }))
+      patchTableTab(tabId, (t) => ({ ...t, page: 0, edits: {}, editError: null, selectedRowIndex: null }))
       await runTable(tabId, { recount: true })
     },
 
@@ -362,7 +371,8 @@ export const useAppStore = create<AppState>((set, get) => {
         sort: cycleSort(t.sort, column),
         page: 0,
         edits: {},
-        editError: null
+        editError: null,
+        selectedRowIndex: null
       }))
       await runTable(tabId, { recount: false })
     },
@@ -370,7 +380,7 @@ export const useAppStore = create<AppState>((set, get) => {
     async setPage(tabId, page) {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
       if (!tab || !confirmDiscard(tab)) return
-      patchTableTab(tabId, (t) => ({ ...t, page: Math.max(0, page), edits: {}, editError: null }))
+      patchTableTab(tabId, (t) => ({ ...t, page: Math.max(0, page), edits: {}, editError: null, selectedRowIndex: null }))
       await runTable(tabId, { recount: false })
     },
 
@@ -378,7 +388,7 @@ export const useAppStore = create<AppState>((set, get) => {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
       if (!tab || !confirmDiscard(tab)) return
       const safe = [50, 100, 500].includes(size) ? size : 100
-      patchTableTab(tabId, (t) => ({ ...t, pageSize: safe, page: 0, edits: {}, editError: null }))
+      patchTableTab(tabId, (t) => ({ ...t, pageSize: safe, page: 0, edits: {}, editError: null, selectedRowIndex: null }))
       await runTable(tabId, { recount: false })
     },
 
@@ -446,6 +456,14 @@ export const useAppStore = create<AppState>((set, get) => {
       } catch (err) {
         failTab(tabId, err)
       }
+    },
+
+    selectRow(tabId, index) {
+      patchTableTab(tabId, (t) => ({ ...t, selectedRowIndex: index }))
+    },
+
+    toggleDetail() {
+      set({ detailOpen: !get().detailOpen })
     }
   }
 })
