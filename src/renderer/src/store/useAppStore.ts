@@ -13,7 +13,7 @@ import type {
 import { buildFilteredQuery, buildCountQuery } from './filterBuilder'
 import { buildUpdateStatements, buildInsertStatements, buildDeleteStatements } from './editBuilder'
 import { rowKeyOf, pkValuesOf } from './rowKey'
-import { pickNextActiveTabId } from './helpers'
+import { pickNextActiveTabId, hasUncommittedChanges } from './helpers'
 import { cycleSort } from './pager'
 
 interface BaseTab {
@@ -141,11 +141,7 @@ interface AppState {
 export const useAppStore = create<AppState>((set, get) => {
   // 未コミットの変更があるとき、ナビゲーション前に破棄してよいか確認する。
   function confirmDiscard(tab: TableTab): boolean {
-    if (
-      Object.keys(tab.edits).length === 0 &&
-      tab.inserts.length === 0 &&
-      Object.keys(tab.deletes).length === 0
-    ) return true
+    if (!hasUncommittedChanges(tab)) return true
     return window.confirm('未コミットの変更があります。破棄して移動しますか？')
   }
 
@@ -307,6 +303,11 @@ export const useAppStore = create<AppState>((set, get) => {
 
     closeTab(id) {
       const { tabs, activeTabId } = get()
+      // 閉じる対象は id 指定のタブ（アクティブとは限らない）。未コミット変更があれば確認する。
+      const target = tabs.find((t) => t.id === id)
+      if (target && hasUncommittedChanges(target)) {
+        if (!window.confirm('未コミットの変更があります。破棄してタブを閉じますか？')) return
+      }
       const nextActive = pickNextActiveTabId(tabs, id, activeTabId)
       set({ tabs: tabs.filter((t) => t.id !== id), activeTabId: nextActive })
     },
