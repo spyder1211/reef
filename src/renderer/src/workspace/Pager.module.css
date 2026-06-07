@@ -1,0 +1,42 @@
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 32px;
+  padding: 0 12px;
+  background: var(--bg-sidebar);
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.size select {
+  font-size: 11px;
+}
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav button {
+  font-size: 11px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.nav button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.pageNo {
+  min-width: 96px;
+  text-align: center;
+}
+.range {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
