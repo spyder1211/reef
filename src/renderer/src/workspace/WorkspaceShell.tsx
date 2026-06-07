@@ -7,6 +7,7 @@ import ResultsGrid from './ResultsGrid'
 import EditBar from './EditBar'
 import Pager from './Pager'
 import StatusBar from './StatusBar'
+import DetailPane from './DetailPane'
 import styles from './WorkspaceShell.module.css'
 
 export default function WorkspaceShell(): JSX.Element {
@@ -14,6 +15,7 @@ export default function WorkspaceShell(): JSX.Element {
     const t = s.tabs.find((t) => t.id === s.activeTabId)
     return t?.kind ?? null
   })
+  const detailOpen = useAppStore((s) => s.detailOpen)
 
   return (
     <div className={styles.shell}>
@@ -34,6 +36,7 @@ export default function WorkspaceShell(): JSX.Element {
           </>
         )}
       </div>
+      {detailOpen && activeKind === 'table' && <DetailPane />}
     </div>
   )
 }
