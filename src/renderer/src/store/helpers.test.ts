@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { filterProfiles, pickNextActiveTabId } from './helpers'
+import { filterProfiles, pickNextActiveTabId, hasUncommittedChanges } from './helpers'
 import { initials } from '../lib/tags'
 
 describe('filterProfiles', () => {
@@ -36,5 +36,28 @@ describe('initials', () => {
   })
   it('日本語名も2文字', () => {
     expect(initials('城下町bot')).toBe('城下')
+  })
+})
+
+describe('hasUncommittedChanges', () => {
+  const emptyTable = { kind: 'table', edits: {}, inserts: [], deletes: {} }
+  it('edits が非空なら true', () => {
+    expect(
+      hasUncommittedChanges({ ...emptyTable, edits: { k: { pk: {}, values: {} } } })
+    ).toBe(true)
+  })
+  it('inserts が非空なら true', () => {
+    expect(
+      hasUncommittedChanges({ ...emptyTable, inserts: [{ localId: 'x', values: {} }] })
+    ).toBe(true)
+  })
+  it('deletes が非空なら true', () => {
+    expect(hasUncommittedChanges({ ...emptyTable, deletes: { k: {} } })).toBe(true)
+  })
+  it('TableTab で 3 つすべて空なら false', () => {
+    expect(hasUncommittedChanges(emptyTable)).toBe(false)
+  })
+  it('SqlTab は常に false', () => {
+    expect(hasUncommittedChanges({ kind: 'sql' })).toBe(false)
   })
 })
