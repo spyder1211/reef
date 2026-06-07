@@ -97,3 +97,6 @@
   color: var(--text-muted);
   cursor: pointer;
 }
+.grid tbody tr.selected td {
+  background: #e6f0ff;
+}
