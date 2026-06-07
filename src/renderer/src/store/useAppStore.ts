@@ -5,10 +5,12 @@ import type {
   QueryResult,
   AppError,
   ApiResult,
-  FilterCondition
+  FilterCondition,
+  TableSort
 } from '../../../shared/types'
-import { buildFilteredQuery } from './filterBuilder'
+import { buildFilteredQuery, buildCountQuery } from './filterBuilder'
 import { pickNextActiveTabId } from './helpers'
+import { cycleSort } from './pager'
 
 interface BaseTab {
   id: string
@@ -26,6 +28,10 @@ export interface TableTab extends BaseTab {
   tableName: string
   columns: string[]
   filters: FilterCondition[]
+  sort: TableSort | null // null = 自然順
+  pageSize: number // 50 | 100 | 500（既定 100）
+  page: number // 0 始まり（UI 表示は 1 始まり）
+  total: number | null // COUNT(*) 由来。未取得は null
 }
 export type Tab = SqlTab | TableTab
 
@@ -54,6 +60,10 @@ function makeTableTab(name: string): TableTab {
     tableName: name,
     columns: [],
     filters: [],
+    sort: null,
+    pageSize: 100,
+    page: 0,
+    total: null,
     result: null,
     error: null,
     // 開いた直後は初回クエリ実行中とみなし、結果ペインのプレースホルダ点滅を防ぐ
@@ -96,6 +106,9 @@ interface AppState {
   updateFilter: (tabId: string, filterId: string, patch: Partial<FilterCondition>) => void
   clearFilters: (tabId: string) => void
   applyFilters: (tabId: string) => Promise<void>
+  setSort: (tabId: string, column: string) => Promise<void>
+  setPage: (tabId: string, page: number) => Promise<void>
+  setPageSize: (tabId: string, size: number) => Promise<void>
 }
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -141,19 +154,35 @@ export const useAppStore = create<AppState>((set, get) => {
     }
   }
 
-  async function runTable(tabId: string): Promise<void> {
+  async function runTable(tabId: string, opts: { recount: boolean }): Promise<void> {
     const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
     if (!tab) return
     setTabRunning(tabId)
     try {
-      const { sql, params } = buildFilteredQuery(tab.tableName, tab.columns, tab.filters)
+      const offset = tab.page * tab.pageSize
+      const { sql, params } = buildFilteredQuery(tab.tableName, tab.columns, tab.filters, {
+        sort: tab.sort,
+        limit: tab.pageSize,
+        offset
+      })
       const res = await window.api.query(sql, params)
+
+      // 件数はフィルタ/テーブル変更時のみ取り直す（ソート・ページ送りでは不変）。
+      // ページクエリが失敗したときは COUNT を打たず、直前の total を維持する。
+      let total = tab.total
+      if (opts.recount && res.ok) {
+        const c = buildCountQuery(tab.tableName, tab.columns, tab.filters)
+        const cres = await window.api.query(c.sql, c.params)
+        // mysql2 は COUNT を bigint で返す場合があるが、現実的な行数なら Number() で安全。
+        total = cres.ok ? Number(cres.data.rows[0]?.total ?? 0) : null
+      }
+
       set({
         tabs: get().tabs.map((t) => {
           if (t.id !== tabId || t.kind !== 'table') return t
           if (!res.ok) return { ...t, running: false, result: null, error: res.error }
-          const columns = t.columns.length > 0 ? t.columns : res.data.columns.map((c) => c.name)
-          return { ...t, running: false, result: res.data, error: null, columns }
+          const columns = t.columns.length > 0 ? t.columns : res.data.columns.map((col) => col.name)
+          return { ...t, running: false, result: res.data, error: null, columns, total }
         })
       })
     } catch (err) {
@@ -256,7 +285,7 @@ export const useAppStore = create<AppState>((set, get) => {
       const tab = get().tabs.find((t) => t.id === get().activeTabId)
       if (!tab) return
       if (tab.kind === 'sql') await runSql(tab.id, tab.sql)
-      else await runTable(tab.id)
+      else await runTable(tab.id, { recount: true })
     },
 
     async selectTable(name) {
@@ -269,7 +298,7 @@ export const useAppStore = create<AppState>((set, get) => {
       }
       const tab = makeTableTab(name)
       set({ tabs: [...get().tabs, tab], activeTabId: tab.id })
-      await runTable(tab.id)
+      await runTable(tab.id, { recount: true })
     },
 
     addFilter(tabId) {
@@ -298,7 +327,24 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     async applyFilters(tabId) {
-      await runTable(tabId)
+      patchTableTab(tabId, (t) => ({ ...t, page: 0 }))
+      await runTable(tabId, { recount: true })
+    },
+
+    async setSort(tabId, column) {
+      patchTableTab(tabId, (t) => ({ ...t, sort: cycleSort(t.sort, column), page: 0 }))
+      await runTable(tabId, { recount: false })
+    },
+
+    async setPage(tabId, page) {
+      patchTableTab(tabId, (t) => ({ ...t, page: Math.max(0, page) }))
+      await runTable(tabId, { recount: false })
+    },
+
+    async setPageSize(tabId, size) {
+      const safe = [50, 100, 500].includes(size) ? size : 100
+      patchTableTab(tabId, (t) => ({ ...t, pageSize: safe, page: 0 }))
+      await runTable(tabId, { recount: false })
     }
   }
 })
