@@ -1,4 +1,5 @@
 import mysql from 'mysql2/promise'
+import type { Connection as Mysql2Connection } from 'mysql2'
 import type { ConnectionConfig, QueryResult, SqlStatement } from '../../shared/types'
 import { extractTableNames } from './extractTableNames'
 import { fieldTypeName } from './mysqlTypes'
@@ -73,6 +74,27 @@ export class ConnectionManager {
         // ignore
       }
       throw err
+    } finally {
+      conn.release()
+    }
+  }
+
+  // プールから1本取り、SELECT の行を逐次 onRow に渡す（ストリーミング）。
+  // for await が行ごとにバックプレッシャを効かせる。onRow が投げたら中断し、必ず release する。
+  async streamRows(
+    sql: string,
+    onRow: (row: Record<string, unknown>) => Promise<void>
+  ): Promise<void> {
+    if (!this.pool) throw new Error('Not connected')
+    const conn = await this.pool.getConnection()
+    try {
+      // conn.connection は型上 promise 版 Connection だが、実体はコールバック版で
+      // .query().stream()（Node Readable）を持つ。そのためコールバック版型へキャストする。
+      const core = conn.connection as unknown as Mysql2Connection
+      const stream = core.query(sql).stream()
+      for await (const row of stream) {
+        await onRow(row as Record<string, unknown>)
+      }
     } finally {
       conn.release()
     }
