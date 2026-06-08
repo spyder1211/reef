@@ -11,6 +11,7 @@ import type {
   PendingInsert
 } from '../../../shared/types'
 import { buildFilteredQuery, buildCountQuery } from './filterBuilder'
+import { toCsv } from '../lib/csv'
 import { buildUpdateStatements, buildInsertStatements, buildDeleteStatements } from './editBuilder'
 import { rowKeyOf, pkValuesOf } from './rowKey'
 import { pickNextActiveTabId, hasUncommittedChanges } from './helpers'
@@ -46,6 +47,11 @@ export interface TableTab extends BaseTab {
 export type Tab = SqlTab | TableTab
 
 export type Status = 'idle' | 'connecting' | 'connected' | 'error'
+
+// exportCsv の結果（UI のフィードバック用）。message は成功時の表示文言（空なら表示しない）。
+export type ExportCsvResult =
+  | { ok: true; canceled?: boolean; message: string }
+  | { ok: false; message: string }
 
 function genId(): string {
   return crypto.randomUUID()
@@ -135,6 +141,10 @@ interface AppState {
   removeInsertRow: (tabId: string, localId: string) => void
   stageDelete: (tabId: string, rowKey: string, pkValues: Record<string, unknown>) => void
   selectRow: (tabId: string, index: number) => void
+  exportCsv: (
+    tabId: string,
+    opts: { scope: 'page' | 'all'; target: 'file' | 'clipboard' }
+  ) => Promise<ExportCsvResult>
   toggleDetail: () => void
 }
 
@@ -544,6 +554,66 @@ export const useAppStore = create<AppState>((set, get) => {
 
     selectRow(tabId, index) {
       patchTableTab(tabId, (t) => ({ ...t, selectedRowIndex: index }))
+    },
+
+    async exportCsv(tabId, opts) {
+      const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
+      if (!tab || !tab.result) {
+        return { ok: false, message: 'エクスポートできる結果がありません。' }
+      }
+
+      // 全件は重くなり得るため、件数が分かっていればフェッチ前に確認する。
+      const EXPORT_CONFIRM_THRESHOLD = 50000
+      if (opts.scope === 'all' && tab.total !== null && tab.total > EXPORT_CONFIRM_THRESHOLD) {
+        if (!window.confirm(`${tab.total} 件をエクスポートします。よろしいですか？`)) {
+          return { ok: true, canceled: true, message: '' }
+        }
+      }
+
+      // 列と行を決定する。
+      let columns: string[]
+      let rows: Record<string, unknown>[]
+      if (opts.scope === 'page') {
+        // 既読み込みの現在ページ・現在のソートをそのまま使う（追加クエリなし）。
+        columns = tab.result.columns.map((c) => c.name)
+        rows = tab.result.rows
+      } else {
+        // 全件: LIMIT を外して再取得する。tab.running は立てず、グリッド表示を維持する。
+        const { sql, params } = buildFilteredQuery(tab.tableName, tab.columns, tab.filters, {
+          sort: tab.sort,
+          limit: null
+        })
+        try {
+          const res = await window.api.query(sql, params)
+          if (!res.ok) return { ok: false, message: res.error.message }
+          columns = res.data.columns.map((c) => c.name)
+          rows = res.data.rows
+        } catch (err) {
+          return { ok: false, message: err instanceof Error ? err.message : String(err) }
+        }
+      }
+
+      const csv = toCsv(columns, rows)
+
+      if (opts.target === 'clipboard') {
+        try {
+          await navigator.clipboard.writeText(csv)
+          return { ok: true, message: 'クリップボードにコピーしました' }
+        } catch (err) {
+          return { ok: false, message: err instanceof Error ? err.message : String(err) }
+        }
+      }
+
+      // target: 'file'
+      try {
+        const res = await window.api.saveCsv(`${tab.tableName}.csv`, csv)
+        if (!res.ok) return { ok: false, message: res.error.message }
+        if (res.data.canceled) return { ok: true, canceled: true, message: '' }
+        const name = res.data.filePath?.split('/').pop() ?? res.data.filePath ?? ''
+        return { ok: true, message: `保存しました: ${name}` }
+      } catch (err) {
+        return { ok: false, message: err instanceof Error ? err.message : String(err) }
+      }
     },
 
     toggleDetail() {
