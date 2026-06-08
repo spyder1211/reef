@@ -32,6 +32,9 @@ export async function dumpDatabase(
   for (const table of tables) {
     const createRes = await manager.query('SHOW CREATE TABLE ' + quoteIdent(table))
     const createSql = String(createRes.rows[0]?.['Create Table'] ?? '')
+    if (!createSql) {
+      throw new Error(`SHOW CREATE TABLE ${quoteIdent(table)} の結果が空です`)
+    }
     write(buildDropAndCreate(table, createSql))
     write('\n')
 
