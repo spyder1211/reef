@@ -564,10 +564,12 @@ export const useAppStore = create<AppState>((set, get) => {
 
       // 全件は重くなり得るため、件数が分かっていればフェッチ前に確認する。
       const EXPORT_CONFIRM_THRESHOLD = 50000
+      let confirmedLarge = false
       if (opts.scope === 'all' && tab.total !== null && tab.total > EXPORT_CONFIRM_THRESHOLD) {
         if (!window.confirm(`${tab.total} 件をエクスポートします。よろしいですか？`)) {
           return { ok: true, canceled: true, message: '' }
         }
+        confirmedLarge = true
       }
 
       // 列と行を決定する。
@@ -590,6 +592,13 @@ export const useAppStore = create<AppState>((set, get) => {
           rows = res.data.rows
         } catch (err) {
           return { ok: false, message: err instanceof Error ? err.message : String(err) }
+        }
+      }
+
+      // tab.total が未カウント/古い場合のフォールバック: 実際の取得行数で確認する（事前確認済みなら省略）。
+      if (opts.scope === 'all' && !confirmedLarge && rows.length > EXPORT_CONFIRM_THRESHOLD) {
+        if (!window.confirm(`${rows.length} 件をエクスポートします。よろしいですか？`)) {
+          return { ok: true, canceled: true, message: '' }
         }
       }
 
