@@ -26,6 +26,7 @@ describe('escapeSqlValue', () => {
     expect(escapeSqlValue(42)).toBe('42')
     expect(escapeSqlValue(-3.14)).toBe('-3.14')
     expect(escapeSqlValue(Infinity)).toBe('NULL')
+    expect(escapeSqlValue(NaN)).toBe('NULL')
   })
   it('bigint は文字列化', () => {
     expect(escapeSqlValue(123n)).toBe('123')
@@ -56,6 +57,7 @@ describe('escapeSqlValue', () => {
     expect(escapeSqlValue('a\rb')).toBe("'a\\rb'")
     expect(escapeSqlValue('a\0b')).toBe("'a\\0b'")
     expect(escapeSqlValue('a\x1ab')).toBe("'a\\Zb'")
+    expect(escapeSqlValue('a\bb')).toBe("'a\\bb'")
   })
 })
 

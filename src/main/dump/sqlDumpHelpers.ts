@@ -58,6 +58,7 @@ export function buildInsert(
 }
 
 // DROP TABLE IF EXISTS と CREATE TABLE（SHOW CREATE TABLE の結果）をセミコロン付きで返す。
+// createTableSql は SHOW CREATE TABLE の結果（mysql2 は末尾セミコロンを含まない）を想定し、末尾に ; を含めない前提。
 export function buildDropAndCreate(table: string, createTableSql: string): string {
   return `DROP TABLE IF EXISTS ${quoteIdent(table)};\n${createTableSql};\n`
 }
