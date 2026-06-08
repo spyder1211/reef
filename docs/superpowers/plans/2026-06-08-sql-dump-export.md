@@ -254,11 +254,19 @@ git commit -m "feat: SQL ダンプの直列化ヘルパー sqlDumpHelpers を追
 
 - [ ] **Step 1: メソッドを追加**
 
-`src/main/connection/ConnectionManager.ts` の `applyChanges(...)` メソッドの直後（`isConnected()` の前）に、次のメソッドを追加する:
+まず import を追加する（既存の `import mysql from 'mysql2/promise'` の直後）:
+
+```ts
+import type { Connection as Mysql2Connection } from 'mysql2'
+```
+
+次に `src/main/connection/ConnectionManager.ts` の `applyChanges(...)` メソッドの直後（`isConnected()` の前）に、次のメソッドを追加する:
 
 ```ts
   // プールから1本取り、SELECT の行を逐次 onRow に渡す（ストリーミング）。
   // for await が行ごとにバックプレッシャを効かせる。onRow が投げたら中断し、必ず release する。
+  // 注: mysql2/promise の PoolConnection.connection は型上 promise 版 Connection だが、
+  // 実体はコールバック版 Connection（.query().stream() を持つ）。stream 取得のためキャストする。
   async streamRows(
     sql: string,
     onRow: (row: Record<string, unknown>) => Promise<void>
@@ -266,7 +274,8 @@ git commit -m "feat: SQL ダンプの直列化ヘルパー sqlDumpHelpers を追
     if (!this.pool) throw new Error('Not connected')
     const conn = await this.pool.getConnection()
     try {
-      const stream = conn.connection.query(sql).stream()
+      const core = conn.connection as unknown as Mysql2Connection
+      const stream = core.query(sql).stream()
       for await (const row of stream) {
         await onRow(row as Record<string, unknown>)
       }
