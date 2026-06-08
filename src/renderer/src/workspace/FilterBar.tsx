@@ -3,6 +3,7 @@ import type { FilterOperator } from '../../../shared/types'
 import { useAppStore } from '../store/useAppStore'
 import { buildFilteredQuery } from '../store/filterBuilder'
 import { OPERATORS, OPERATOR_VALUE_KIND } from '../lib/filterOperators'
+import ExportMenu from './ExportMenu'
 import styles from './FilterBar.module.css'
 
 export default function FilterBar(): JSX.Element | null {
@@ -127,6 +128,7 @@ export default function FilterBar(): JSX.Element | null {
           ＋ 条件を追加
         </button>
         <div className={styles.spacer} />
+        <ExportMenu disabled={!tab.result || tab.running} />
         <button
           className={styles.clear}
           onClick={() => {
