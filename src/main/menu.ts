@@ -34,12 +34,20 @@ async function exportSqlDump(manager: ConnectionManager): Promise<void> {
   if (result.canceled || !result.filePath) return
 
   const stream = createWriteStream(result.filePath, 'utf-8')
+  // createWriteStream はパスを開けなくても同期 throw せず非同期に 'error' を出す。
+  // リスナ未設定だと uncaughtException でメインプロセスが落ちるため、常設リスナで捕捉する。
+  let streamError: Error | null = null
+  stream.on('error', (e) => {
+    streamError = e
+  })
   try {
+    await once(stream, 'open') // 開けない場合は 'error' により reject される
     const summary = await dumpDatabase(
       manager,
       (chunk) => stream.write(chunk),
       new Date().toISOString()
     )
+    if (streamError) throw streamError
     stream.end()
     await once(stream, 'finish')
     await dialog.showMessageBox({
@@ -69,7 +77,10 @@ export function buildAppMenu(manager: ConnectionManager): Menu {
         {
           label: 'SQLダンプをエクスポート…',
           click: () => {
-            void exportSqlDump(manager)
+            // 捕捉漏れ（ダイアログ拒否など）でメインプロセスが落ちないよう最終防衛で握る。
+            exportSqlDump(manager).catch((err) => {
+              console.error('exportSqlDump failed:', err)
+            })
           }
         },
         { type: 'separator' },
