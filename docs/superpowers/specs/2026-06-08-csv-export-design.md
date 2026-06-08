@@ -58,7 +58,7 @@ export function registerFileHandlers(): void
 - `file:saveCsv` ハンドラを登録。引数 `(defaultFileName: string, content: string)`。
 - `dialog.showSaveDialog(BrowserWindow.getFocusedWindow() ?? undefined, { defaultPath: defaultFileName, filters: [{ name: 'CSV', extensions: ['csv'] }] })`。
 - キャンセル時は `{ ok: true, data: { canceled: true } }` を返す。
-- 確定時は `fs.writeFile(filePath, '﻿' + content, 'utf-8')`（**ここで BOM を付与**）→ `{ ok: true, data: { canceled: false, filePath } }`。
+- 確定時は `fs.writeFile(filePath, '\uFEFF' + content, 'utf-8')`（**ここで BOM を付与**）→ `{ ok: true, data: { canceled: false, filePath } }`。
 - 例外は `{ ok: false, error: { code, message } }` に正規化して返す（IPC は例外を投げず判別共用体で返す既存方針に合わせる）。
 - `src/main/index.ts` の `app.whenReady()` 内で `registerFileHandlers()` を呼ぶ。
 
