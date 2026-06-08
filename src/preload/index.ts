@@ -5,7 +5,8 @@ import type {
   QueryResult,
   ConnectionProfile,
   ConnectionProfileInput,
-  SqlStatement
+  SqlStatement,
+  SaveFileResult
 } from '../shared/types'
 
 const api = {
@@ -19,6 +20,8 @@ const api = {
     ipcRenderer.invoke('db:primaryKey', table),
   applyChanges: (statements: SqlStatement[]): Promise<ApiResult<{ affectedRows: number }>> =>
     ipcRenderer.invoke('db:applyChanges', statements),
+  saveCsv: (defaultFileName: string, content: string): Promise<ApiResult<SaveFileResult>> =>
+    ipcRenderer.invoke('file:saveCsv', defaultFileName, content),
   connections: {
     list: (): Promise<ApiResult<ConnectionProfile[]>> => ipcRenderer.invoke('connections:list'),
     save: (input: ConnectionProfileInput): Promise<ApiResult<ConnectionProfile>> =>

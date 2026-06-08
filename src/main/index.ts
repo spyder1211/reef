@@ -3,6 +3,7 @@ import { join } from 'path'
 import { ConnectionManager } from './connection/ConnectionManager'
 import { registerDbHandlers } from './ipc/registerDbHandlers'
 import { registerConnectionHandlers } from './ipc/registerConnectionHandlers'
+import { registerFileHandlers } from './ipc/registerFileHandlers'
 import { createProfileStore } from './connection/createProfileStore'
 
 function createWindow(): void {
@@ -31,6 +32,7 @@ app.whenReady().then(() => {
   const manager = new ConnectionManager()
   registerDbHandlers(manager)
   registerConnectionHandlers(manager, createProfileStore())
+  registerFileHandlers()
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

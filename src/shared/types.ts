@@ -95,3 +95,9 @@ export interface PendingInsert {
   localId: string                       // ローカル一意 ID（"ins-0", "ins-1" …）
   values: Record<string, string | null> // 列名 → 入力値（空文字は SQL から除外）
 }
+
+// ファイル保存ダイアログの結果
+export interface SaveFileResult {
+  canceled: boolean
+  filePath?: string
+}
