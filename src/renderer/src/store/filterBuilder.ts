@@ -98,6 +98,7 @@ export interface PageOptions {
  * @param table スキーマ由来の信頼できるテーブル名（ユーザー入力をそのまま渡さないこと）。
  * @param columns フィルター/ソート可能なカラムのホワイトリスト。
  * @param options sort/limit/offset。省略時は ORDER BY なし・LIMIT 100・OFFSET なし。
+ *   limit が null のときは LIMIT を付けず全件取得し、OFFSET も無視される（MySQL では LIMIT なしの OFFSET が無効なため）。
  */
 export function buildFilteredQuery(
   table: string,
