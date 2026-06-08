@@ -151,6 +151,22 @@ describe('buildFilteredQuery options (sort/limit/offset)', () => {
     expect(r.sql).toBe('SELECT * FROM `t` LIMIT 100')
   })
 
+  it('limit: null は LIMIT を付けない（全件）', () => {
+    const r = buildFilteredQuery('t', cols, [], { limit: null })
+    expect(r.sql).toBe('SELECT * FROM `t`')
+  })
+
+  it('limit: null でも WHERE / ORDER BY は付く（OFFSET は付かない）', () => {
+    const r = buildFilteredQuery(
+      't',
+      cols,
+      [{ id: 'x', enabled: true, value: '5', value2: '', column: 'id', operator: '=' }],
+      { sort: { column: 'name', dir: 'asc' }, limit: null, offset: 100 }
+    )
+    expect(r.sql).toBe('SELECT * FROM `t` WHERE `id` = ? ORDER BY `name` ASC')
+    expect(r.params).toEqual(['5'])
+  })
+
   it('WHERE + ORDER BY + LIMIT + OFFSET の順で結合する', () => {
     const r = buildFilteredQuery(
       't',
