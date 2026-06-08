@@ -80,7 +80,8 @@ export class ConnectionManager {
   }
 
   // プールから1本取り、SELECT の行を逐次 onRow に渡す（ストリーミング）。
-  // for await が行ごとにバックプレッシャを効かせる。onRow が投げたら中断し、必ず release する。
+  // for await が行ごとにバックプレッシャを効かせる。onRow が投げたら中断する。
+  // 正常終了時は接続を release してプールへ戻し、異常終了時は destroy してプールから除外する。
   async streamRows(
     sql: string,
     onRow: (row: Record<string, unknown>) => Promise<void>
@@ -95,9 +96,13 @@ export class ConnectionManager {
       for await (const row of stream) {
         await onRow(row as Record<string, unknown>)
       }
-    } finally {
-      conn.release()
+    } catch (err) {
+      // onRow/ストリームが異常終了した場合、in-flight クエリが残った接続を
+      // プールへ戻すと次の借り手で protocol desync を起こし得るため、破棄する。
+      conn.destroy()
+      throw err
     }
+    conn.release()
   }
 
   isConnected(): boolean {
