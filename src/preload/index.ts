@@ -22,6 +22,12 @@ const api = {
     ipcRenderer.invoke('db:applyChanges', statements),
   saveCsv: (defaultFileName: string, content: string): Promise<ApiResult<SaveFileResult>> =>
     ipcRenderer.invoke('file:saveCsv', defaultFileName, content),
+  // ウィンドウの閉じる操作で接続中に発火。登録解除関数を返す（React のクリーンアップ用）。
+  onReturnToConnections: (cb: () => void): (() => void) => {
+    const handler = (): void => cb()
+    ipcRenderer.on('app:return-to-connections', handler)
+    return () => ipcRenderer.removeListener('app:return-to-connections', handler)
+  },
   connections: {
     list: (): Promise<ApiResult<ConnectionProfile[]>> => ipcRenderer.invoke('connections:list'),
     save: (input: ConnectionProfileInput): Promise<ApiResult<ConnectionProfile>> =>

@@ -7,7 +7,14 @@ import { registerFileHandlers } from './ipc/registerFileHandlers'
 import { createProfileStore } from './connection/createProfileStore'
 import { buildAppMenu } from './menu'
 
-function createWindow(): void {
+// 明示的なアプリ終了（Cmd+Q / quit ロール）中かどうか。
+// quit も window の close を経由するため、これを見て「閉じるボタン」と区別する。
+let isQuitting = false
+app.on('before-quit', () => {
+  isQuitting = true
+})
+
+function createWindow(manager: ConnectionManager): void {
   const win = new BrowserWindow({
     width: 1100,
     height: 720,
@@ -22,6 +29,16 @@ function createWindow(): void {
 
   win.on('ready-to-show', () => win.show())
 
+  // 接続中（テーブル一覧表示中）に閉じるボタンを押したら、ウィンドウを閉じる代わりに
+  // 接続一覧へ戻す。未接続（接続一覧画面）ではそのまま閉じる＝「閉じる2回」で終了する。
+  // Cmd+Q などの明示的な終了（isQuitting）は妨げず通常どおり閉じる。
+  win.on('close', (e) => {
+    if (!isQuitting && manager.isConnected()) {
+      e.preventDefault()
+      win.webContents.send('app:return-to-connections')
+    }
+  })
+
   if (process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -35,9 +52,9 @@ app.whenReady().then(() => {
   registerConnectionHandlers(manager, createProfileStore())
   registerFileHandlers()
   Menu.setApplicationMenu(buildAppMenu(manager))
-  createWindow()
+  createWindow(manager)
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) createWindow(manager)
   })
 })
 

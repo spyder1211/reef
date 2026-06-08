@@ -118,6 +118,7 @@ interface AppState {
   deleteProfile: (id: string) => Promise<void>
   connect: (profile: ConnectionProfile) => Promise<void>
   disconnect: () => Promise<void>
+  returnToConnections: () => Promise<void>
   addTab: () => void
   closeTab: (id: string) => void
   setActiveTab: (id: string) => void
@@ -303,6 +304,17 @@ export const useAppStore = create<AppState>((set, get) => {
         activeTabId: null,
         connectError: null
       })
+    },
+
+    // ウィンドウの閉じる操作（接続中）から呼ばれる。未コミット変更があれば確認し、
+    // 問題なければ接続を切って接続一覧（HomeScreen）へ戻す。
+    async returnToConnections() {
+      if (get().status !== 'connected') return
+      const hasChanges = get().tabs.some((t) => hasUncommittedChanges(t))
+      if (hasChanges && !window.confirm('未コミットの変更があります。破棄して接続一覧に戻りますか？')) {
+        return
+      }
+      await get().disconnect()
     },
 
     addTab() {
