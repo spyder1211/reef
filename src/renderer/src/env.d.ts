@@ -19,6 +19,7 @@ declare global {
       primaryKey: (table: string) => Promise<ApiResult<string[]>>
       applyChanges: (statements: SqlStatement[]) => Promise<ApiResult<{ affectedRows: number }>>
       saveCsv: (defaultFileName: string, content: string) => Promise<ApiResult<SaveFileResult>>
+      onReturnToConnections: (cb: () => void) => () => void
       connections: {
         list: () => Promise<ApiResult<ConnectionProfile[]>>
         save: (input: ConnectionProfileInput) => Promise<ApiResult<ConnectionProfile>>
