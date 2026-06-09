@@ -394,7 +394,8 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     clearFilters(tabId) {
-      patchTableTab(tabId, (t) => ({ ...t, filters: [] }))
+      // appliedFilters も空にして Clear→Apply 間の一瞬の未適用(dirty)ちらつきを防ぐ
+      patchTableTab(tabId, (t) => ({ ...t, filters: [], appliedFilters: [] }))
     },
 
     async applyFilters(tabId) {
