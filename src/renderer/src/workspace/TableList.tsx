@@ -15,10 +15,10 @@ export default function TableList(): JSX.Element {
   // 入力に応じたフィルタ済みリスト。tables か query が変わったときだけ再計算。
   const filtered = useMemo(() => filterTables(tables, query), [tables, query])
 
-  // クエリ変更でアクティブ行を先頭へ戻す（リストが縮んだときの位置ずれも解消）。
+  // クエリ／テーブル一覧が変わったらアクティブ行を先頭へ戻す（範囲外 index を防ぐ）。
   useEffect(() => {
     setActiveIndex(0)
-  }, [query])
+  }, [query, tables])
 
   // ⌘P（macOS）/ Ctrl+P（その他）で検索ボックスへフォーカスし既存テキストを全選択。
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function TableList(): JSX.Element {
       setActiveIndex((i) => Math.max(i - 1, 0))
     } else if (e.key === 'Enter') {
       e.preventDefault()
-      const name = filtered[activeIndex] ?? filtered[0]
+      const name = filtered[activeIndex]
       if (name) open(name)
     } else if (e.key === 'Escape') {
       // 二段挙動: 入力があればクリア、空ならフォーカスを外す。
@@ -89,7 +89,6 @@ export default function TableList(): JSX.Element {
               data-index={i}
               className={i === activeIndex ? `${styles.row} ${styles.active}` : styles.row}
               onClick={() => open(t)}
-              onMouseEnter={() => setActiveIndex(i)}
               title={t}
             >
               <span className={styles.icon}>▸</span>
