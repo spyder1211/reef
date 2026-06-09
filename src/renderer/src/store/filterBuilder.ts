@@ -133,3 +133,21 @@ export function buildCountQuery(
     `SELECT COUNT(*) AS total FROM ${quoteIdent(table)}` + (where ? ` WHERE ${where}` : '')
   return { sql, params }
 }
+
+// 2つの条件集合が同じ WHERE 効果（適用しても結果が変わらない）かを判定する。
+// 内部の buildWhere を再利用し where 文字列と params の一致で比較するため、
+// id の違い・無効化・空値など結果に影響しない差分は自動的に無視される。
+export function sameFilterEffect(
+  columns: string[],
+  a: FilterCondition[],
+  b: FilterCondition[]
+): boolean {
+  const wa = buildWhere(columns, a)
+  const wb = buildWhere(columns, b)
+  return wa.where === wb.where && JSON.stringify(wa.params) === JSON.stringify(wb.params)
+}
+
+// 有効かつ実効のある（isUsable な）条件の件数。適用中バッジ用。
+export function countUsableFilters(columns: string[], conditions: FilterCondition[]): number {
+  return conditions.filter((c) => isUsable(c, columns)).length
+}
