@@ -105,20 +105,36 @@
   background: #e9e9ee;
 }
 .apply {
-  border: none;
-  background: var(--accent);
-  color: var(--accent-fg);
+  border: 1px solid var(--accent);
+  background: var(--bg);
+  color: var(--accent);
   border-radius: 6px;
   padding: 4px 16px;
   font-size: 12px;
   font-weight: 600;
 }
 .apply:hover {
-  background: #0060e0;
+  background: #eef4ff;
 }
 .apply:disabled {
   opacity: 0.5;
   cursor: default;
+}
+.applyDirty {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.applyDirty:hover {
+  background: #0060e0;
+}
+.status {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.statusDirty {
+  color: var(--accent);
+  font-weight: 600;
 }
 .preview {
   margin-top: 6px;
