@@ -105,6 +105,27 @@ export class ConnectionManager {
     conn.release()
   }
 
+  // pool から1本借り、その接続だけで動く exec(sql) を fn に渡す。
+  // import 用：SET FOREIGN_KEY_CHECKS=0 等の接続単位セッション設定を全 statement に効かせるため、
+  // 全文を必ず同一接続で流す。正常終了で release、異常終了で destroy（streamRows と同じ契約）。
+  async withDedicatedConnection<T>(
+    fn: (exec: (sql: string) => Promise<void>) => Promise<T>
+  ): Promise<T> {
+    if (!this.pool) throw new Error('Not connected')
+    const conn = await this.pool.getConnection()
+    const exec = async (sql: string): Promise<void> => {
+      await conn.query(sql)
+    }
+    try {
+      const result = await fn(exec)
+      conn.release()
+      return result
+    } catch (err) {
+      conn.destroy()
+      throw err
+    }
+  }
+
   isConnected(): boolean {
     return this.pool !== null
   }
