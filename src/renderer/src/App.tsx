@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useAppStore } from './store/useAppStore'
 import HomeScreen from './home/HomeScreen'
 import WorkspaceShell from './workspace/WorkspaceShell'
+import SqlImportModal from './workspace/SqlImportModal'
 
 export default function App(): JSX.Element {
   const status = useAppStore((s) => s.status)
@@ -18,5 +19,10 @@ export default function App(): JSX.Element {
     })
   }, [])
 
-  return status === 'connected' ? <WorkspaceShell /> : <HomeScreen />
+  return (
+    <>
+      {status === 'connected' ? <WorkspaceShell /> : <HomeScreen />}
+      <SqlImportModal />
+    </>
+  )
 }

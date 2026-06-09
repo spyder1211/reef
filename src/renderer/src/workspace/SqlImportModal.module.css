@@ -1,0 +1,129 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  width: 460px;
+  max-width: calc(100vw - 48px);
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  font-size: 13px;
+  color: #1d1d1f;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.k {
+  color: #6e6e73;
+}
+
+.warn {
+  margin: 12px 0;
+  padding: 10px 12px;
+  background: #fff4e5;
+  border: 1px solid #ffd8a8;
+  border-radius: 6px;
+  line-height: 1.5;
+  color: #8a5a00;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.btn,
+.btnPrimary,
+.btnDanger {
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn {
+  background: #e8e8ed;
+  color: #1d1d1f;
+}
+
+.btnPrimary {
+  background: #0071e3;
+  color: #fff;
+}
+
+.btnDanger {
+  background: #d70015;
+  color: #fff;
+}
+
+.bar {
+  height: 8px;
+  background: #e8e8ed;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.barFill {
+  height: 100%;
+  background: #0071e3;
+  transition: width 0.15s ease;
+}
+
+.preview {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #f5f5f7;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 120px;
+  overflow: auto;
+}
+
+.ok {
+  padding: 10px 12px;
+  background: #e6f4ea;
+  border: 1px solid #b7e1c2;
+  border-radius: 6px;
+  color: #137333;
+}
+
+.error {
+  padding: 10px 12px;
+  background: #fce8e6;
+  border: 1px solid #f5c2c0;
+  border-radius: 6px;
+  color: #c5221f;
+  line-height: 1.5;
+}
+
+.msg {
+  margin-top: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
