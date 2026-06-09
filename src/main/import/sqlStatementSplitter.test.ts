@@ -86,3 +86,43 @@ describe('SqlStatementSplitter', () => {
     expect(splitAll(sql)).toEqual(['INSERT INTO `t` (`a`,`b`)\nVALUES (1,2),\n(3,4)'])
   })
 })
+
+describe('SqlStatementSplitter チャンク境界の2文字トークン', () => {
+  it('バックスラッシュエスケープがチャンク境界を跨ぐ', () => {
+    const s = new SqlStatementSplitter()
+    const out = [...s.push("INSERT INTO t VALUES ('a\\"), ...s.push("'; b');"), ...s.end()]
+    expect(out).toEqual(["INSERT INTO t VALUES ('a\\'; b')"])
+  })
+
+  it('行コメント -- がチャンク境界を跨ぐ（チャンク末尾が単一の -）', () => {
+    const s = new SqlStatementSplitter()
+    const out = [
+      ...s.push('INSERT INTO t VALUES (1);-'),
+      ...s.push('- c\nINSERT INTO t VALUES (2);'),
+      ...s.end()
+    ]
+    expect(out).toEqual(['INSERT INTO t VALUES (1)', 'INSERT INTO t VALUES (2)'])
+  })
+
+  it('ブロックコメント開始 /* がチャンク境界を跨ぐ', () => {
+    const s = new SqlStatementSplitter()
+    const out = [...s.push('SELECT 1;/'), ...s.push('* c */SELECT 2;'), ...s.end()]
+    expect(out).toEqual(['SELECT 1', 'SELECT 2'])
+  })
+
+  it('ブロックコメント終了 */ がチャンク境界を跨ぐ（SQL を欠落させない）', () => {
+    const s = new SqlStatementSplitter()
+    const out = [
+      ...s.push('SELECT /* c *'),
+      ...s.push('/ 1;INSERT INTO t VALUES (1);'),
+      ...s.end()
+    ]
+    expect(out).toEqual(['SELECT  1', 'INSERT INTO t VALUES (1)'])
+  })
+
+  it("二重クォート '' がチャンク境界を跨ぐ", () => {
+    const s = new SqlStatementSplitter()
+    const out = [...s.push("INSERT INTO t VALUES ('it'"), ...s.push("'s; ok');"), ...s.end()]
+    expect(out).toEqual(["INSERT INTO t VALUES ('it''s; ok')"])
+  })
+})
