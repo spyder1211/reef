@@ -46,7 +46,7 @@ export default function TableList(): JSX.Element {
   const onInputKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setActiveIndex((i) => Math.min(i + 1, filtered.length - 1))
+      setActiveIndex((i) => Math.max(0, Math.min(i + 1, filtered.length - 1)))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setActiveIndex((i) => Math.max(i - 1, 0))
@@ -55,6 +55,7 @@ export default function TableList(): JSX.Element {
       const name = filtered[activeIndex]
       if (name) open(name)
     } else if (e.key === 'Escape') {
+      e.preventDefault()
       // 二段挙動: 入力があればクリア、空ならフォーカスを外す。
       if (query !== '') setQuery('')
       else inputRef.current?.blur()
