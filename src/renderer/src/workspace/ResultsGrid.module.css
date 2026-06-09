@@ -139,3 +139,9 @@
   background: #ff3b30 !important;
   color: #fff !important;
 }
+
+.ctxSep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}

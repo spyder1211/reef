@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildFilteredQuery, buildCountQuery } from './filterBuilder'
+import { buildFilteredQuery, buildCountQuery, sameFilterEffect, countUsableFilters } from './filterBuilder'
 import type { FilterCondition } from '../../../shared/types'
 
 const cols = ['id', 'name', 'date']
@@ -193,5 +193,65 @@ describe('buildCountQuery', () => {
     ])
     expect(r.sql).toBe('SELECT COUNT(*) AS total FROM `t` WHERE `id` = ?')
     expect(r.params).toEqual(['5'])
+  })
+})
+
+describe('sameFilterEffect', () => {
+  const cols = ['id', 'name']
+  const f = (over: Partial<FilterCondition>): FilterCondition => ({
+    id: 'x', enabled: true, column: 'id', operator: '=', value: '', value2: '', ...over
+  })
+
+  it('id だけ違う同内容は true', () => {
+    expect(sameFilterEffect(cols, [f({ id: 'a', value: '5' })], [f({ id: 'b', value: '5' })])).toBe(true)
+  })
+  it('無効化された条件の有無は効果に影響しない（true）', () => {
+    const a = [f({ value: '5' })]
+    const b = [f({ value: '5' }), f({ column: 'name', operator: 'contains', value: 'z', enabled: false })]
+    expect(sameFilterEffect(cols, a, b)).toBe(true)
+  })
+  it('空値の条件追加は効果なし（true）', () => {
+    const a = [f({ value: '5' })]
+    const b = [f({ value: '5' }), f({ column: 'name', operator: '=', value: '' })]
+    expect(sameFilterEffect(cols, a, b)).toBe(true)
+  })
+  it('値の変更は false', () => {
+    expect(sameFilterEffect(cols, [f({ value: '5' })], [f({ value: '6' })])).toBe(false)
+  })
+  it('演算子の変更は false', () => {
+    expect(sameFilterEffect(cols, [f({ value: '5', operator: '=' })], [f({ value: '5', operator: '<>' })])).toBe(false)
+  })
+  it('列の変更は false', () => {
+    expect(sameFilterEffect(cols, [f({ column: 'id', value: '5' })], [f({ column: 'name', value: '5' })])).toBe(false)
+  })
+  it('ホワイトリスト外の列を含む差分は無視（true）', () => {
+    const a = [f({ value: '5' })]
+    const b = [f({ value: '5' }), f({ column: 'evil', value: 'z' })]
+    expect(sameFilterEffect(cols, a, b)).toBe(true)
+  })
+})
+
+describe('countUsableFilters', () => {
+  const cols = ['id', 'name']
+  const f = (over: Partial<FilterCondition>): FilterCondition => ({
+    id: 'x', enabled: true, column: 'id', operator: '=', value: '', value2: '', ...over
+  })
+
+  it('有効＋実効のある条件のみ数える', () => {
+    const list = [
+      f({ value: '5' }),
+      f({ column: 'name', operator: 'contains', value: 'a' }),
+      f({ value: '9', enabled: false }),
+      f({ column: 'name', operator: '=', value: '' }),
+      f({ column: 'evil', value: 'z' })
+    ]
+    expect(countUsableFilters(cols, list)).toBe(2)
+  })
+  it('is_null は値なしでも実効ありとして数える', () => {
+    expect(countUsableFilters(cols, [f({ operator: 'is_null', value: '' })])).toBe(1)
+    expect(countUsableFilters(cols, [f({ operator: 'is_not_null', value: '' })])).toBe(1)
+  })
+  it('0 件は 0', () => {
+    expect(countUsableFilters(cols, [])).toBe(0)
   })
 })

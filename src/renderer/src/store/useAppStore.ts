@@ -6,6 +6,7 @@ import type {
   AppError,
   ApiResult,
   FilterCondition,
+  FilterOperator,
   TableSort,
   RowEdit,
   PendingInsert
@@ -33,6 +34,7 @@ export interface TableTab extends BaseTab {
   tableName: string
   columns: string[]
   filters: FilterCondition[]
+  appliedFilters: FilterCondition[] // いま表示中の結果を生んだフィルタのスナップショット
   sort: TableSort | null // null = 自然順
   pageSize: number // 50 | 100 | 500（既定 100）
   page: number // 0 始まり（UI 表示は 1 始まり）
@@ -76,6 +78,7 @@ function makeTableTab(name: string): TableTab {
     tableName: name,
     columns: [],
     filters: [],
+    appliedFilters: [],
     sort: null,
     pageSize: 100,
     page: 0,
@@ -130,6 +133,8 @@ interface AppState {
   updateFilter: (tabId: string, filterId: string, patch: Partial<FilterCondition>) => void
   clearFilters: (tabId: string) => void
   applyFilters: (tabId: string) => Promise<void>
+  duplicateFilter: (tabId: string, filterId: string) => void
+  quickFilter: (tabId: string, column: string, operator: FilterOperator, value: unknown) => Promise<void>
   setSort: (tabId: string, column: string) => Promise<void>
   setPage: (tabId: string, page: number) => Promise<void>
   setPageSize: (tabId: string, size: number) => Promise<void>
@@ -389,13 +394,55 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     clearFilters(tabId) {
-      patchTableTab(tabId, (t) => ({ ...t, filters: [] }))
+      // appliedFilters も空にして Clear→Apply 間の一瞬の未適用(dirty)ちらつきを防ぐ
+      patchTableTab(tabId, (t) => ({ ...t, filters: [], appliedFilters: [] }))
     },
 
     async applyFilters(tabId) {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
       if (!tab || !confirmDiscard(tab)) return
-      patchTableTab(tabId, (t) => ({ ...t, page: 0, edits: {}, inserts: [], deletes: {}, editError: null, selectedRowIndex: null }))
+      patchTableTab(tabId, (t) => ({ ...t, appliedFilters: t.filters, page: 0, edits: {}, inserts: [], deletes: {}, editError: null, selectedRowIndex: null }))
+      await runTable(tabId, { recount: true })
+    },
+
+    duplicateFilter(tabId, filterId) {
+      patchTableTab(tabId, (t) => {
+        const idx = t.filters.findIndex((f) => f.id === filterId)
+        if (idx === -1) return t
+        const clone = { ...t.filters[idx], id: genId() }
+        return {
+          ...t,
+          filters: [...t.filters.slice(0, idx + 1), clone, ...t.filters.slice(idx + 1)]
+        }
+      })
+    },
+
+    async quickFilter(tabId, column, operator, value) {
+      const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
+      if (!tab || !confirmDiscard(tab)) return
+      const valueless = operator === 'is_null' || operator === 'is_not_null'
+      const cond: FilterCondition = {
+        id: genId(),
+        enabled: true,
+        column,
+        operator,
+        value: valueless ? '' : value == null ? '' : String(value),
+        value2: ''
+      }
+      patchTableTab(tabId, (t) => {
+        const filters = [...t.filters, cond]
+        return {
+          ...t,
+          filters,
+          appliedFilters: filters,
+          page: 0,
+          edits: {},
+          inserts: [],
+          deletes: {},
+          editError: null,
+          selectedRowIndex: null
+        }
+      })
       await runTable(tabId, { recount: true })
     },
 

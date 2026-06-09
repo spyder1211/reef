@@ -1,11 +1,17 @@
-import { useMemo, useRef, useState, useEffect, type MouseEvent } from 'react'
+import { useMemo, useRef, useState, useEffect } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   type ColumnDef
 } from '@tanstack/react-table'
-import type { QueryResult, TableSort, RowEdit, PendingInsert } from '../../../shared/types'
+import type {
+  QueryResult,
+  TableSort,
+  RowEdit,
+  PendingInsert,
+  FilterOperator
+} from '../../../shared/types'
 import { useAppStore } from '../store/useAppStore'
 import { rowKeyOf, pkValuesOf } from '../store/rowKey'
 import styles from './ResultsGrid.module.css'
@@ -13,13 +19,15 @@ import styles from './ResultsGrid.module.css'
 type Row = Record<string, unknown>
 
 type CtxMenu =
-  | { kind: 'existing'; x: number; y: number; rowKey: string; pkValues: Record<string, unknown> }
   | {
-      kind: 'delete-staged'
+      kind: 'cell'
       x: number
       y: number
+      column: string
+      value: unknown
       rowKey: string
       pkValues: Record<string, unknown>
+      isDeleted: boolean
     }
   | { kind: 'insert'; x: number; y: number; localId: string }
 
@@ -32,6 +40,7 @@ export default function ResultsGrid(): JSX.Element {
   const updateInsertCell = useAppStore((s) => s.updateInsertCell)
   const removeInsertRow = useAppStore((s) => s.removeInsertRow)
   const stageDelete = useAppStore((s) => s.stageDelete)
+  const quickFilter = useAppStore((s) => s.quickFilter)
 
   if (!tab) return <div className={styles.placeholder} />
   if (tab.running) return <div className={styles.placeholder}>実行中…</div>
@@ -57,6 +66,11 @@ export default function ResultsGrid(): JSX.Element {
   const deletes = isTable ? tab.deletes : {}
   const selectedRowIndex = isTable ? tab.selectedRowIndex : null
   const onSelectRow = isTable ? (index: number): void => selectRow(tab.id, index) : undefined
+  // quick filter はテーブルタブのみ（SQL タブはクエリを所有しないため）。主キー不要。
+  const onQuickFilter = isTable
+    ? (column: string, operator: FilterOperator, value: unknown): void =>
+        void quickFilter(tab.id, column, operator, value)
+    : undefined
 
   return (
     <Grid
@@ -79,6 +93,7 @@ export default function ResultsGrid(): JSX.Element {
       onStageDelete={
         editable ? (rowKey, pkValues) => stageDelete(tab.id, rowKey, pkValues) : undefined
       }
+      onQuickFilter={onQuickFilter}
     />
   )
 }
@@ -98,7 +113,8 @@ function Grid({
   onNull,
   onUpdateInsert,
   onRemoveInsert,
-  onStageDelete
+  onStageDelete,
+  onQuickFilter
 }: {
   result: QueryResult
   sort: TableSort | null
@@ -115,6 +131,7 @@ function Grid({
   onUpdateInsert?: (localId: string, column: string, value: string) => void
   onRemoveInsert?: (localId: string) => void
   onStageDelete?: (rowKey: string, pkValues: Record<string, unknown>) => void
+  onQuickFilter?: (column: string, operator: FilterOperator, value: unknown) => void
 }): JSX.Element {
   const [editing, setEditing] = useState<{ rowKey: string; column: string } | null>(null)
   const [draft, setDraft] = useState('')
@@ -184,18 +201,6 @@ function Grid({
             const isDeleted = editable && rowKey in deletes
             const rowEdit = editable ? edits[rowKey] : undefined
 
-            const handleContextMenu = (e: MouseEvent): void => {
-              if (!editable) return
-              e.preventDefault()
-              onSelectRow?.(r.index)
-              const pkVals = pkValuesOf(primaryKey, original)
-              setCtxMenu(
-                isDeleted
-                  ? { kind: 'delete-staged', x: e.clientX, y: e.clientY, rowKey, pkValues: pkVals }
-                  : { kind: 'existing', x: e.clientX, y: e.clientY, rowKey, pkValues: pkVals }
-              )
-            }
-
             return (
               <tr
                 key={r.id}
@@ -207,7 +212,6 @@ function Grid({
                       : undefined
                 }
                 onClick={onSelectRow ? () => onSelectRow(r.index) : undefined}
-                onContextMenu={handleContextMenu}
               >
                 {r.getVisibleCells().map((cell) => {
                   const colId = cell.column.id
@@ -247,6 +251,24 @@ function Grid({
                       key={cell.id}
                       className={cls}
                       onDoubleClick={editable && !isDeleted ? startEdit : undefined}
+                      onContextMenu={
+                        onQuickFilter
+                          ? (e) => {
+                              e.preventDefault()
+                              onSelectRow?.(r.index)
+                              setCtxMenu({
+                                kind: 'cell',
+                                x: e.clientX,
+                                y: e.clientY,
+                                column: colId,
+                                value: original[colId],
+                                rowKey,
+                                pkValues: editable ? pkValuesOf(primaryKey, original) : {},
+                                isDeleted
+                              })
+                            }
+                          : undefined
+                      }
                     >
                       {isEditingThis ? (
                         <span className={styles.editWrap}>
@@ -361,27 +383,87 @@ function Grid({
           style={{ top: ctxMenu.y, left: ctxMenu.x }}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          {ctxMenu.kind === 'existing' && (
-            <div
-              className={`${styles.ctxItem} ${styles.ctxDanger}`}
-              onClick={() => {
-                onStageDelete?.(ctxMenu.rowKey, ctxMenu.pkValues)
-                setCtxMenu(null)
-              }}
-            >
-              行を削除
-            </div>
-          )}
-          {ctxMenu.kind === 'delete-staged' && (
-            <div
-              className={styles.ctxItem}
-              onClick={() => {
-                onStageDelete?.(ctxMenu.rowKey, ctxMenu.pkValues)
-                setCtxMenu(null)
-              }}
-            >
-              削除を取り消す
-            </div>
+          {ctxMenu.kind === 'cell' && (
+            <>
+              {ctxMenu.value === null || ctxMenu.value === undefined ? (
+                <>
+                  <div
+                    className={styles.ctxItem}
+                    onClick={() => {
+                      onQuickFilter?.(ctxMenu.column, 'is_null', null)
+                      setCtxMenu(null)
+                    }}
+                  >
+                    IS NULL
+                  </div>
+                  <div
+                    className={styles.ctxItem}
+                    onClick={() => {
+                      onQuickFilter?.(ctxMenu.column, 'is_not_null', null)
+                      setCtxMenu(null)
+                    }}
+                  >
+                    IS NOT NULL
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div
+                    className={styles.ctxItem}
+                    onClick={() => {
+                      onQuickFilter?.(ctxMenu.column, '=', ctxMenu.value)
+                      setCtxMenu(null)
+                    }}
+                  >
+                    = この値で絞り込む
+                  </div>
+                  <div
+                    className={styles.ctxItem}
+                    onClick={() => {
+                      onQuickFilter?.(ctxMenu.column, '<>', ctxMenu.value)
+                      setCtxMenu(null)
+                    }}
+                  >
+                    ≠ この値
+                  </div>
+                  <div
+                    className={styles.ctxItem}
+                    onClick={() => {
+                      onQuickFilter?.(ctxMenu.column, 'contains', ctxMenu.value)
+                      setCtxMenu(null)
+                    }}
+                  >
+                    含む
+                  </div>
+                </>
+              )}
+              {onStageDelete && (
+                <>
+                  <div className={styles.ctxSep} />
+                  {ctxMenu.isDeleted ? (
+                    <div
+                      className={styles.ctxItem}
+                      onClick={() => {
+                        onStageDelete(ctxMenu.rowKey, ctxMenu.pkValues)
+                        setCtxMenu(null)
+                      }}
+                    >
+                      削除を取り消す
+                    </div>
+                  ) : (
+                    <div
+                      className={`${styles.ctxItem} ${styles.ctxDanger}`}
+                      onClick={() => {
+                        onStageDelete(ctxMenu.rowKey, ctxMenu.pkValues)
+                        setCtxMenu(null)
+                      }}
+                    >
+                      行を削除
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           )}
           {ctxMenu.kind === 'insert' && (
             <div
