@@ -394,8 +394,8 @@ export const useAppStore = create<AppState>((set, get) => {
         return
       }
       try {
-        const { sql } = buildTruncateStatement(name)
-        const res = await window.api.query(sql)
+        const { sql, params } = buildTruncateStatement(name)
+        const res = await window.api.query(sql, params)
         if (!res.ok) {
           window.alert(res.error.message)
           return
@@ -423,13 +423,15 @@ export const useAppStore = create<AppState>((set, get) => {
 
     async dropTable(name) {
       if (
-        !window.confirm(`テーブル \`${name}\` を削除します。この操作は取り消せません。よろしいですか？`)
+        !window.confirm(
+          `テーブル \`${name}\` を削除します。この操作は取り消せません。よろしいですか？`
+        )
       ) {
         return
       }
       try {
-        const { sql } = buildDropStatement(name)
-        const res = await window.api.query(sql)
+        const { sql, params } = buildDropStatement(name)
+        const res = await window.api.query(sql, params)
         if (!res.ok) {
           window.alert(res.error.message)
           return
