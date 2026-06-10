@@ -44,6 +44,12 @@ describe('GroupStore', () => {
     expect(g.list()[0].name).toBe('A2')
   })
 
+  it('存在しない id の rename は no-op', () => {
+    const a = g.create('A')
+    expect(() => g.rename('nope', 'X')).not.toThrow()
+    expect(g.list()[0].name).toBe('A')
+  })
+
   it('reorder で指定順に order を振り直す', () => {
     const a = g.create('A')
     const b = g.create('B')
@@ -57,8 +63,7 @@ describe('GroupStore', () => {
     const b = g.create('B')
     g.reorder([b.id]) // a を省略
     const names = g.list().map((x) => x.name)
-    expect(names[0]).toBe('B')
-    expect(names).toContain('A')
+    expect(names).toEqual(['B', 'A'])
   })
 
   it('delete でグループが消え、所属接続の groupId が外れる（未分類化）', () => {

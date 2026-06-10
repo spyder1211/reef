@@ -21,18 +21,16 @@ export class GroupStore {
     const trimmed = name.trim()
     if (!trimmed) return
     const doc = this.deps.load()
-    const grp = doc.groups.find((x) => x.id === id)
-    if (!grp) return
-    grp.name = trimmed
+    const idx = doc.groups.findIndex((x) => x.id === id)
+    if (idx < 0) return
+    doc.groups[idx] = { ...doc.groups[idx], name: trimmed }
     this.deps.persist(doc)
   }
 
   delete(id: string): void {
     const doc = this.deps.load()
     doc.groups = doc.groups.filter((x) => x.id !== id)
-    for (const p of doc.profiles) {
-      if (p.groupId === id) p.groupId = undefined
-    }
+    doc.profiles = doc.profiles.map((p) => (p.groupId === id ? { ...p, groupId: undefined } : p))
     this.deps.persist(doc)
   }
 
