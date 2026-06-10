@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import type { AppError, ConnectionProfileInput, ConnectionTag } from '../../../shared/types'
 import { useAppStore } from '../store/useAppStore'
-import { TAG_ORDER, TAG_COLORS } from '../lib/tags'
+import { TAG_ORDER, TAG_COLORS, TAG_LABELS } from '../lib/tags'
 import styles from './ConnectionFormModal.module.css'
 
 function initialForm(): ConnectionProfileInput {
@@ -75,20 +75,21 @@ export default function ConnectionFormModal(): JSX.Element {
 
         <Field label="タグ">
           <div className={styles.swatches}>
-            {TAG_ORDER.map((t) => (
-              <button
-                key={t}
-                type="button"
-                className={styles.swatch}
-                style={{
-                  background: TAG_COLORS[t],
-                  outline: form.tag === t ? `2px solid ${TAG_COLORS[t]}88` : 'none',
-                  outlineOffset: 1
-                }}
-                title={t}
-                onClick={() => update('tag', t as ConnectionTag)}
-              />
-            ))}
+            {TAG_ORDER.map((t) => {
+              const selected = form.tag === t
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  className={`${styles.tagOption} ${selected ? styles.tagSelected : ''}`}
+                  style={selected ? { borderColor: TAG_COLORS[t], color: TAG_COLORS[t] } : undefined}
+                  onClick={() => update('tag', t as ConnectionTag)}
+                >
+                  <span className={styles.tagDot} style={{ background: TAG_COLORS[t] }} />
+                  {TAG_LABELS[t] || 'なし'}
+                </button>
+              )
+            })}
           </div>
         </Field>
 

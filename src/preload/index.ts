@@ -5,6 +5,7 @@ import type {
   QueryResult,
   ConnectionProfile,
   ConnectionProfileInput,
+  ConnectionGroup,
   SqlStatement,
   SaveFileResult,
   ImportSummary,
@@ -52,7 +53,19 @@ const api = {
     save: (input: ConnectionProfileInput): Promise<ApiResult<ConnectionProfile>> =>
       ipcRenderer.invoke('connections:save', input),
     delete: (id: string): Promise<ApiResult<null>> => ipcRenderer.invoke('connections:delete', id),
-    connect: (id: string): Promise<ApiResult<null>> => ipcRenderer.invoke('connections:connect', id)
+    connect: (id: string): Promise<ApiResult<null>> => ipcRenderer.invoke('connections:connect', id),
+    move: (profileId: string, groupId: string | null): Promise<ApiResult<null>> =>
+      ipcRenderer.invoke('connections:move', profileId, groupId)
+  },
+  groups: {
+    list: (): Promise<ApiResult<ConnectionGroup[]>> => ipcRenderer.invoke('groups:list'),
+    create: (name: string): Promise<ApiResult<ConnectionGroup>> =>
+      ipcRenderer.invoke('groups:create', name),
+    rename: (id: string, name: string): Promise<ApiResult<null>> =>
+      ipcRenderer.invoke('groups:rename', id, name),
+    delete: (id: string): Promise<ApiResult<null>> => ipcRenderer.invoke('groups:delete', id),
+    reorder: (orderedIds: string[]): Promise<ApiResult<null>> =>
+      ipcRenderer.invoke('groups:reorder', orderedIds)
   }
 }
 

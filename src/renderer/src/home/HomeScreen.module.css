@@ -48,3 +48,13 @@
   color: #b91c1c;
   font-size: 12px;
 }
+.groupInput {
+  width: 200px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+}

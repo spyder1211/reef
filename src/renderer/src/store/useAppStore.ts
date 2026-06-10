@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type {
   ConnectionProfile,
   ConnectionProfileInput,
+  ConnectionGroup,
   QueryResult,
   AppError,
   ApiResult,
@@ -109,6 +110,8 @@ function makeFilter(column: string): FilterCondition {
 interface AppState {
   profiles: ConnectionProfile[]
   search: string
+  groups: ConnectionGroup[]
+  collapsed: Record<string, boolean> // key=groupId（未分類は UNGROUPED_ID）, true=折り畳み
   status: Status
   connectError: AppError | null
   activeProfile: ConnectionProfile | null
@@ -125,6 +128,13 @@ interface AppState {
   closeForm: () => void
   saveProfile: (input: ConnectionProfileInput) => Promise<ApiResult<ConnectionProfile>>
   deleteProfile: (id: string) => Promise<void>
+  loadGroups: () => Promise<void>
+  createGroup: (name: string) => Promise<void>
+  renameGroup: (id: string, name: string) => Promise<void>
+  deleteGroup: (id: string) => Promise<void>
+  reorderGroups: (orderedIds: string[]) => Promise<void>
+  moveProfileToGroup: (profileId: string, groupId: string | null) => Promise<void>
+  toggleCollapse: (groupId: string) => void
   connect: (profile: ConnectionProfile) => Promise<void>
   disconnect: () => Promise<void>
   returnToConnections: () => Promise<void>
@@ -256,6 +266,8 @@ export const useAppStore = create<AppState>((set, get) => {
   return {
     profiles: [],
     search: '',
+    groups: [],
+    collapsed: {},
     status: 'idle',
     connectError: null,
     activeProfile: null,
@@ -292,6 +304,63 @@ export const useAppStore = create<AppState>((set, get) => {
     async deleteProfile(id) {
       await window.api.connections.delete(id)
       await get().loadProfiles()
+    },
+
+    async loadGroups() {
+      const res = await window.api.groups.list()
+      if (res.ok) set({ groups: res.data })
+    },
+
+    async createGroup(name) {
+      const res = await window.api.groups.create(name)
+      if (!res.ok) {
+        window.alert(res.error.message)
+        return
+      }
+      await get().loadGroups()
+    },
+
+    async renameGroup(id, name) {
+      const res = await window.api.groups.rename(id, name)
+      if (!res.ok) {
+        window.alert(res.error.message)
+        return
+      }
+      await get().loadGroups()
+    },
+
+    async deleteGroup(id) {
+      const res = await window.api.groups.delete(id)
+      if (!res.ok) {
+        window.alert(res.error.message)
+        return
+      }
+      await get().loadGroups()
+      await get().loadProfiles()
+    },
+
+    async reorderGroups(orderedIds) {
+      const res = await window.api.groups.reorder(orderedIds)
+      if (!res.ok) {
+        window.alert(res.error.message)
+        return
+      }
+      await get().loadGroups()
+    },
+
+    async moveProfileToGroup(profileId, groupId) {
+      const current = get().profiles.find((p) => p.id === profileId)
+      if (current && (current.groupId ?? null) === groupId) return // 既に同じ所属なら何もしない
+      const res = await window.api.connections.move(profileId, groupId)
+      if (!res.ok) {
+        window.alert(res.error.message)
+        return
+      }
+      await get().loadProfiles()
+    },
+
+    toggleCollapse(groupId) {
+      set((s) => ({ collapsed: { ...s.collapsed, [groupId]: !s.collapsed[groupId] } }))
     },
 
     async connect(profile) {
