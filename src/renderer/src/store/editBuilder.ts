@@ -1,7 +1,23 @@
 import type { RowEdit, PendingInsert, SqlStatement } from '../../../shared/types'
 
-function quoteIdent(name: string): string {
+export function quoteIdent(name: string): string {
   return '`' + name.replace(/`/g, '``') + '`'
+}
+
+/**
+ * TRUNCATE 文を組む。テーブル定義は残し全行を削除する（取り消し不可・暗黙コミット）。
+ * 識別子はバッククォート2重化でエスケープ。値プレースホルダは無し。
+ */
+export function buildTruncateStatement(table: string): SqlStatement {
+  return { sql: `TRUNCATE TABLE ${quoteIdent(table)}`, params: [] }
+}
+
+/**
+ * DROP 文を組む。テーブルごと削除する（取り消し不可）。
+ * 識別子はバッククォート2重化でエスケープ。値プレースホルダは無し。
+ */
+export function buildDropStatement(table: string): SqlStatement {
+  return { sql: `DROP TABLE ${quoteIdent(table)}`, params: [] }
 }
 
 /**
