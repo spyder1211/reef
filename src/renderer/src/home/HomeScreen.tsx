@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import AppRail from './AppRail'
 import ConnectionList from './ConnectionList'
@@ -11,6 +12,13 @@ export default function HomeScreen(): JSX.Element {
   const createGroup = useAppStore((s) => s.createGroup)
   const formOpen = useAppStore((s) => s.formOpen)
   const connectError = useAppStore((s) => s.connectError)
+  const [groupDraft, setGroupDraft] = useState<string | null>(null) // null=非作成中
+
+  function submitGroup(): void {
+    const name = (groupDraft ?? '').trim()
+    if (name) void createGroup(name)
+    setGroupDraft(null)
+  }
 
   return (
     <div className={styles.home}>
@@ -23,13 +31,24 @@ export default function HomeScreen(): JSX.Element {
           <button
             className={styles.plus}
             title="新規グループ"
-            onClick={() => {
-              const name = window.prompt('新しいグループ名')
-              if (name && name.trim()) void createGroup(name.trim())
-            }}
+            onClick={() => setGroupDraft('')}
           >
             🗂
           </button>
+          {groupDraft !== null && (
+            <input
+              className={styles.groupInput}
+              placeholder="グループ名を入力…"
+              value={groupDraft}
+              autoFocus
+              onChange={(e) => setGroupDraft(e.target.value)}
+              onBlur={() => setGroupDraft(null)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') submitGroup()
+                if (e.key === 'Escape') setGroupDraft(null)
+              }}
+            />
+          )}
           <input
             className={styles.search}
             placeholder="接続を検索…"
