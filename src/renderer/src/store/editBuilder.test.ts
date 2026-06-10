@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { buildUpdateStatements, buildInsertStatements, buildDeleteStatements } from './editBuilder'
+import {
+  buildUpdateStatements,
+  buildInsertStatements,
+  buildDeleteStatements,
+  buildTruncateStatement,
+  buildDropStatement
+} from './editBuilder'
 import type { RowEdit, PendingInsert } from '../../../shared/types'
 
 describe('buildUpdateStatements', () => {
@@ -134,5 +140,37 @@ describe('buildDeleteStatements', () => {
 
   it('deletes が空なら空配列', () => {
     expect(buildDeleteStatements('t', ['id'], {})).toEqual([])
+  })
+})
+
+describe('buildTruncateStatement', () => {
+  it('TRUNCATE 文を組む', () => {
+    expect(buildTruncateStatement('users')).toEqual({
+      sql: 'TRUNCATE TABLE `users`',
+      params: []
+    })
+  })
+
+  it('識別子のバッククォートを2重化', () => {
+    expect(buildTruncateStatement('we`ird')).toEqual({
+      sql: 'TRUNCATE TABLE `we``ird`',
+      params: []
+    })
+  })
+})
+
+describe('buildDropStatement', () => {
+  it('DROP 文を組む', () => {
+    expect(buildDropStatement('users')).toEqual({
+      sql: 'DROP TABLE `users`',
+      params: []
+    })
+  })
+
+  it('識別子のバッククォートを2重化', () => {
+    expect(buildDropStatement('we`ird')).toEqual({
+      sql: 'DROP TABLE `we``ird`',
+      params: []
+    })
   })
 })

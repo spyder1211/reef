@@ -6,11 +6,14 @@ import styles from './TableList.module.css'
 export default function TableList(): JSX.Element {
   const tables = useAppStore((s) => s.tables)
   const selectTable = useAppStore((s) => s.selectTable)
+  const truncateTable = useAppStore((s) => s.truncateTable)
+  const dropTable = useAppStore((s) => s.dropTable)
 
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const [ctxMenu, setCtxMenu] = useState<{ table: string; x: number; y: number } | null>(null)
 
   // 入力に応じたフィルタ済みリスト。tables か query が変わったときだけ再計算。
   const filtered = useMemo(() => filterTables(tables, query), [tables, query])
@@ -38,6 +41,14 @@ export default function TableList(): JSX.Element {
     const el = listRef.current?.querySelector<HTMLElement>(`[data-index="${activeIndex}"]`)
     el?.scrollIntoView({ block: 'nearest' })
   }, [activeIndex])
+
+  // コンテキストメニューをページ外クリックで閉じる（ResultsGrid と同パターン）
+  useEffect(() => {
+    if (!ctxMenu) return
+    const close = (): void => setCtxMenu(null)
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [ctxMenu])
 
   const open = (name: string): void => {
     void selectTable(name)
@@ -90,6 +101,10 @@ export default function TableList(): JSX.Element {
               data-index={i}
               className={i === activeIndex ? `${styles.row} ${styles.active}` : styles.row}
               onClick={() => open(t)}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                setCtxMenu({ table: t, x: e.clientX, y: e.clientY })
+              }}
               title={t}
             >
               <span className={styles.icon}>▸</span>
@@ -98,6 +113,33 @@ export default function TableList(): JSX.Element {
           ))
         )}
       </div>
+      {ctxMenu && (
+        <div
+          className={styles.ctxMenu}
+          style={{ top: ctxMenu.y, left: ctxMenu.x }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div
+            className={styles.ctxItem}
+            onClick={() => {
+              void truncateTable(ctxMenu.table)
+              setCtxMenu(null)
+            }}
+          >
+            テーブルを空にする（TRUNCATE）
+          </div>
+          <div className={styles.ctxSep} />
+          <div
+            className={`${styles.ctxItem} ${styles.ctxDanger}`}
+            onClick={() => {
+              void dropTable(ctxMenu.table)
+              setCtxMenu(null)
+            }}
+          >
+            テーブルを削除（DROP）
+          </div>
+        </div>
+      )}
     </div>
   )
 }
