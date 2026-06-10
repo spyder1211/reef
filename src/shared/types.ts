@@ -101,3 +101,30 @@ export interface SaveFileResult {
   canceled: boolean
   filePath?: string
 }
+
+// SQL dump import / restore の実行結果サマリ
+export interface ImportSummary {
+  status: 'completed' | 'failed'
+  executedCount: number // 成功実行できた statement 数
+  durationMs: number
+  failure?: {
+    statementIndex: number // 1始まり：失敗した statement の番号
+    statementPreview: string // 該当 statement の先頭 N 文字
+    message: string // DB エラーメッセージ
+  }
+}
+
+// import 実行中に main → renderer へ push する進捗
+export interface ImportProgress {
+  executedCount: number
+  bytesRead: number
+  totalBytes: number
+  currentPreview?: string // 実行中/直近 statement の先頭
+}
+
+// File メニューでファイル選択後、main → renderer へ送る開始要求
+export interface SqlImportRequest {
+  fileName: string
+  totalBytes: number
+  dbName: string
+}

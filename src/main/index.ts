@@ -4,6 +4,7 @@ import { ConnectionManager } from './connection/ConnectionManager'
 import { registerDbHandlers } from './ipc/registerDbHandlers'
 import { registerConnectionHandlers } from './ipc/registerConnectionHandlers'
 import { registerFileHandlers } from './ipc/registerFileHandlers'
+import { registerImportHandlers } from './import/registerImportHandlers'
 import { createProfileStore } from './connection/createProfileStore'
 import { buildAppMenu } from './menu'
 
@@ -51,6 +52,7 @@ app.whenReady().then(() => {
   registerDbHandlers(manager)
   registerConnectionHandlers(manager, createProfileStore())
   registerFileHandlers()
+  registerImportHandlers(manager)
   Menu.setApplicationMenu(buildAppMenu(manager))
   createWindow(manager)
   app.on('activate', () => {

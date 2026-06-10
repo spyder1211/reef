@@ -6,7 +6,10 @@ import type {
   ConnectionProfile,
   ConnectionProfileInput,
   SqlStatement,
-  SaveFileResult
+  SaveFileResult,
+  ImportSummary,
+  ImportProgress,
+  SqlImportRequest
 } from '../../shared/types'
 
 declare global {
@@ -20,6 +23,11 @@ declare global {
       applyChanges: (statements: SqlStatement[]) => Promise<ApiResult<{ affectedRows: number }>>
       saveCsv: (defaultFileName: string, content: string) => Promise<ApiResult<SaveFileResult>>
       onReturnToConnections: (cb: () => void) => () => void
+      sqlImport: {
+        onRequest: (cb: (req: SqlImportRequest) => void) => () => void
+        start: () => Promise<ApiResult<ImportSummary>>
+        onProgress: (cb: (p: ImportProgress) => void) => () => void
+      }
       connections: {
         list: () => Promise<ApiResult<ConnectionProfile[]>>
         save: (input: ConnectionProfileInput) => Promise<ApiResult<ConnectionProfile>>

@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 import type {
   ConnectionConfig,
   ApiResult,
@@ -6,7 +6,10 @@ import type {
   ConnectionProfile,
   ConnectionProfileInput,
   SqlStatement,
-  SaveFileResult
+  SaveFileResult,
+  ImportSummary,
+  ImportProgress,
+  SqlImportRequest
 } from '../shared/types'
 
 const api = {
@@ -27,6 +30,22 @@ const api = {
     const handler = (): void => cb()
     ipcRenderer.on('app:return-to-connections', handler)
     return () => ipcRenderer.removeListener('app:return-to-connections', handler)
+  },
+  sqlImport: {
+    // File メニューからの開始要求を購読。登録解除関数を返す。
+    onRequest: (cb: (req: SqlImportRequest) => void): (() => void) => {
+      const handler = (_e: IpcRendererEvent, req: SqlImportRequest): void => cb(req)
+      ipcRenderer.on('app:sql-import-request', handler)
+      return () => ipcRenderer.removeListener('app:sql-import-request', handler)
+    },
+    // 保留中のファイルを実行（パスは渡さない）。
+    start: (): Promise<ApiResult<ImportSummary>> => ipcRenderer.invoke('sqlImport:start'),
+    // 進捗を購読。登録解除関数を返す。
+    onProgress: (cb: (p: ImportProgress) => void): (() => void) => {
+      const handler = (_e: IpcRendererEvent, p: ImportProgress): void => cb(p)
+      ipcRenderer.on('app:sql-import-progress', handler)
+      return () => ipcRenderer.removeListener('app:sql-import-progress', handler)
+    }
   },
   connections: {
     list: (): Promise<ApiResult<ConnectionProfile[]>> => ipcRenderer.invoke('connections:list'),
