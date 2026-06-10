@@ -11,7 +11,15 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
   const sub = `${profile.host} : ${profile.database ?? profile.user}`
 
   return (
-    <div className={styles.row} onDoubleClick={() => void connect(profile)}>
+    <div
+      className={styles.row}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('application/x-tableplus-conn', profile.id)
+        e.dataTransfer.effectAllowed = 'move'
+      }}
+      onDoubleClick={() => void connect(profile)}
+    >
       <Avatar name={profile.name} tag={profile.tag} />
       <div className={styles.meta}>
         <div className={styles.nameLine}>
