@@ -95,7 +95,7 @@ async function importSqlDump(manager: ConnectionManager): Promise<void> {
   const win = BrowserWindow.getFocusedWindow()
   const opts = {
     properties: ['openFile' as const],
-    filters: [{ name: 'SQL', extensions: ['sql'] }]
+    filters: [{ name: 'SQL dump', extensions: ['sql', 'gz'] }]
   }
   const result = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
   if (result.canceled || result.filePaths.length === 0) return
