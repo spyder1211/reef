@@ -63,14 +63,32 @@
 }
 .swatches {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
 }
-.swatch {
-  width: 20px;
-  height: 20px;
-  border-radius: 5px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  padding: 0;
+.tagOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.tagOption:hover {
+  background: var(--bg-subtle);
+}
+.tagSelected {
+  font-weight: 600;
+}
+.tagDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 .note {
   font-size: 11px;
