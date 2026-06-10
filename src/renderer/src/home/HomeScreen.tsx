@@ -8,6 +8,7 @@ export default function HomeScreen(): JSX.Element {
   const search = useAppStore((s) => s.search)
   const setSearch = useAppStore((s) => s.setSearch)
   const openForm = useAppStore((s) => s.openForm)
+  const createGroup = useAppStore((s) => s.createGroup)
   const formOpen = useAppStore((s) => s.formOpen)
   const connectError = useAppStore((s) => s.connectError)
 
@@ -18,6 +19,16 @@ export default function HomeScreen(): JSX.Element {
         <div className={styles.top}>
           <button className={styles.plus} onClick={() => openForm()} title="新規接続">
             ＋
+          </button>
+          <button
+            className={styles.plus}
+            title="新規グループ"
+            onClick={() => {
+              const name = window.prompt('新しいグループ名')
+              if (name && name.trim()) void createGroup(name.trim())
+            }}
+          >
+            🗂
           </button>
           <input
             className={styles.search}
