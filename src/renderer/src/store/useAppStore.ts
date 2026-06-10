@@ -388,7 +388,7 @@ export const useAppStore = create<AppState>((set, get) => {
     async truncateTable(name) {
       if (
         !window.confirm(
-          `テーブル \`${name}\` を空にします。全データが削除され、取り消せません。よろしいですか？`
+          `テーブル「${name}」を空にします。全データが削除され、取り消せません。よろしいですか？`
         )
       ) {
         return
@@ -412,7 +412,8 @@ export const useAppStore = create<AppState>((set, get) => {
             inserts: [],
             deletes: {},
             editError: null,
-            selectedRowIndex: null
+            selectedRowIndex: null,
+            page: 0
           }))
           await runTable(tab.id, { recount: true })
         }
@@ -424,7 +425,7 @@ export const useAppStore = create<AppState>((set, get) => {
     async dropTable(name) {
       if (
         !window.confirm(
-          `テーブル \`${name}\` を削除します。この操作は取り消せません。よろしいですか？`
+          `テーブル「${name}」を削除します。この操作は取り消せません。よろしいですか？`
         )
       ) {
         return
