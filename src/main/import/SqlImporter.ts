@@ -33,6 +33,12 @@ export async function importSqlDump(
   let failure: ImportSummary['failure'] | undefined
 
   await manager.withDedicatedConnection(async (exec) => {
+    // import 中は外部キー制約を無効化する。dump 内の DROP/CREATE/INSERT が
+    // テーブル定義順や循環参照に依存せず通るようにするため。dedicated 接続の
+    // セッション変数なので以降の全 statement に効く。
+    // ※ executedCount には含めない（dump 由来の文ではないので runOne を通さない）。
+    await exec('SET FOREIGN_KEY_CHECKS=0')
+
     const splitter = new SqlStatementSplitter()
     const decoder = new StringDecoder('utf8')
     const raw = createReadStream(filePath)
@@ -97,6 +103,13 @@ export async function importSqlDump(
       // raw を destroy すれば pipe 先の counter/gunzip も連鎖して破棄される。
       // 途中 return（stop-on-error）や例外時は async iterator の teardown が textSource を閉じる。
       raw.destroy()
+      // 接続をプールへ返す前に FK チェックを復帰する（次の借り手へ無効状態を漏らさない）。
+      // 復帰自体の失敗で元の例外やサマリを覆い隠さないよう握りつぶす。
+      try {
+        await exec('SET FOREIGN_KEY_CHECKS=1')
+      } catch {
+        // ignore
+      }
     }
   })
 

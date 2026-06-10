@@ -52,6 +52,13 @@ function fakeExecutor(opts?: { failOn?: string; error?: Error }): {
   return { exec, manager }
 }
 
+// SET FOREIGN_KEY_CHECKS の内部文を除いた、dump 由来の exec 呼び出しだけを取り出す。
+function dumpCalls(exec: ReturnType<typeof vi.fn>): string[] {
+  return exec.mock.calls
+    .map((c) => c[0] as string)
+    .filter((s) => !s.startsWith('SET FOREIGN_KEY_CHECKS'))
+}
+
 describe('importSqlDump', () => {
   it('全文成功で status=completed と executedCount を返す', async () => {
     const file = writeTmp('ok', 'CREATE TABLE t (id INT);\nINSERT INTO t VALUES (1);\n')
@@ -61,7 +68,7 @@ describe('importSqlDump', () => {
     expect(summary.status).toBe('completed')
     expect(summary.executedCount).toBe(2)
     expect(summary.failure).toBeUndefined()
-    expect(exec).toHaveBeenCalledTimes(2)
+    expect(dumpCalls(exec)).toHaveLength(2)
     expect(onProgress).toHaveBeenCalled()
   })
 
@@ -77,8 +84,8 @@ describe('importSqlDump', () => {
     expect(summary.failure?.statementIndex).toBe(2)
     expect(summary.failure?.message).toBe('no such table')
     expect(summary.failure?.statementPreview).toContain('INSERT INTO bad')
-    // 3 文目は実行されない（CREATE と bad の 2 回のみ）
-    expect(exec).toHaveBeenCalledTimes(2)
+    // 3 文目は実行されない（dump 由来は CREATE と bad の 2 文のみ）
+    expect(dumpCalls(exec)).toHaveLength(2)
   })
 
   it('onProgress に executedCount/bytesRead/totalBytes が渡る', async () => {
@@ -100,7 +107,7 @@ describe('importSqlDump', () => {
     const summary = await importSqlDump(manager, file, vi.fn())
     expect(summary.status).toBe('completed')
     expect(summary.executedCount).toBe(3)
-    expect(exec).toHaveBeenCalledTimes(3)
+    expect(dumpCalls(exec)).toHaveLength(3)
   })
 
   it('gzip import の totalBytes は圧縮ファイルサイズ', async () => {
@@ -121,7 +128,7 @@ describe('importSqlDump', () => {
     const summary = await importSqlDump(manager, file, vi.fn())
     expect(summary.status).toBe('completed')
     expect(summary.executedCount).toBe(1)
-    expect(exec.mock.calls[0][0]).toContain('日本語テスト')
+    expect(dumpCalls(exec)[0]).toContain('日本語テスト')
   })
 
   it('壊れた gzip は専用エラーメッセージで reject する', async () => {
@@ -135,7 +142,29 @@ describe('importSqlDump', () => {
     await expect(importSqlDump(manager, file, vi.fn())).rejects.toThrow(
       'gzip の展開に失敗しました'
     )
-    // 展開に失敗するため 1 文も実行されない。
-    expect(exec).not.toHaveBeenCalled()
+    // 展開に失敗するため dump の文は 1 つも実行されない（SET 文以外は呼ばれない）。
+    expect(dumpCalls(exec)).toHaveLength(0)
+  })
+
+  it('import 開始時に FK チェックを無効化し、終了時に復帰する', async () => {
+    const file = writeTmp('fk', 'INSERT INTO t VALUES (1);\n')
+    const { exec, manager } = fakeExecutor()
+    const summary = await importSqlDump(manager, file, vi.fn())
+    expect(summary.status).toBe('completed')
+    // SET 文は dump 由来ではないため executedCount に含めない。
+    expect(summary.executedCount).toBe(1)
+    const calls = exec.mock.calls.map((c) => c[0])
+    expect(calls[0]).toBe('SET FOREIGN_KEY_CHECKS=0')
+    expect(calls[calls.length - 1]).toBe('SET FOREIGN_KEY_CHECKS=1')
+  })
+
+  it('途中失敗でも FK チェックを復帰してから終了する', async () => {
+    const file = writeTmp('fkfail', 'INSERT INTO bad VALUES (1);\nINSERT INTO t VALUES (2);\n')
+    const { exec, manager } = fakeExecutor({ failOn: 'INSERT INTO bad' })
+    const summary = await importSqlDump(manager, file, vi.fn())
+    expect(summary.status).toBe('failed')
+    const calls = exec.mock.calls.map((c) => c[0])
+    expect(calls[0]).toBe('SET FOREIGN_KEY_CHECKS=0')
+    expect(calls).toContain('SET FOREIGN_KEY_CHECKS=1')
   })
 })
