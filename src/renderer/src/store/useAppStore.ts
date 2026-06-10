@@ -13,7 +13,13 @@ import type {
 } from '../../../shared/types'
 import { buildFilteredQuery, buildCountQuery } from './filterBuilder'
 import { toCsv } from '../lib/csv'
-import { buildUpdateStatements, buildInsertStatements, buildDeleteStatements } from './editBuilder'
+import {
+  buildUpdateStatements,
+  buildInsertStatements,
+  buildDeleteStatements,
+  buildTruncateStatement,
+  buildDropStatement
+} from './editBuilder'
 import { rowKeyOf, pkValuesOf } from './rowKey'
 import { pickNextActiveTabId, hasUncommittedChanges } from './helpers'
 import { cycleSort } from './pager'
@@ -128,6 +134,8 @@ interface AppState {
   setTabSql: (id: string, sql: string) => void
   runActiveTab: () => Promise<void>
   selectTable: (name: string) => Promise<void>
+  truncateTable: (name: string) => Promise<void>
+  dropTable: (name: string) => Promise<void>
   addFilter: (tabId: string) => void
   removeFilter: (tabId: string, filterId: string) => void
   updateFilter: (tabId: string, filterId: string, patch: Partial<FilterCondition>) => void
@@ -180,6 +188,12 @@ export const useAppStore = create<AppState>((set, get) => {
         t.id === tabId ? { ...t, running: false, result: null, error: { code: 'CLIENT_ERROR', message } } : t
       )
     })
+  }
+
+  // テーブル一覧を再取得してストアへ反映する。connect と dropTable で共有する。
+  async function refreshTables(): Promise<void> {
+    const tbl = await window.api.listTables()
+    if (tbl.ok) set({ tables: tbl.data })
   }
 
   async function runSql(tabId: string, sql: string, params?: unknown[]): Promise<void> {
@@ -295,8 +309,7 @@ export const useAppStore = create<AppState>((set, get) => {
         activeTabId: tab.id,
         tables: []
       })
-      const tbl = await window.api.listTables()
-      if (tbl.ok) set({ tables: tbl.data })
+      await refreshTables()
     },
 
     async disconnect() {
@@ -370,6 +383,68 @@ export const useAppStore = create<AppState>((set, get) => {
       const pk = await window.api.primaryKey(name)
       patchTableTab(tab.id, (t) => ({ ...t, primaryKey: pk.ok ? pk.data : [] }))
       await runTable(tab.id, { recount: true })
+    },
+
+    async truncateTable(name) {
+      if (
+        !window.confirm(
+          `テーブル \`${name}\` を空にします。全データが削除され、取り消せません。よろしいですか？`
+        )
+      ) {
+        return
+      }
+      try {
+        const { sql } = buildTruncateStatement(name)
+        const res = await window.api.query(sql)
+        if (!res.ok) {
+          window.alert(res.error.message)
+          return
+        }
+        // 該当テーブルの開いているタブ（selectTable が同名タブを再利用するため最大1つ）の
+        // ステージをクリアして再描画する。クリアしないと消えた行に対する UPDATE/DELETE が残る。
+        const tab = get().tabs.find(
+          (t): t is TableTab => t.kind === 'table' && t.tableName === name
+        )
+        if (tab) {
+          patchTableTab(tab.id, (t) => ({
+            ...t,
+            edits: {},
+            inserts: [],
+            deletes: {},
+            editError: null,
+            selectedRowIndex: null
+          }))
+          await runTable(tab.id, { recount: true })
+        }
+      } catch (err) {
+        window.alert(err instanceof Error ? err.message : String(err))
+      }
+    },
+
+    async dropTable(name) {
+      if (
+        !window.confirm(`テーブル \`${name}\` を削除します。この操作は取り消せません。よろしいですか？`)
+      ) {
+        return
+      }
+      try {
+        const { sql } = buildDropStatement(name)
+        const res = await window.api.query(sql)
+        if (!res.ok) {
+          window.alert(res.error.message)
+          return
+        }
+        // 該当テーブル名のタブ（最大1つ）を確認なしで閉じる（テーブルごと消えるため編集ステージは無意味）。
+        const { tabs, activeTabId } = get()
+        const target = tabs.find((t) => t.kind === 'table' && t.tableName === name)
+        if (target) {
+          const nextActive = pickNextActiveTabId(tabs, target.id, activeTabId)
+          set({ tabs: tabs.filter((t) => t.id !== target.id), activeTabId: nextActive })
+        }
+        await refreshTables()
+      } catch (err) {
+        window.alert(err instanceof Error ? err.message : String(err))
+      }
     },
 
     addFilter(tabId) {
