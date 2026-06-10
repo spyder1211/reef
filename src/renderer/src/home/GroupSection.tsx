@@ -1,4 +1,4 @@
-import { useState, type DragEvent } from 'react'
+import { useState, useRef, type DragEvent } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { TAG_COLORS, TAG_LABELS } from '../lib/tags'
 import { computeReorder, type GroupView } from '../lib/grouping'
@@ -28,6 +28,8 @@ export default function GroupSection({
   const [draft, setDraft] = useState(view.name)
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const [dropActive, setDropActive] = useState(false)
+  // rename の確定/取消を1回に保証する（Enter→unmount→blur の二重発火・Esc の誤確定を防ぐ）
+  const renameDone = useRef(false)
 
   const expanded = searching || !collapsed
   const targetGroupId = view.isUngrouped ? null : view.id
@@ -58,18 +60,36 @@ export default function GroupSection({
     }
   }
 
+  function startRename(): void {
+    if (view.isUngrouped) return
+    setDraft(view.name)
+    renameDone.current = false
+    setRenaming(true)
+  }
+
   function commitRename(): void {
+    if (renameDone.current) return
+    renameDone.current = true
     setRenaming(false)
     const name = draft.trim()
     if (name && name !== view.name) void renameGroup(view.id, name)
     else setDraft(view.name)
   }
 
+  function cancelRename(): void {
+    if (renameDone.current) return
+    renameDone.current = true
+    setRenaming(false)
+    setDraft(view.name)
+  }
+
   return (
     <div
       className={`${styles.group} ${dropActive ? styles.dropActive : ''}`}
       onDragOver={onDragOver}
-      onDragLeave={() => setDropActive(false)}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropActive(false)
+      }}
       onDrop={onDrop}
     >
       <div
@@ -102,22 +122,11 @@ export default function GroupSection({
             onBlur={commitRename}
             onKeyDown={(e) => {
               if (e.key === 'Enter') commitRename()
-              if (e.key === 'Escape') {
-                setRenaming(false)
-                setDraft(view.name)
-              }
+              if (e.key === 'Escape') cancelRename()
             }}
           />
         ) : (
-          <span
-            className={styles.name}
-            onDoubleClick={() => {
-              if (!view.isUngrouped) {
-                setDraft(view.name)
-                setRenaming(true)
-              }
-            }}
-          >
+          <span className={styles.name} onDoubleClick={startRename}>
             {view.name}
           </span>
         )}

@@ -349,6 +349,8 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     async moveProfileToGroup(profileId, groupId) {
+      const current = get().profiles.find((p) => p.id === profileId)
+      if (current && (current.groupId ?? null) === groupId) return // 既に同じ所属なら何もしない
       const res = await window.api.connections.move(profileId, groupId)
       if (!res.ok) {
         window.alert(res.error.message)
