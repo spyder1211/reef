@@ -88,6 +88,9 @@ export function registerConnectionHandlers(
   })
 
   ipcMain.handle('groups:rename', async (_e, id: string, name: string): Promise<ApiResult<null>> => {
+    if (!name || !name.trim()) {
+      return { ok: false, error: { code: 'INVALID_CONFIG', message: 'グループ名は必須です' } }
+    }
     try {
       groups.rename(id, name)
       return { ok: true, data: null }
