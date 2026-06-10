@@ -19,6 +19,13 @@ function writeTmpGz(name: string, content: string): string {
   tmpFiles.push(p)
   return p
 }
+// 生バイトをそのまま .sql.gz として書き出す（壊れた gzip の検証用）。
+function writeTmpRawGz(name: string, buf: Buffer): string {
+  const p = join(tmpdir(), `tableplus-import-test-${name}-${process.pid}.sql.gz`)
+  writeFileSync(p, buf)
+  tmpFiles.push(p)
+  return p
+}
 afterEach(() => {
   for (const p of tmpFiles.splice(0)) {
     try {
@@ -115,5 +122,20 @@ describe('importSqlDump', () => {
     expect(summary.status).toBe('completed')
     expect(summary.executedCount).toBe(1)
     expect(exec.mock.calls[0][0]).toContain('日本語テスト')
+  })
+
+  it('壊れた gzip は専用エラーメッセージで reject する', async () => {
+    // gzip マジックバイト + 妥当なヘッダ10バイトの後に不正な deflate データ → 展開時に Z_DATA_ERROR。
+    const corrupt = Buffer.concat([
+      Buffer.from([0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03]),
+      Buffer.from('this is not valid deflate data')
+    ])
+    const file = writeTmpRawGz('gzbad', corrupt)
+    const { exec, manager } = fakeExecutor()
+    await expect(importSqlDump(manager, file, vi.fn())).rejects.toThrow(
+      'gzip の展開に失敗しました'
+    )
+    // 展開に失敗するため 1 文も実行されない。
+    expect(exec).not.toHaveBeenCalled()
   })
 })

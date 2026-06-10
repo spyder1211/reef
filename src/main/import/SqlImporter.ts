@@ -94,6 +94,8 @@ export async function importSqlDump(
       }
       throw err
     } finally {
+      // raw を destroy すれば pipe 先の counter/gunzip も連鎖して破棄される。
+      // 途中 return（stop-on-error）や例外時は async iterator の teardown が textSource を閉じる。
       raw.destroy()
     }
   })
