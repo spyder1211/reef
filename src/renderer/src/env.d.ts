@@ -5,6 +5,7 @@ import type {
   QueryResult,
   ConnectionProfile,
   ConnectionProfileInput,
+  ConnectionGroup,
   SqlStatement,
   SaveFileResult,
   ImportSummary,
@@ -33,6 +34,14 @@ declare global {
         save: (input: ConnectionProfileInput) => Promise<ApiResult<ConnectionProfile>>
         delete: (id: string) => Promise<ApiResult<null>>
         connect: (id: string) => Promise<ApiResult<null>>
+        move: (profileId: string, groupId: string | null) => Promise<ApiResult<null>>
+      }
+      groups: {
+        list: () => Promise<ApiResult<ConnectionGroup[]>>
+        create: (name: string) => Promise<ApiResult<ConnectionGroup>>
+        rename: (id: string, name: string) => Promise<ApiResult<null>>
+        delete: (id: string) => Promise<ApiResult<null>>
+        reorder: (orderedIds: string[]) => Promise<ApiResult<null>>
       }
     }
   }

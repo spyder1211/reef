@@ -5,7 +5,7 @@ import { registerDbHandlers } from './ipc/registerDbHandlers'
 import { registerConnectionHandlers } from './ipc/registerConnectionHandlers'
 import { registerFileHandlers } from './ipc/registerFileHandlers'
 import { registerImportHandlers } from './import/registerImportHandlers'
-import { createProfileStore } from './connection/createProfileStore'
+import { createConnectionStores } from './connection/createProfileStore'
 import { buildAppMenu } from './menu'
 
 // 明示的なアプリ終了（Cmd+Q / quit ロール）中かどうか。
@@ -50,7 +50,8 @@ function createWindow(manager: ConnectionManager): void {
 app.whenReady().then(() => {
   const manager = new ConnectionManager()
   registerDbHandlers(manager)
-  registerConnectionHandlers(manager, createProfileStore())
+  const { profileStore, groupStore } = createConnectionStores()
+  registerConnectionHandlers(manager, profileStore, groupStore)
   registerFileHandlers()
   registerImportHandlers(manager)
   Menu.setApplicationMenu(buildAppMenu(manager))

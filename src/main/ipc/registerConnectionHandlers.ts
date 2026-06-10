@@ -1,11 +1,16 @@
 import { ipcMain } from 'electron'
 import { ConnectionManager } from '../connection/ConnectionManager'
 import { ProfileStore } from '../connection/ProfileStore'
+import { GroupStore } from '../connection/GroupStore'
 import { validateConnectionConfig } from '../connection/validateConnectionConfig'
 import { normalizeDbError } from '../connection/normalizeDbError'
-import type { ApiResult, ConnectionProfile, ConnectionProfileInput } from '../../shared/types'
+import type { ApiResult, ConnectionGroup, ConnectionProfile, ConnectionProfileInput } from '../../shared/types'
 
-export function registerConnectionHandlers(manager: ConnectionManager, store: ProfileStore): void {
+export function registerConnectionHandlers(
+  manager: ConnectionManager,
+  store: ProfileStore,
+  groups: GroupStore
+): void {
   ipcMain.handle('connections:list', async (): Promise<ApiResult<ConnectionProfile[]>> => {
     try {
       return { ok: true, data: store.list() }
@@ -45,6 +50,64 @@ export function registerConnectionHandlers(manager: ConnectionManager, store: Pr
     try {
       const config = store.getConnectConfig(id)
       await manager.connect(config)
+      return { ok: true, data: null }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
+    }
+  })
+
+  ipcMain.handle(
+    'connections:move',
+    async (_e, profileId: string, groupId: string | null): Promise<ApiResult<null>> => {
+      try {
+        store.move(profileId, groupId)
+        return { ok: true, data: null }
+      } catch (err) {
+        return { ok: false, error: normalizeDbError(err) }
+      }
+    }
+  )
+
+  ipcMain.handle('groups:list', async (): Promise<ApiResult<ConnectionGroup[]>> => {
+    try {
+      return { ok: true, data: groups.list() }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
+    }
+  })
+
+  ipcMain.handle('groups:create', async (_e, name: string): Promise<ApiResult<ConnectionGroup>> => {
+    if (!name || !name.trim()) {
+      return { ok: false, error: { code: 'INVALID_CONFIG', message: 'グループ名は必須です' } }
+    }
+    try {
+      return { ok: true, data: groups.create(name) }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
+    }
+  })
+
+  ipcMain.handle('groups:rename', async (_e, id: string, name: string): Promise<ApiResult<null>> => {
+    try {
+      groups.rename(id, name)
+      return { ok: true, data: null }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
+    }
+  })
+
+  ipcMain.handle('groups:delete', async (_e, id: string): Promise<ApiResult<null>> => {
+    try {
+      groups.delete(id)
+      return { ok: true, data: null }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
+    }
+  })
+
+  ipcMain.handle('groups:reorder', async (_e, orderedIds: string[]): Promise<ApiResult<null>> => {
+    try {
+      groups.reorder(orderedIds)
       return { ok: true, data: null }
     } catch (err) {
       return { ok: false, error: normalizeDbError(err) }
