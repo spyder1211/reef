@@ -158,6 +158,16 @@ export default function GroupSection({
               className={styles.menuItem}
               onClick={() => {
                 setMenu(null)
+                startRename()
+              }}
+            >
+              グループ名を変更
+            </button>
+            <div className={styles.menuSep} />
+            <button
+              className={`${styles.menuItem} ${styles.danger}`}
+              onClick={() => {
+                setMenu(null)
                 if (
                   window.confirm(
                     `グループ「${view.name}」を削除します。中の接続は未分類へ移動します。よろしいですか？`

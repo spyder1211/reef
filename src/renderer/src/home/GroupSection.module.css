@@ -94,10 +94,21 @@
   background: transparent;
   padding: 7px 10px;
   font-size: 12px;
-  color: #c0392b;
+  color: var(--text);
   border-radius: 6px;
   cursor: pointer;
 }
 .menuItem:hover {
+  background: var(--bg-subtle);
+}
+.danger {
+  color: #c0392b;
+}
+.danger:hover {
   background: #fdecea;
+}
+.menuSep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 2px;
 }
