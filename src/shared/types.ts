@@ -32,6 +32,13 @@ export type ApiResult<T> =
 // 接続プロファイル（保存済み接続）
 export type ConnectionTag = 'production' | 'staging' | 'development' | 'local' | 'none'
 
+// 接続グループ（上位グループ）。環境サブグループは tag から導出するため保存しない
+export interface ConnectionGroup {
+  id: string
+  name: string
+  order: number // 並び替え用。小さいほど上に表示
+}
+
 // レンダラに渡す形（パスワードは含めない）
 export interface ConnectionProfile {
   id: string
@@ -41,6 +48,7 @@ export interface ConnectionProfile {
   port: number
   user: string
   database?: string
+  groupId?: string // 所属グループ。未設定 = 未分類
 }
 
 // 保存・更新の入力（パスワードを含む。保存後はメインのみが暗号化保持）
@@ -53,6 +61,7 @@ export interface ConnectionProfileInput {
   user: string
   password: string
   database?: string
+  groupId?: string // 通常フォームからは送らない。DnD/move 経由で設定
 }
 
 // フィルター条件
