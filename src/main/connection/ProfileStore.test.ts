@@ -92,4 +92,19 @@ describe('ProfileStore', () => {
     s.save({ id: a.id, name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: '', groupId: 'g2' })
     expect(s.list()[0].groupId).toBe('g2')
   })
+
+  it('save / move / delete は既存の groups を保持する', () => {
+    let doc: StoredDoc = { profiles: [], groups: [{ id: 'g1', name: 'G', order: 0 }] }
+    const deps: StoreDeps = {
+      load: () => doc,
+      persist: (d) => { doc = d },
+      secret: { encrypt: (s) => `enc:${s}`, decrypt: (s) => s.replace(/^enc:/, '') },
+      genId: () => 'pid-1'
+    }
+    const store = new ProfileStore(deps)
+    const a = store.save({ name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'p' })
+    store.move(a.id, 'g1')
+    store.delete(a.id)
+    expect(doc.groups).toEqual([{ id: 'g1', name: 'G', order: 0 }])
+  })
 })

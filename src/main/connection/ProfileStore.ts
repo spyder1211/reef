@@ -68,9 +68,9 @@ export class ProfileStore {
 
   move(profileId: string, groupId: string | null): void {
     const doc = this.deps.load()
-    const p = doc.profiles.find((x) => x.id === profileId)
-    if (!p) return
-    p.groupId = groupId ?? undefined
+    const idx = doc.profiles.findIndex((x) => x.id === profileId)
+    if (idx < 0) return
+    doc.profiles[idx] = { ...doc.profiles[idx], groupId: groupId ?? undefined }
     this.deps.persist(doc)
   }
 
