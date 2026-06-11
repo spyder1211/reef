@@ -168,6 +168,12 @@ interface AppState {
   updateInsertCell: (tabId: string, localId: string, column: string, value: string) => void
   removeInsertRow: (tabId: string, localId: string) => void
   stageDelete: (tabId: string, rowKey: string, pkValues: Record<string, unknown>) => void
+  setSelectedRows: (tabId: string, indices: number[], anchor: number | null) => void
+  stageDeleteMany: (
+    tabId: string,
+    entries: { rowKey: string; pkValues: Record<string, unknown> }[]
+  ) => void
+  duplicateRows: (tabId: string, rowIndices: number[]) => void
   selectRow: (tabId: string, index: number) => void
   exportCsv: (
     tabId: string,
@@ -760,6 +766,50 @@ export const useAppStore = create<AppState>((set, get) => {
       } catch (err) {
         failTab(tabId, err)
       }
+    },
+
+    setSelectedRows(tabId, indices, anchor) {
+      patchTableTab(tabId, (t) => ({ ...t, selectedRowIndices: indices, selectionAnchor: anchor }))
+    },
+
+    stageDeleteMany(tabId, entries) {
+      patchTableTab(tabId, (t) => {
+        if (entries.length === 0) return t
+        const deletes = { ...t.deletes }
+        const edits = { ...t.edits }
+        const allStaged = entries.every((e) => e.rowKey in deletes)
+        if (allStaged) {
+          for (const e of entries) delete deletes[e.rowKey]
+        } else {
+          for (const e of entries) {
+            deletes[e.rowKey] = e.pkValues
+            delete edits[e.rowKey] // DELETE 後の UPDATE は無意味なので破棄
+          }
+        }
+        return { ...t, deletes, edits, editError: null }
+      })
+    },
+
+    duplicateRows(tabId, rowIndices) {
+      patchTableTab(tabId, (t) => {
+        if (!t.result) return t
+        const exclude = new Set(t.autoIncrementColumns)
+        const colNames = t.result.columns.map((c) => c.name)
+        const newInserts: PendingInsert[] = []
+        for (const idx of rowIndices) {
+          const row = t.result.rows[idx]
+          if (!row) continue
+          const values: Record<string, string | null> = {}
+          for (const c of colNames) {
+            if (exclude.has(c)) continue
+            const v = row[c]
+            // 空文字は buildInsertStatements でDBデフォルト扱いになる（既存の INSERT 仕様に合わせる）
+            values[c] = v === null || v === undefined ? null : String(v)
+          }
+          newInserts.push({ localId: `ins-${crypto.randomUUID()}`, values })
+        }
+        return { ...t, inserts: [...t.inserts, ...newInserts], editError: null }
+      })
     },
 
     selectRow(tabId, index) {
