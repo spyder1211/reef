@@ -51,6 +51,29 @@ describe('ProfileStore', () => {
     expect(s.getConnectConfig(a.id).password).toBe('new')
   })
 
+  it('duplicate は新 id・「… のコピー」名で複製し、パスワード/タグ/グループを引き継ぐ', () => {
+    const a = s.save({ name: 'orig', tag: 'staging', host: 'h', port: 3306, user: 'u', password: 'secret', database: 'db' })
+    s.move(a.id, 'g1')
+    const copy = s.duplicate(a.id)
+    expect(copy.id).not.toBe(a.id)
+    expect(copy.name).toBe('orig のコピー')
+    expect(copy.tag).toBe('staging')
+    expect(copy.groupId).toBe('g1')
+    // 暗号化パスワードも引き継ぐ（renderer から再入力不要）
+    expect(s.getConnectConfig(copy.id).password).toBe('secret')
+  })
+
+  it('duplicate は元の直後に挿入し、件数が増える', () => {
+    const a = s.save({ name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'p' })
+    s.save({ name: 'b', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'p' })
+    s.duplicate(a.id)
+    expect(s.list().map((p) => p.name)).toEqual(['a', 'a のコピー', 'b'])
+  })
+
+  it('存在しない id の duplicate は例外', () => {
+    expect(() => s.duplicate('nope')).toThrow()
+  })
+
   it('delete で消える', () => {
     const a = s.save({ name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'p' })
     s.delete(a.id)

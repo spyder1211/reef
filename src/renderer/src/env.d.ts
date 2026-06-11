@@ -18,6 +18,7 @@ declare global {
     api: {
       connect: (config: ConnectionConfig) => Promise<ApiResult<null>>
       query: (sql: string, params?: unknown[]) => Promise<ApiResult<QueryResult>>
+      queryScript: (sql: string) => Promise<ApiResult<QueryResult>>
       disconnect: () => Promise<ApiResult<null>>
       listTables: () => Promise<ApiResult<string[]>>
       primaryKey: (table: string) => Promise<ApiResult<string[]>>
@@ -34,6 +35,7 @@ declare global {
       connections: {
         list: () => Promise<ApiResult<ConnectionProfile[]>>
         save: (input: ConnectionProfileInput) => Promise<ApiResult<ConnectionProfile>>
+        duplicate: (id: string) => Promise<ApiResult<ConnectionProfile>>
         delete: (id: string) => Promise<ApiResult<null>>
         connect: (id: string) => Promise<ApiResult<null>>
         move: (profileId: string, groupId: string | null) => Promise<ApiResult<null>>

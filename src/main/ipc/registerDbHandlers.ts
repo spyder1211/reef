@@ -32,6 +32,17 @@ export function registerDbHandlers(manager: ConnectionManager): void {
     }
   )
 
+  ipcMain.handle(
+    'db:queryScript',
+    async (_e, sql: string): Promise<ApiResult<QueryResult>> => {
+      try {
+        return { ok: true, data: await manager.queryScript(sql) }
+      } catch (err) {
+        return { ok: false, error: normalizeDbError(err) }
+      }
+    }
+  )
+
   ipcMain.handle('db:disconnect', async (): Promise<ApiResult<null>> => {
     try {
       await manager.disconnect()

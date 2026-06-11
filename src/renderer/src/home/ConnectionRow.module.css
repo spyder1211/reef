@@ -59,3 +59,44 @@
 .connect:hover {
   background: #0060e0;
 }
+.menuBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.menu {
+  position: fixed;
+  z-index: 41;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 4px;
+  min-width: 140px;
+}
+.menuItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 7px 10px;
+  font-size: 12px;
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.menuItem:hover {
+  background: var(--bg-subtle);
+}
+.danger {
+  color: #c0392b;
+}
+.danger:hover {
+  background: #fdecea;
+}
+.menuSep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 2px;
+}

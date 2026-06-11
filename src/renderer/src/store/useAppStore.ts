@@ -131,6 +131,7 @@ interface AppState {
   openForm: (id?: string) => void
   closeForm: () => void
   saveProfile: (input: ConnectionProfileInput) => Promise<ApiResult<ConnectionProfile>>
+  duplicateProfile: (id: string) => Promise<void>
   deleteProfile: (id: string) => Promise<void>
   loadGroups: () => Promise<void>
   createGroup: (name: string) => Promise<void>
@@ -214,10 +215,11 @@ export const useAppStore = create<AppState>((set, get) => {
     if (tbl.ok) set({ tables: tbl.data })
   }
 
-  async function runSql(tabId: string, sql: string, params?: unknown[]): Promise<void> {
+  async function runSql(tabId: string, sql: string): Promise<void> {
     setTabRunning(tabId)
     try {
-      const res = await window.api.query(sql, params)
+      // SQL エディタは複数文を1回で全実行する（; で分割して逐次実行）。
+      const res = await window.api.queryScript(sql)
       set({
         tabs: get().tabs.map((t) =>
           t.id === tabId
@@ -307,6 +309,11 @@ export const useAppStore = create<AppState>((set, get) => {
       const res = await window.api.connections.save(input)
       if (res.ok) await get().loadProfiles()
       return res
+    },
+
+    async duplicateProfile(id) {
+      const res = await window.api.connections.duplicate(id)
+      if (res.ok) await get().loadProfiles()
     },
 
     async deleteProfile(id) {

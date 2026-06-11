@@ -18,6 +18,9 @@ const api = {
     ipcRenderer.invoke('db:connect', config),
   query: (sql: string, params?: unknown[]): Promise<ApiResult<QueryResult>> =>
     ipcRenderer.invoke('db:query', sql, params),
+  // SQL エディタ用：複数文を ; で分割して順に実行（main 側）。
+  queryScript: (sql: string): Promise<ApiResult<QueryResult>> =>
+    ipcRenderer.invoke('db:queryScript', sql),
   disconnect: (): Promise<ApiResult<null>> => ipcRenderer.invoke('db:disconnect'),
   listTables: (): Promise<ApiResult<string[]>> => ipcRenderer.invoke('db:listTables'),
   primaryKey: (table: string): Promise<ApiResult<string[]>> =>
@@ -61,6 +64,8 @@ const api = {
     list: (): Promise<ApiResult<ConnectionProfile[]>> => ipcRenderer.invoke('connections:list'),
     save: (input: ConnectionProfileInput): Promise<ApiResult<ConnectionProfile>> =>
       ipcRenderer.invoke('connections:save', input),
+    duplicate: (id: string): Promise<ApiResult<ConnectionProfile>> =>
+      ipcRenderer.invoke('connections:duplicate', id),
     delete: (id: string): Promise<ApiResult<null>> => ipcRenderer.invoke('connections:delete', id),
     connect: (id: string): Promise<ApiResult<null>> => ipcRenderer.invoke('connections:connect', id),
     move: (profileId: string, groupId: string | null): Promise<ApiResult<null>> =>
