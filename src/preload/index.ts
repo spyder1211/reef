@@ -22,6 +22,8 @@ const api = {
   listTables: (): Promise<ApiResult<string[]>> => ipcRenderer.invoke('db:listTables'),
   primaryKey: (table: string): Promise<ApiResult<string[]>> =>
     ipcRenderer.invoke('db:primaryKey', table),
+  autoIncrementColumns: (table: string): Promise<ApiResult<string[]>> =>
+    ipcRenderer.invoke('db:autoIncrementColumns', table),
   applyChanges: (statements: SqlStatement[]): Promise<ApiResult<{ affectedRows: number }>> =>
     ipcRenderer.invoke('db:applyChanges', statements),
   saveCsv: (defaultFileName: string, content: string): Promise<ApiResult<SaveFileResult>> =>
