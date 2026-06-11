@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toCsv } from './csv'
+import { toCsv, toTsv } from './csv'
 
 describe('toCsv', () => {
   it('ヘッダ + 複数行を CRLF で連結する', () => {
@@ -43,5 +43,35 @@ describe('toCsv', () => {
 
   it('BOM を含まない', () => {
     expect(toCsv(['a'], [{ a: '1' }]).charCodeAt(0)).not.toBe(0xfeff)
+  })
+})
+
+describe('toTsv', () => {
+  it('タブ区切り・ヘッダなしで直列化する', () => {
+    const out = toTsv(
+      ['id', 'name'],
+      [
+        { id: 1, name: '天野工業' },
+        { id: 2, name: '高速保全' }
+      ]
+    )
+    expect(out).toBe('1\t天野工業\r\n2\t高速保全')
+  })
+
+  it('null/undefined は空文字にする', () => {
+    expect(toTsv(['a', 'b'], [{ a: null, b: undefined }])).toBe('\t')
+  })
+
+  it('タブ/改行/引用符を含む値はクォートし内部の " を2重化する', () => {
+    const out = toTsv(['v'], [{ v: 'a\tb' }, { v: 'c\nd' }, { v: 'he said "hi"' }])
+    expect(out).toBe('"a\tb"\r\n"c\nd"\r\n"he said ""hi"""')
+  })
+
+  it('列が空なら空文字を返す', () => {
+    expect(toTsv([], [{ a: 1 }])).toBe('')
+  })
+
+  it('行が空ならヘッダなしのため空文字を返す', () => {
+    expect(toTsv(['a', 'b'], [])).toBe('')
   })
 })
