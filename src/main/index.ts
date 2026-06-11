@@ -8,6 +8,11 @@ import { registerImportHandlers } from './import/registerImportHandlers'
 import { createConnectionStores } from './connection/createProfileStore'
 import { buildAppMenu } from './menu'
 
+// アプリの表示名。macOS のアプリメニューやダイアログのタイトルに使われる。
+// dev/prod を問わず確実に反映させるため明示設定する（package.json の
+// productName はビルド時のバンドル名用で、ランタイムの解決に依存しないようにする）。
+app.setName('Table++')
+
 // 明示的なアプリ終了（Cmd+Q / quit ロール）中かどうか。
 // quit も window の close を経由するため、これを見て「閉じるボタン」と区別する。
 let isQuitting = false

@@ -1,0 +1,19 @@
+appId: com.spyder1211.tableplus
+# productName は package.json の "Table++" を使う（.app / .dmg 名に反映される）
+directories:
+  output: dist
+  buildResources: build
+# electron-vite の成果物（out/）とエントリ参照用の package.json を同梱する。
+# mysql2 などの dependencies は electron-builder が自動でバンドルする。
+files:
+  - out/**/*
+  - package.json
+mac:
+  target:
+    - dmg
+  # 署名なし。arm64 でローカル実行できるよう electron-builder が ad-hoc 署名を行う。
+  identity: null
+  category: public.app-category.developer-tools
+# 未署名 .app の Gatekeeper 隔離属性を付けない（ローカル起動時の警告を軽減）
+dmg:
+  writeUpdateInfo: false

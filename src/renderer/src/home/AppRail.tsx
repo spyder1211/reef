@@ -12,7 +12,7 @@ export default function AppRail(): JSX.Element {
           <path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" stroke="#fff" strokeWidth="1.6" fill="none" />
         </svg>
       </div>
-      <div className={styles.name}>MySQL Client</div>
+      <div className={styles.name}>Table++</div>
       <div className={styles.version}>Version 0.1.0</div>
       <div className={styles.spacer} />
       <button className={styles.railBtn} onClick={() => openForm()}>
