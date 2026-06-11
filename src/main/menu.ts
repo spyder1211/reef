@@ -140,7 +140,31 @@ export function buildAppMenu(manager: ConnectionManager): Menu {
       ]
     },
     { role: 'editMenu' },
-    { role: 'viewMenu' },
+    {
+      label: 'View',
+      submenu: [
+        {
+          // Cmd+R は Electron 標準のフルリロード（webContents.reload）ではなく、
+          // 現在アクティブなタブのクエリ/テーブルを再実行する「再読み込み」に割り当てる。
+          // フルリロードはレンダラの接続状態（zustand）を初期化してしまい、作業画面が
+          // 接続一覧に戻る＝ウィンドウが閉じたように見える挙動になるため、外している。
+          label: '再読み込み',
+          accelerator: 'CmdOrCtrl+R',
+          click: (_item, win) => {
+            if (win instanceof BrowserWindow) {
+              win.webContents.send('app:reload-active-tab')
+            }
+          }
+        },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
     { role: 'windowMenu' }
   ]
   return Menu.buildFromTemplate(template)
