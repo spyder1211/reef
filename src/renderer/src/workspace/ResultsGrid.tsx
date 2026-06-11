@@ -14,6 +14,7 @@ import type {
 } from '../../../shared/types'
 import { useAppStore } from '../store/useAppStore'
 import { rowKeyOf, pkValuesOf } from '../store/rowKey'
+import { toTsv } from '../lib/csv'
 import styles from './ResultsGrid.module.css'
 
 type Row = Record<string, unknown>
@@ -25,9 +26,6 @@ type CtxMenu =
       y: number
       column: string
       value: unknown
-      rowKey: string
-      pkValues: Record<string, unknown>
-      isDeleted: boolean
     }
   | { kind: 'insert'; x: number; y: number; localId: string }
 
@@ -39,7 +37,8 @@ export default function ResultsGrid(): JSX.Element {
   const setSelectedRows = useAppStore((s) => s.setSelectedRows)
   const updateInsertCell = useAppStore((s) => s.updateInsertCell)
   const removeInsertRow = useAppStore((s) => s.removeInsertRow)
-  const stageDelete = useAppStore((s) => s.stageDelete)
+  const stageDeleteMany = useAppStore((s) => s.stageDeleteMany)
+  const duplicateRows = useAppStore((s) => s.duplicateRows)
   const quickFilter = useAppStore((s) => s.quickFilter)
 
   if (!tab) return <div className={styles.placeholder} />
@@ -95,8 +94,13 @@ export default function ResultsGrid(): JSX.Element {
         editable ? (localId, col, val) => updateInsertCell(tab.id, localId, col, val) : undefined
       }
       onRemoveInsert={editable ? (localId) => removeInsertRow(tab.id, localId) : undefined}
-      onStageDelete={
-        editable ? (rowKey, pkValues) => stageDelete(tab.id, rowKey, pkValues) : undefined
+      onStageDeleteMany={
+        editable
+          ? (entries): void => stageDeleteMany(tab.id, entries)
+          : undefined
+      }
+      onDuplicateRows={
+        editable ? (indices): void => duplicateRows(tab.id, indices) : undefined
       }
       onQuickFilter={onQuickFilter}
     />
@@ -120,7 +124,8 @@ function Grid({
   onNull,
   onUpdateInsert,
   onRemoveInsert,
-  onStageDelete,
+  onStageDeleteMany,
+  onDuplicateRows,
   onQuickFilter
 }: {
   result: QueryResult
@@ -139,7 +144,8 @@ function Grid({
   onNull?: (row: Row, column: string) => void
   onUpdateInsert?: (localId: string, column: string, value: string) => void
   onRemoveInsert?: (localId: string) => void
-  onStageDelete?: (rowKey: string, pkValues: Record<string, unknown>) => void
+  onStageDeleteMany?: (entries: { rowKey: string; pkValues: Record<string, unknown> }[]) => void
+  onDuplicateRows?: (indices: number[]) => void
   onQuickFilter?: (column: string, operator: FilterOperator, value: unknown) => void
 }): JSX.Element {
   const [editing, setEditing] = useState<{ rowKey: string; column: string } | null>(null)
@@ -150,6 +156,16 @@ function Grid({
   const [ctxMenu, setCtxMenu] = useState<CtxMenu | null>(null)
 
   const selectedSet = useMemo(() => new Set(selectedRowIndices), [selectedRowIndices])
+
+  const copySelectedRows = (indices: number[]): void => {
+    const colNames = result.columns.map((c) => c.name)
+    const rows = indices
+      .filter((i) => i < result.rows.length)
+      .sort((a, b) => a - b)
+      .map((i) => result.rows[i] as Row)
+    if (rows.length === 0) return
+    void navigator.clipboard.writeText(toTsv(colNames, rows))
+  }
 
   // クリック + 修飾キーから次の選択集合を計算して通知する。
   const handleRowMouseDown = (index: number, e: React.MouseEvent): void => {
@@ -310,10 +326,7 @@ function Grid({
                                 x: e.clientX,
                                 y: e.clientY,
                                 column: colId,
-                                value: original[colId],
-                                rowKey,
-                                pkValues: editable ? pkValuesOf(primaryKey, original) : {},
-                                isDeleted
+                                value: original[colId]
                               })
                             }
                           : undefined
@@ -496,32 +509,49 @@ function Grid({
                   </div>
                 </>
               )}
-              {onStageDelete && (
-                <>
-                  <div className={styles.ctxSep} />
-                  {ctxMenu.isDeleted ? (
+              {onStageDeleteMany && (() => {
+                // 選択中の結果行のみ対象（INSERT 行・範囲外は除外）。
+                const targets = [...selectedSet].filter((i) => i < result.rows.length).sort((a, b) => a - b)
+                if (targets.length === 0) return null
+                const entries = targets.map((i) => {
+                  const row = result.rows[i] as Row
+                  return { rowKey: rowKeyOf(primaryKey, row), pkValues: pkValuesOf(primaryKey, row) }
+                })
+                const allStaged = entries.every((e) => e.rowKey in deletes)
+                const n = targets.length
+                return (
+                  <>
+                    <div className={styles.ctxSep} />
+                    <div
+                      className={`${styles.ctxItem} ${allStaged ? '' : styles.ctxDanger}`}
+                      onClick={() => {
+                        onStageDeleteMany(entries)
+                        setCtxMenu(null)
+                      }}
+                    >
+                      {allStaged ? `削除を取り消す（${n} 行）` : `選択 ${n} 行を削除`}
+                    </div>
                     <div
                       className={styles.ctxItem}
                       onClick={() => {
-                        onStageDelete(ctxMenu.rowKey, ctxMenu.pkValues)
+                        onDuplicateRows?.(targets)
                         setCtxMenu(null)
                       }}
                     >
-                      削除を取り消す
+                      選択 {n} 行を複製
                     </div>
-                  ) : (
                     <div
-                      className={`${styles.ctxItem} ${styles.ctxDanger}`}
+                      className={styles.ctxItem}
                       onClick={() => {
-                        onStageDelete(ctxMenu.rowKey, ctxMenu.pkValues)
+                        copySelectedRows(targets)
                         setCtxMenu(null)
                       }}
                     >
-                      行を削除
+                      選択 {n} 行をコピー
                     </div>
-                  )}
-                </>
-              )}
+                  </>
+                )
+              })()}
             </>
           )}
           {ctxMenu.kind === 'insert' && (

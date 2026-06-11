@@ -167,7 +167,6 @@ interface AppState {
   addInsertRow: (tabId: string) => void
   updateInsertCell: (tabId: string, localId: string, column: string, value: string) => void
   removeInsertRow: (tabId: string, localId: string) => void
-  stageDelete: (tabId: string, rowKey: string, pkValues: Record<string, unknown>) => void
   setSelectedRows: (tabId: string, indices: number[], anchor: number | null) => void
   stageDeleteMany: (
     tabId: string,
@@ -709,22 +708,6 @@ export const useAppStore = create<AppState>((set, get) => {
         selectedRowIndices: [], selectionAnchor: null,
         editError: null,
       }))
-    },
-
-    stageDelete(tabId, rowKey, pkValues) {
-      patchTableTab(tabId, (t) => {
-        const deletes = { ...t.deletes }
-        const edits = { ...t.edits }
-        if (rowKey in deletes) {
-          delete deletes[rowKey] // トグル：すでに削除ステージング済みなら取り消す
-        } else {
-          deletes[rowKey] = pkValues
-          // 削除する行に対する UPDATE ステージは無意味（DELETE 後の UPDATE は 0 行）なので破棄し、
-          // EditBar の二重カウントや無駄な文の生成を防ぐ。
-          delete edits[rowKey]
-        }
-        return { ...t, deletes, edits, editError: null }
-      })
     },
 
     async commitEdits(tabId) {
