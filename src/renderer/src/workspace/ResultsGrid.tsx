@@ -15,6 +15,7 @@ import type {
 import { useAppStore } from '../store/useAppStore'
 import { rowKeyOf, pkValuesOf } from '../store/rowKey'
 import { toTsv } from '../lib/csv'
+import { deriveLead, nextArrowSelection } from './gridSelection'
 import styles from './ResultsGrid.module.css'
 
 type Row = Record<string, unknown>
@@ -154,6 +155,7 @@ function Grid({
   const committedRef = useRef(false)
 
   const [ctxMenu, setCtxMenu] = useState<CtxMenu | null>(null)
+  const gridWrapRef = useRef<HTMLDivElement>(null)
 
   const selectedSet = useMemo(() => new Set(selectedRowIndices), [selectedRowIndices])
 
@@ -170,6 +172,9 @@ function Grid({
   // クリック + 修飾キーから次の選択集合を計算して通知する。
   const handleRowMouseDown = (index: number, e: React.MouseEvent): void => {
     if (!onSetSelection) return
+    // 右クリック等（非左ボタン）は選択を変更しない。右クリック時の選択は onContextMenu 側で
+    // 「未選択行なら単一に畳む／選択済みなら維持」する。ここで畳むと複数選択が失われる。
+    if (e.button !== 0) return
     if (e.shiftKey) {
       e.preventDefault() // Shift+クリックでテキスト選択が走るのを防ぐ
       const anchor = selectionAnchor ?? index
@@ -218,6 +223,7 @@ function Grid({
 
   return (
     <div
+      ref={gridWrapRef}
       className={styles.gridWrap}
       tabIndex={0}
       onKeyDown={(e) => {
@@ -231,6 +237,18 @@ function Grid({
           onSetSelection(all, 0)
         } else if (e.key === 'Escape') {
           onSetSelection([], null)
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          // 上下キーで選択を移動。Shift 併用で範囲選択を拡張/縮小する（結果行のみ対象）。
+          e.preventDefault()
+          const dir = e.key === 'ArrowDown' ? 1 : -1
+          const lead = deriveLead(selectedRowIndices, selectionAnchor)
+          const next = nextArrowSelection(rowCount, selectionAnchor, lead, dir, e.shiftKey)
+          if (!next) return
+          onSetSelection(next.indices, next.anchor)
+          // アクティブ行を可視領域へスクロール
+          gridWrapRef.current
+            ?.querySelector(`tr[data-row-index="${next.lead}"]`)
+            ?.scrollIntoView({ block: 'nearest' })
         }
       }}
     >
@@ -268,6 +286,7 @@ function Grid({
             return (
               <tr
                 key={r.id}
+                data-row-index={r.index}
                 className={
                   isDeleted
                     ? styles.deleteRow
