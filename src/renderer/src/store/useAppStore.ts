@@ -459,8 +459,15 @@ export const useAppStore = create<AppState>((set, get) => {
       }
       const tab = makeTableTab(name)
       set({ tabs: [...get().tabs, tab], activeTabId: tab.id })
-      const pk = await window.api.primaryKey(name)
-      patchTableTab(tab.id, (t) => ({ ...t, primaryKey: pk.ok ? pk.data : [] }))
+      const [pk, ai] = await Promise.all([
+        window.api.primaryKey(name),
+        window.api.autoIncrementColumns(name)
+      ])
+      patchTableTab(tab.id, (t) => ({
+        ...t,
+        primaryKey: pk.ok ? pk.data : [],
+        autoIncrementColumns: ai.ok ? ai.data : []
+      }))
       await runTable(tab.id, { recount: true })
     },
 
