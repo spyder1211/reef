@@ -36,7 +36,7 @@ export default function ResultsGrid(): JSX.Element {
   const setSort = useAppStore((s) => s.setSort)
   const setCellEdit = useAppStore((s) => s.setCellEdit)
   const setCellNull = useAppStore((s) => s.setCellNull)
-  const selectRow = useAppStore((s) => s.selectRow)
+  const setSelectedRows = useAppStore((s) => s.setSelectedRows)
   const updateInsertCell = useAppStore((s) => s.updateInsertCell)
   const removeInsertRow = useAppStore((s) => s.removeInsertRow)
   const stageDelete = useAppStore((s) => s.stageDelete)
@@ -64,8 +64,11 @@ export default function ResultsGrid(): JSX.Element {
   const edits = isTable ? tab.edits : {}
   const inserts = isTable ? tab.inserts : []
   const deletes = isTable ? tab.deletes : {}
-  const selectedRowIndex = isTable ? tab.selectedRowIndex : null
-  const onSelectRow = isTable ? (index: number): void => selectRow(tab.id, index) : undefined
+  const selectedRowIndices = isTable ? tab.selectedRowIndices : []
+  const selectionAnchor = isTable ? tab.selectionAnchor : null
+  const onSetSelection = isTable
+    ? (indices: number[], anchor: number | null): void => setSelectedRows(tab.id, indices, anchor)
+    : undefined
   // quick filter はテーブルタブのみ（SQL タブはクエリを所有しないため）。主キー不要。
   const onQuickFilter = isTable
     ? (column: string, operator: FilterOperator, value: unknown): void =>
@@ -82,8 +85,10 @@ export default function ResultsGrid(): JSX.Element {
       edits={edits}
       inserts={inserts}
       deletes={deletes}
-      selectedRowIndex={selectedRowIndex}
-      onSelectRow={onSelectRow}
+      selectedRowIndices={selectedRowIndices}
+      selectionAnchor={selectionAnchor}
+      rowCount={tab.result?.rows.length ?? 0}
+      onSetSelection={onSetSelection}
       onEdit={editable ? (row, col, val) => setCellEdit(tab.id, row, col, val) : undefined}
       onNull={editable ? (row, col) => setCellNull(tab.id, row, col) : undefined}
       onUpdateInsert={
@@ -107,8 +112,10 @@ function Grid({
   edits,
   inserts,
   deletes,
-  selectedRowIndex,
-  onSelectRow,
+  selectedRowIndices,
+  selectionAnchor,
+  rowCount,
+  onSetSelection,
   onEdit,
   onNull,
   onUpdateInsert,
@@ -124,8 +131,10 @@ function Grid({
   edits: Record<string, RowEdit>
   inserts: PendingInsert[]
   deletes: Record<string, Record<string, unknown>>
-  selectedRowIndex: number | null
-  onSelectRow?: (index: number) => void
+  selectedRowIndices: number[]
+  selectionAnchor: number | null
+  rowCount: number
+  onSetSelection?: (indices: number[], anchor: number | null) => void
   onEdit?: (row: Row, column: string, value: string) => void
   onNull?: (row: Row, column: string) => void
   onUpdateInsert?: (localId: string, column: string, value: string) => void
@@ -139,6 +148,29 @@ function Grid({
   const committedRef = useRef(false)
 
   const [ctxMenu, setCtxMenu] = useState<CtxMenu | null>(null)
+
+  const selectedSet = useMemo(() => new Set(selectedRowIndices), [selectedRowIndices])
+
+  // クリック + 修飾キーから次の選択集合を計算して通知する。
+  const handleRowMouseDown = (index: number, e: React.MouseEvent): void => {
+    if (!onSetSelection) return
+    if (e.shiftKey) {
+      e.preventDefault() // Shift+クリックでテキスト選択が走るのを防ぐ
+      const anchor = selectionAnchor ?? index
+      const lo = Math.min(anchor, index)
+      const hi = Math.max(anchor, index)
+      const range: number[] = []
+      for (let i = lo; i <= hi; i++) range.push(i)
+      onSetSelection(range, anchor)
+    } else if (e.metaKey || e.ctrlKey) {
+      const next = new Set(selectedSet)
+      if (next.has(index)) next.delete(index)
+      else next.add(index)
+      onSetSelection([...next], index)
+    } else {
+      onSetSelection([index], index)
+    }
+  }
 
   // コンテキストメニューをページ外クリックで閉じる
   useEffect(() => {
@@ -169,7 +201,23 @@ function Grid({
   }
 
   return (
-    <div className={styles.gridWrap}>
+    <div
+      className={styles.gridWrap}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (editing) return // セル編集中の入力を奪わない
+        if (!onSetSelection) return
+        if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')) {
+          e.preventDefault()
+          // ⌘A は結果行のみ選択する（バルク操作対象は結果行のみ。INSERT 行はバルク対象外のため除外）
+          const all: number[] = []
+          for (let i = 0; i < rowCount; i++) all.push(i)
+          onSetSelection(all, 0)
+        } else if (e.key === 'Escape') {
+          onSetSelection([], null)
+        }
+      }}
+    >
       <table className={styles.grid}>
         <thead>
           {table.getHeaderGroups().map((hg) => (
@@ -207,11 +255,11 @@ function Grid({
                 className={
                   isDeleted
                     ? styles.deleteRow
-                    : r.index === selectedRowIndex
+                    : selectedSet.has(r.index)
                       ? styles.selected
                       : undefined
                 }
-                onClick={onSelectRow ? () => onSelectRow(r.index) : undefined}
+                onMouseDown={(e) => handleRowMouseDown(r.index, e)}
               >
                 {r.getVisibleCells().map((cell) => {
                   const colId = cell.column.id
@@ -255,7 +303,8 @@ function Grid({
                         onQuickFilter
                           ? (e) => {
                               e.preventDefault()
-                              onSelectRow?.(r.index)
+                              // 右クリック行が選択に含まれていなければ単一選択に畳む。含まれていれば選択維持。
+                              if (!selectedSet.has(r.index)) onSetSelection?.([r.index], r.index)
                               setCtxMenu({
                                 kind: 'cell',
                                 x: e.clientX,
@@ -309,13 +358,23 @@ function Grid({
           {inserts.map((insert, insertIndex) => (
             <tr
               key={insert.localId}
-              className={styles.insertRow}
-              onClick={
-                onSelectRow ? () => onSelectRow(result.rows.length + insertIndex) : undefined
+              className={
+                selectedSet.has(result.rows.length + insertIndex)
+                  ? `${styles.insertRow} ${styles.selected}`
+                  : styles.insertRow
+              }
+              onClick={() =>
+                onSetSelection?.(
+                  [result.rows.length + insertIndex],
+                  result.rows.length + insertIndex
+                )
               }
               onContextMenu={(e) => {
                 e.preventDefault()
-                onSelectRow?.(result.rows.length + insertIndex)
+                onSetSelection?.(
+                  [result.rows.length + insertIndex],
+                  result.rows.length + insertIndex
+                )
                 setCtxMenu({ kind: 'insert', x: e.clientX, y: e.clientY, localId: insert.localId })
               }}
             >

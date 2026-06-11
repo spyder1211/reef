@@ -174,7 +174,6 @@ interface AppState {
     entries: { rowKey: string; pkValues: Record<string, unknown> }[]
   ) => void
   duplicateRows: (tabId: string, rowIndices: number[]) => void
-  selectRow: (tabId: string, index: number) => void
   exportCsv: (
     tabId: string,
     opts: { scope: 'page' | 'all'; target: 'file' | 'clipboard' }
@@ -817,10 +816,6 @@ export const useAppStore = create<AppState>((set, get) => {
         }
         return { ...t, inserts: [...t.inserts, ...newInserts], editError: null }
       })
-    },
-
-    selectRow(tabId, index) {
-      patchTableTab(tabId, (t) => ({ ...t, selectedRowIndices: [index], selectionAnchor: index }))
     },
 
     async exportCsv(tabId, opts) {

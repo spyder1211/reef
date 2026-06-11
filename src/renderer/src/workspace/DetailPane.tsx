@@ -16,7 +16,7 @@ export default function DetailPane(): JSX.Element | null {
   if (!tab) return null
 
   const result = tab.result
-  const index = tab.selectedRowIndex
+  const index = tab.selectedRowIndices.length === 1 ? tab.selectedRowIndices[0] : null
   const isInsertRow = index != null && result != null && index >= result.rows.length
   const row =
     result && index != null && !isInsertRow ? (result.rows[index] as Row | undefined) : undefined
