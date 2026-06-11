@@ -38,8 +38,21 @@ export default function WorkspaceShell(): JSX.Element {
                   className={splitView ? `${styles.splitToggle} ${styles.splitOn}` : styles.splitToggle}
                   onClick={() => toggleSplitView()}
                   title={splitView ? '分割を解除' : '左右に分割して同じテーブルを見る'}
+                  aria-label={splitView ? '分割を解除' : '左右に分割'}
                 >
-                  {splitView ? '⬓ 結合' : '⬓ 分割'}
+                  <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+                    <rect
+                      x="1.5"
+                      y="2.5"
+                      width="13"
+                      height="11"
+                      rx="1.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.3"
+                    />
+                    <line x1="8" y1="2.5" x2="8" y2="13.5" stroke="currentColor" strokeWidth="1.3" />
+                  </svg>
                 </button>
               )}
               {splitView && activeKind === 'table' ? <SplitGrids /> : <ResultsGrid />}
