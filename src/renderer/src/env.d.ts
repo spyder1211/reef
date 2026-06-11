@@ -25,6 +25,7 @@ declare global {
       applyChanges: (statements: SqlStatement[]) => Promise<ApiResult<{ affectedRows: number }>>
       saveCsv: (defaultFileName: string, content: string) => Promise<ApiResult<SaveFileResult>>
       onReturnToConnections: (cb: () => void) => () => void
+      onReloadActiveTab: (cb: () => void) => () => void
       sqlImport: {
         onRequest: (cb: (req: SqlImportRequest) => void) => () => void
         start: () => Promise<ApiResult<ImportSummary>>

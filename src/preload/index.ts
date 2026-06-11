@@ -34,6 +34,13 @@ const api = {
     ipcRenderer.on('app:return-to-connections', handler)
     return () => ipcRenderer.removeListener('app:return-to-connections', handler)
   },
+  // View →「再読み込み」(Cmd+R) で発火。アクティブタブのクエリ/テーブルを再実行する。
+  // 登録解除関数を返す（React のクリーンアップ用）。
+  onReloadActiveTab: (cb: () => void): (() => void) => {
+    const handler = (): void => cb()
+    ipcRenderer.on('app:reload-active-tab', handler)
+    return () => ipcRenderer.removeListener('app:reload-active-tab', handler)
+  },
   sqlImport: {
     // File メニューからの開始要求を購読。登録解除関数を返す。
     onRequest: (cb: (req: SqlImportRequest) => void): (() => void) => {

@@ -21,6 +21,14 @@ export default function App(): JSX.Element {
     })
   }, [])
 
+  // Cmd+R（View →「再読み込み」）で現在のアクティブタブを再実行する。
+  // 未接続時やタブ未選択時は runActiveTab が何もしないため、ガード不要。
+  useEffect(() => {
+    return window.api.onReloadActiveTab(() => {
+      void useAppStore.getState().runActiveTab()
+    })
+  }, [])
+
   return (
     <>
       {status === 'connected' ? <WorkspaceShell /> : <HomeScreen />}
