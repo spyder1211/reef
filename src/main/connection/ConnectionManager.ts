@@ -53,6 +53,18 @@ export class ConnectionManager {
       .map((r) => String(r.Column_name))
   }
 
+  // auto_increment 属性を持つ列名を返す（複製時に除外して自動採番させるため）。
+  // 接続中の DB スコープ。該当無しなら []。
+  async autoIncrementColumns(table: string): Promise<string[]> {
+    if (!this.pool) throw new Error('Not connected')
+    const quoted = '`' + table.replace(/`/g, '``') + '`'
+    const [rows] = await this.pool.query(`SHOW COLUMNS FROM ${quoted}`)
+    const list = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
+    return list
+      .filter((r) => String(r.Extra ?? '').toLowerCase().includes('auto_increment'))
+      .map((r) => String(r.Field))
+  }
+
   // 複数の文を1トランザクションで適用。1つでも失敗したら全ロールバックして再 throw。
   async applyChanges(statements: SqlStatement[]): Promise<{ affectedRows: number }> {
     if (!this.pool) throw new Error('Not connected')

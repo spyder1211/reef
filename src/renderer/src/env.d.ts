@@ -21,6 +21,7 @@ declare global {
       disconnect: () => Promise<ApiResult<null>>
       listTables: () => Promise<ApiResult<string[]>>
       primaryKey: (table: string) => Promise<ApiResult<string[]>>
+      autoIncrementColumns: (table: string) => Promise<ApiResult<string[]>>
       applyChanges: (statements: SqlStatement[]) => Promise<ApiResult<{ affectedRows: number }>>
       saveCsv: (defaultFileName: string, content: string) => Promise<ApiResult<SaveFileResult>>
       onReturnToConnections: (cb: () => void) => () => void

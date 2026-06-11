@@ -14,6 +14,8 @@ import type {
 } from '../../../shared/types'
 import { useAppStore } from '../store/useAppStore'
 import { rowKeyOf, pkValuesOf } from '../store/rowKey'
+import { toTsv } from '../lib/csv'
+import { deriveLead, nextArrowSelection } from './gridSelection'
 import styles from './ResultsGrid.module.css'
 
 type Row = Record<string, unknown>
@@ -25,9 +27,6 @@ type CtxMenu =
       y: number
       column: string
       value: unknown
-      rowKey: string
-      pkValues: Record<string, unknown>
-      isDeleted: boolean
     }
   | { kind: 'insert'; x: number; y: number; localId: string }
 
@@ -36,10 +35,11 @@ export default function ResultsGrid(): JSX.Element {
   const setSort = useAppStore((s) => s.setSort)
   const setCellEdit = useAppStore((s) => s.setCellEdit)
   const setCellNull = useAppStore((s) => s.setCellNull)
-  const selectRow = useAppStore((s) => s.selectRow)
+  const setSelectedRows = useAppStore((s) => s.setSelectedRows)
   const updateInsertCell = useAppStore((s) => s.updateInsertCell)
   const removeInsertRow = useAppStore((s) => s.removeInsertRow)
-  const stageDelete = useAppStore((s) => s.stageDelete)
+  const stageDeleteMany = useAppStore((s) => s.stageDeleteMany)
+  const duplicateRows = useAppStore((s) => s.duplicateRows)
   const quickFilter = useAppStore((s) => s.quickFilter)
 
   if (!tab) return <div className={styles.placeholder} />
@@ -64,8 +64,11 @@ export default function ResultsGrid(): JSX.Element {
   const edits = isTable ? tab.edits : {}
   const inserts = isTable ? tab.inserts : []
   const deletes = isTable ? tab.deletes : {}
-  const selectedRowIndex = isTable ? tab.selectedRowIndex : null
-  const onSelectRow = isTable ? (index: number): void => selectRow(tab.id, index) : undefined
+  const selectedRowIndices = isTable ? tab.selectedRowIndices : []
+  const selectionAnchor = isTable ? tab.selectionAnchor : null
+  const onSetSelection = isTable
+    ? (indices: number[], anchor: number | null): void => setSelectedRows(tab.id, indices, anchor)
+    : undefined
   // quick filter はテーブルタブのみ（SQL タブはクエリを所有しないため）。主キー不要。
   const onQuickFilter = isTable
     ? (column: string, operator: FilterOperator, value: unknown): void =>
@@ -82,16 +85,23 @@ export default function ResultsGrid(): JSX.Element {
       edits={edits}
       inserts={inserts}
       deletes={deletes}
-      selectedRowIndex={selectedRowIndex}
-      onSelectRow={onSelectRow}
+      selectedRowIndices={selectedRowIndices}
+      selectionAnchor={selectionAnchor}
+      rowCount={tab.result?.rows.length ?? 0}
+      onSetSelection={onSetSelection}
       onEdit={editable ? (row, col, val) => setCellEdit(tab.id, row, col, val) : undefined}
       onNull={editable ? (row, col) => setCellNull(tab.id, row, col) : undefined}
       onUpdateInsert={
         editable ? (localId, col, val) => updateInsertCell(tab.id, localId, col, val) : undefined
       }
       onRemoveInsert={editable ? (localId) => removeInsertRow(tab.id, localId) : undefined}
-      onStageDelete={
-        editable ? (rowKey, pkValues) => stageDelete(tab.id, rowKey, pkValues) : undefined
+      onStageDeleteMany={
+        editable
+          ? (entries): void => stageDeleteMany(tab.id, entries)
+          : undefined
+      }
+      onDuplicateRows={
+        editable ? (indices): void => duplicateRows(tab.id, indices) : undefined
       }
       onQuickFilter={onQuickFilter}
     />
@@ -107,13 +117,16 @@ function Grid({
   edits,
   inserts,
   deletes,
-  selectedRowIndex,
-  onSelectRow,
+  selectedRowIndices,
+  selectionAnchor,
+  rowCount,
+  onSetSelection,
   onEdit,
   onNull,
   onUpdateInsert,
   onRemoveInsert,
-  onStageDelete,
+  onStageDeleteMany,
+  onDuplicateRows,
   onQuickFilter
 }: {
   result: QueryResult
@@ -124,13 +137,16 @@ function Grid({
   edits: Record<string, RowEdit>
   inserts: PendingInsert[]
   deletes: Record<string, Record<string, unknown>>
-  selectedRowIndex: number | null
-  onSelectRow?: (index: number) => void
+  selectedRowIndices: number[]
+  selectionAnchor: number | null
+  rowCount: number
+  onSetSelection?: (indices: number[], anchor: number | null) => void
   onEdit?: (row: Row, column: string, value: string) => void
   onNull?: (row: Row, column: string) => void
   onUpdateInsert?: (localId: string, column: string, value: string) => void
   onRemoveInsert?: (localId: string) => void
-  onStageDelete?: (rowKey: string, pkValues: Record<string, unknown>) => void
+  onStageDeleteMany?: (entries: { rowKey: string; pkValues: Record<string, unknown> }[]) => void
+  onDuplicateRows?: (indices: number[]) => void
   onQuickFilter?: (column: string, operator: FilterOperator, value: unknown) => void
 }): JSX.Element {
   const [editing, setEditing] = useState<{ rowKey: string; column: string } | null>(null)
@@ -139,6 +155,43 @@ function Grid({
   const committedRef = useRef(false)
 
   const [ctxMenu, setCtxMenu] = useState<CtxMenu | null>(null)
+  const gridWrapRef = useRef<HTMLDivElement>(null)
+
+  const selectedSet = useMemo(() => new Set(selectedRowIndices), [selectedRowIndices])
+
+  const copySelectedRows = (indices: number[]): void => {
+    const colNames = result.columns.map((c) => c.name)
+    const rows = indices
+      .filter((i) => i < result.rows.length)
+      .sort((a, b) => a - b)
+      .map((i) => result.rows[i] as Row)
+    if (rows.length === 0) return
+    void navigator.clipboard.writeText(toTsv(colNames, rows))
+  }
+
+  // クリック + 修飾キーから次の選択集合を計算して通知する。
+  const handleRowMouseDown = (index: number, e: React.MouseEvent): void => {
+    if (!onSetSelection) return
+    // 右クリック等（非左ボタン）は選択を変更しない。右クリック時の選択は onContextMenu 側で
+    // 「未選択行なら単一に畳む／選択済みなら維持」する。ここで畳むと複数選択が失われる。
+    if (e.button !== 0) return
+    if (e.shiftKey) {
+      e.preventDefault() // Shift+クリックでテキスト選択が走るのを防ぐ
+      const anchor = selectionAnchor ?? index
+      const lo = Math.min(anchor, index)
+      const hi = Math.max(anchor, index)
+      const range: number[] = []
+      for (let i = lo; i <= hi; i++) range.push(i)
+      onSetSelection(range, anchor)
+    } else if (e.metaKey || e.ctrlKey) {
+      const next = new Set(selectedSet)
+      if (next.has(index)) next.delete(index)
+      else next.add(index)
+      onSetSelection([...next], index)
+    } else {
+      onSetSelection([index], index)
+    }
+  }
 
   // コンテキストメニューをページ外クリックで閉じる
   useEffect(() => {
@@ -169,7 +222,36 @@ function Grid({
   }
 
   return (
-    <div className={styles.gridWrap}>
+    <div
+      ref={gridWrapRef}
+      className={styles.gridWrap}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (editing) return // セル編集中の入力を奪わない
+        if (!onSetSelection) return
+        if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')) {
+          e.preventDefault()
+          // ⌘A は結果行のみ選択する（バルク操作対象は結果行のみ。INSERT 行はバルク対象外のため除外）
+          const all: number[] = []
+          for (let i = 0; i < rowCount; i++) all.push(i)
+          onSetSelection(all, 0)
+        } else if (e.key === 'Escape') {
+          onSetSelection([], null)
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          // 上下キーで選択を移動。Shift 併用で範囲選択を拡張/縮小する（結果行のみ対象）。
+          e.preventDefault()
+          const dir = e.key === 'ArrowDown' ? 1 : -1
+          const lead = deriveLead(selectedRowIndices, selectionAnchor)
+          const next = nextArrowSelection(rowCount, selectionAnchor, lead, dir, e.shiftKey)
+          if (!next) return
+          onSetSelection(next.indices, next.anchor)
+          // アクティブ行を可視領域へスクロール
+          gridWrapRef.current
+            ?.querySelector(`tr[data-row-index="${next.lead}"]`)
+            ?.scrollIntoView({ block: 'nearest' })
+        }
+      }}
+    >
       <table className={styles.grid}>
         <thead>
           {table.getHeaderGroups().map((hg) => (
@@ -204,14 +286,15 @@ function Grid({
             return (
               <tr
                 key={r.id}
+                data-row-index={r.index}
                 className={
                   isDeleted
                     ? styles.deleteRow
-                    : r.index === selectedRowIndex
+                    : selectedSet.has(r.index)
                       ? styles.selected
                       : undefined
                 }
-                onClick={onSelectRow ? () => onSelectRow(r.index) : undefined}
+                onMouseDown={(e) => handleRowMouseDown(r.index, e)}
               >
                 {r.getVisibleCells().map((cell) => {
                   const colId = cell.column.id
@@ -255,16 +338,14 @@ function Grid({
                         onQuickFilter
                           ? (e) => {
                               e.preventDefault()
-                              onSelectRow?.(r.index)
+                              // 右クリック行が選択に含まれていなければ単一選択に畳む。含まれていれば選択維持。
+                              if (!selectedSet.has(r.index)) onSetSelection?.([r.index], r.index)
                               setCtxMenu({
                                 kind: 'cell',
                                 x: e.clientX,
                                 y: e.clientY,
                                 column: colId,
-                                value: original[colId],
-                                rowKey,
-                                pkValues: editable ? pkValuesOf(primaryKey, original) : {},
-                                isDeleted
+                                value: original[colId]
                               })
                             }
                           : undefined
@@ -309,13 +390,23 @@ function Grid({
           {inserts.map((insert, insertIndex) => (
             <tr
               key={insert.localId}
-              className={styles.insertRow}
-              onClick={
-                onSelectRow ? () => onSelectRow(result.rows.length + insertIndex) : undefined
+              className={
+                selectedSet.has(result.rows.length + insertIndex)
+                  ? `${styles.insertRow} ${styles.selected}`
+                  : styles.insertRow
+              }
+              onClick={() =>
+                onSetSelection?.(
+                  [result.rows.length + insertIndex],
+                  result.rows.length + insertIndex
+                )
               }
               onContextMenu={(e) => {
                 e.preventDefault()
-                onSelectRow?.(result.rows.length + insertIndex)
+                onSetSelection?.(
+                  [result.rows.length + insertIndex],
+                  result.rows.length + insertIndex
+                )
                 setCtxMenu({ kind: 'insert', x: e.clientX, y: e.clientY, localId: insert.localId })
               }}
             >
@@ -437,32 +528,49 @@ function Grid({
                   </div>
                 </>
               )}
-              {onStageDelete && (
-                <>
-                  <div className={styles.ctxSep} />
-                  {ctxMenu.isDeleted ? (
+              {onStageDeleteMany && (() => {
+                // 選択中の結果行のみ対象（INSERT 行・範囲外は除外）。
+                const targets = [...selectedSet].filter((i) => i < result.rows.length).sort((a, b) => a - b)
+                if (targets.length === 0) return null
+                const entries = targets.map((i) => {
+                  const row = result.rows[i] as Row
+                  return { rowKey: rowKeyOf(primaryKey, row), pkValues: pkValuesOf(primaryKey, row) }
+                })
+                const allStaged = entries.every((e) => e.rowKey in deletes)
+                const n = targets.length
+                return (
+                  <>
+                    <div className={styles.ctxSep} />
+                    <div
+                      className={`${styles.ctxItem} ${allStaged ? '' : styles.ctxDanger}`}
+                      onClick={() => {
+                        onStageDeleteMany(entries)
+                        setCtxMenu(null)
+                      }}
+                    >
+                      {allStaged ? `削除を取り消す（${n} 行）` : `選択 ${n} 行を削除`}
+                    </div>
                     <div
                       className={styles.ctxItem}
                       onClick={() => {
-                        onStageDelete(ctxMenu.rowKey, ctxMenu.pkValues)
+                        onDuplicateRows?.(targets)
                         setCtxMenu(null)
                       }}
                     >
-                      削除を取り消す
+                      選択 {n} 行を複製
                     </div>
-                  ) : (
                     <div
-                      className={`${styles.ctxItem} ${styles.ctxDanger}`}
+                      className={styles.ctxItem}
                       onClick={() => {
-                        onStageDelete(ctxMenu.rowKey, ctxMenu.pkValues)
+                        copySelectedRows(targets)
                         setCtxMenu(null)
                       }}
                     >
-                      行を削除
+                      選択 {n} 行をコピー
                     </div>
-                  )}
-                </>
-              )}
+                  </>
+                )
+              })()}
             </>
           )}
           {ctxMenu.kind === 'insert' && (
