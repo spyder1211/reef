@@ -37,6 +37,17 @@ export function registerConnectionHandlers(
     }
   )
 
+  ipcMain.handle(
+    'connections:duplicate',
+    async (_e, id: string): Promise<ApiResult<ConnectionProfile>> => {
+      try {
+        return { ok: true, data: store.duplicate(id) }
+      } catch (err) {
+        return { ok: false, error: normalizeDbError(err) }
+      }
+    }
+  )
+
   ipcMain.handle('connections:delete', async (_e, id: string): Promise<ApiResult<null>> => {
     try {
       store.delete(id)

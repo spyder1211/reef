@@ -60,6 +60,24 @@ export class ProfileStore {
     return stripSecret(stored)
   }
 
+  // 既存接続を複製する。パスワード（暗号化済み）・タグ・所属グループも引き継ぎ、
+  // 新しい id と「… のコピー」名で元の直後に挿入する。renderer はパスワードを参照できないため、
+  // 暗号文を扱える main 側で複製する。
+  duplicate(id: string): ConnectionProfile {
+    const doc = this.deps.load()
+    const idx = doc.profiles.findIndex((p) => p.id === id)
+    if (idx < 0) throw new Error(`Profile not found: ${id}`)
+    const src = doc.profiles[idx]
+    const copy: StoredProfile = {
+      ...src,
+      id: this.deps.genId(),
+      name: `${src.name} のコピー`
+    }
+    doc.profiles.splice(idx + 1, 0, copy)
+    this.deps.persist(doc)
+    return stripSecret(copy)
+  }
+
   delete(id: string): void {
     const doc = this.deps.load()
     doc.profiles = doc.profiles.filter((p) => p.id !== id)

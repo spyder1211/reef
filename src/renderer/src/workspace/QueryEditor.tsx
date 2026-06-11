@@ -1,6 +1,7 @@
 import CodeMirror from '@uiw/react-codemirror'
 import { sql, MySQL } from '@codemirror/lang-sql'
 import { keymap } from '@codemirror/view'
+import { Prec } from '@codemirror/state'
 import { useMemo } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import styles from './QueryEditor.module.css'
@@ -19,15 +20,19 @@ export default function QueryEditor(): JSX.Element | null {
   const extensions = useMemo(
     () => [
       sql({ dialect: MySQL }),
-      keymap.of([
-        {
-          key: 'Mod-Enter',
-          run: () => {
-            void runActiveTab()
-            return true
+      // Prec.highest で basicSetup の defaultKeymap（Mod-Enter=insertBlankLine）に勝たせる。
+      // これが無いと Cmd+Enter が空行挿入に奪われ、実行されない。
+      Prec.highest(
+        keymap.of([
+          {
+            key: 'Mod-Enter',
+            run: () => {
+              void runActiveTab()
+              return true
+            }
           }
-        }
-      ])
+        ])
+      )
     ],
     [runActiveTab]
   )

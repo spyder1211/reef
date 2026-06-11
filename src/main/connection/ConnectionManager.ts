@@ -3,6 +3,7 @@ import type { Connection as Mysql2Connection } from 'mysql2'
 import type { ConnectionConfig, QueryResult, SqlStatement } from '../../shared/types'
 import { extractTableNames } from './extractTableNames'
 import { fieldTypeName } from './mysqlTypes'
+import { SqlStatementSplitter } from '../import/sqlStatementSplitter'
 
 export class ConnectionManager {
   private pool: mysql.Pool | null = null
@@ -35,6 +36,25 @@ export class ConnectionManager {
       return { name: ff.name, type: typeof ff.type === 'number' ? fieldTypeName(ff.type) : undefined }
     })
     return { columns, rows: dataRows, rowCount: dataRows.length, durationMs }
+  }
+
+  // SQL エディタ用：入力全体を ; で文単位に分割し、先頭から順に実行する。
+  // mysql2 の multipleStatements は無効なので、1回の Cmd+Enter で複数文を流すにはここで分割する。
+  // 表示するのは最後の文の結果（複数 SELECT のうち最後）。所要時間は全文の合計。
+  // 途中の文が失敗したら即 throw し、以降の文は実行しない（autocommit のため既実行分は確定済み）。
+  // ※ splitter はコメントを除去するため、実行 SQL からコメントは取り除かれる。
+  async queryScript(sql: string): Promise<QueryResult> {
+    if (!this.pool) throw new Error('Not connected')
+    const splitter = new SqlStatementSplitter()
+    const statements = [...splitter.push(sql), ...splitter.end()]
+    // 空入力やコメントのみはエラーにせず空結果を返す。
+    if (statements.length === 0) return { columns: [], rows: [], rowCount: 0, durationMs: 0 }
+    const start = Date.now()
+    let last: QueryResult = { columns: [], rows: [], rowCount: 0, durationMs: 0 }
+    for (const stmt of statements) {
+      last = await this.query(stmt)
+    }
+    return { ...last, durationMs: Date.now() - start }
   }
 
   async listTables(): Promise<string[]> {
