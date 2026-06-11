@@ -8,20 +8,16 @@
   flex-direction: column;
   min-width: 0;
 }
-/* グリッド領域。ResultsGrid / SplitGrids（どちらも flex:1）を内包し、
-   右上に分割トグルを浮かせるため position:relative。 */
-.gridArea {
-  flex: 1;
+/* グリッド上部の固定ツールバー行。分割トグルを Apply ボタンの下あたりに右寄せで置く。
+   グリッド本体の上に通常フローで配置するため、sticky なテーブルヘッダーと重ならない。 */
+.gridToolbar {
+  flex-shrink: 0;
   display: flex;
-  flex-direction: column;
-  min-height: 0;
-  position: relative;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 3px 14px;
 }
 .splitToggle {
-  position: absolute;
-  top: 6px;
-  right: 14px;
-  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -33,11 +29,8 @@
   color: var(--text-muted);
   border-radius: 6px;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-  opacity: 0.85;
 }
 .splitToggle:hover {
-  opacity: 1;
   background: var(--bg-subtle);
 }
 .splitOn {

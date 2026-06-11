@@ -32,8 +32,8 @@ export default function WorkspaceShell(): JSX.Element {
         ) : (
           <>
             {activeKind === 'table' ? <FilterBar /> : <QueryEditor />}
-            <div className={styles.gridArea}>
-              {activeKind === 'table' && (
+            {activeKind === 'table' && (
+              <div className={styles.gridToolbar}>
                 <button
                   className={splitView ? `${styles.splitToggle} ${styles.splitOn}` : styles.splitToggle}
                   onClick={() => toggleSplitView()}
@@ -54,9 +54,9 @@ export default function WorkspaceShell(): JSX.Element {
                     <line x1="8" y1="2.5" x2="8" y2="13.5" stroke="currentColor" strokeWidth="1.3" />
                   </svg>
                 </button>
-              )}
-              {splitView && activeKind === 'table' ? <SplitGrids /> : <ResultsGrid />}
-            </div>
+              </div>
+            )}
+            {splitView && activeKind === 'table' ? <SplitGrids /> : <ResultsGrid />}
             {activeKind === 'table' && <EditBar />}
             {activeKind === 'table' && <Pager />}
             <StatusBar />
