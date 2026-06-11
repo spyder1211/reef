@@ -123,6 +123,7 @@ interface AppState {
   tabs: Tab[]
   activeTabId: string | null
   detailOpen: boolean
+  splitView: boolean
   formOpen: boolean
   editingId: string | null
 
@@ -179,6 +180,7 @@ interface AppState {
     opts: { scope: 'page' | 'all'; target: 'file' | 'clipboard' }
   ) => Promise<ExportCsvResult>
   toggleDetail: () => void
+  toggleSplitView: () => void
 }
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -285,6 +287,7 @@ export const useAppStore = create<AppState>((set, get) => {
     tabs: [],
     activeTabId: null,
     detailOpen: true,
+    splitView: false,
     formOpen: false,
     editingId: null,
 
@@ -879,6 +882,10 @@ export const useAppStore = create<AppState>((set, get) => {
 
     toggleDetail() {
       set({ detailOpen: !get().detailOpen })
+    },
+
+    toggleSplitView() {
+      set({ splitView: !get().splitView })
     }
   }
 })

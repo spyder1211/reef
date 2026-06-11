@@ -8,6 +8,41 @@
   flex-direction: column;
   min-width: 0;
 }
+/* グリッド上部の固定ツールバー行。分割トグルを Apply ボタンの下あたりに右寄せで置く。
+   グリッド本体の上に通常フローで配置するため、sticky なテーブルヘッダーと重ならない。 */
+.gridToolbar {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 14px;
+}
+.toolBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.toolBtn:hover:not(:disabled) {
+  background: var(--bg-subtle);
+}
+.toolBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.toolBtnOn {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+}
 .empty {
   flex: 1;
   display: flex;

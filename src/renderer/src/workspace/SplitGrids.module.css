@@ -1,0 +1,24 @@
+.row {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  min-width: 0;
+}
+/* 各ペインは ResultsGrid（flex:1, overflow:auto）を内包する箱。
+   min-width:0 で横スクロールを各ペイン内に閉じ込める。 */
+.pane {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+}
+/* 中央の仕切り。左ペインとの境界線を兼ねる。 */
+.divider {
+  flex: 0 0 6px;
+  cursor: col-resize;
+  background: var(--border);
+  transition: background 0.12s;
+}
+.divider:hover {
+  background: var(--accent);
+}

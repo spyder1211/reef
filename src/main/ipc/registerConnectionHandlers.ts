@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, BrowserWindow } from 'electron'
 import { ConnectionManager } from '../connection/ConnectionManager'
 import { ProfileStore } from '../connection/ProfileStore'
 import { GroupStore } from '../connection/GroupStore'
@@ -57,10 +57,12 @@ export function registerConnectionHandlers(
     }
   })
 
-  ipcMain.handle('connections:connect', async (_e, id: string): Promise<ApiResult<null>> => {
+  ipcMain.handle('connections:connect', async (e, id: string): Promise<ApiResult<null>> => {
     try {
       const config = store.getConnectConfig(id)
       await manager.connect(config)
+      // 接続成功でテーブル一覧画面へ遷移する。作業領域いっぱいにウィンドウを最大化する。
+      BrowserWindow.fromWebContents(e.sender)?.maximize()
       return { ok: true, data: null }
     } catch (err) {
       return { ok: false, error: normalizeDbError(err) }
