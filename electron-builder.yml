@@ -8,9 +8,13 @@ directories:
 files:
   - out/**/*
   - package.json
+# パック後にバンドル全体を ad-hoc 署名し直す（未署名配布時の「壊れている」エラー緩和）。
+afterPack: build/afterPack.cjs
 mac:
   target:
     - dmg
+  # アプリアイコン。build/ は buildResources なので自動検出もされるが明示する。
+  icon: build/icon.icns
   # 署名なし。arm64 でローカル実行できるよう electron-builder が ad-hoc 署名を行う。
   identity: null
   category: public.app-category.developer-tools

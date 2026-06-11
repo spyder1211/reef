@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu } from 'electron'
 import { join } from 'path'
+import { existsSync } from 'fs'
 import { ConnectionManager } from './connection/ConnectionManager'
 import { registerDbHandlers } from './ipc/registerDbHandlers'
 import { registerConnectionHandlers } from './ipc/registerConnectionHandlers'
@@ -12,6 +13,13 @@ import { buildAppMenu } from './menu'
 // dev/prod を問わず確実に反映させるため明示設定する（package.json の
 // productName はビルド時のバンドル名用で、ランタイムの解決に依存しないようにする）。
 app.setName('Table++')
+
+// dev モードの Dock アイコン。パッケージ版は .icns がバンドルに焼き込まれるため不要だが、
+// electron-vite dev では Electron 既定アイコンになるので、リポジトリの build/icon.png を使う。
+if (process.env['ELECTRON_RENDERER_URL'] && process.platform === 'darwin') {
+  const devIcon = join(__dirname, '../../build/icon.png')
+  if (existsSync(devIcon)) app.dock?.setIcon(devIcon)
+}
 
 // 明示的なアプリ終了（Cmd+Q / quit ロール）中かどうか。
 // quit も window の close を経由するため、これを見て「閉じるボタン」と区別する。
