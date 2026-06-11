@@ -15,9 +15,10 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: 6px;
   padding: 3px 14px;
 }
-.splitToggle {
+.toolBtn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -30,14 +31,17 @@
   border-radius: 6px;
   cursor: pointer;
 }
-.splitToggle:hover {
+.toolBtn:hover:not(:disabled) {
   background: var(--bg-subtle);
 }
-.splitOn {
+.toolBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.toolBtnOn {
   background: var(--accent);
   color: var(--accent-fg);
   border-color: var(--accent);
-  opacity: 1;
 }
 .empty {
   flex: 1;
