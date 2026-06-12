@@ -130,4 +130,45 @@ describe('ProfileStore', () => {
     store.delete(a.id)
     expect(doc.groups).toEqual([{ id: 'g1', name: 'G', order: 0 }])
   })
+
+  it('SSH 設定を保存し、list では password/passphrase を返さない', () => {
+    const saved = s.save({
+      name: 'with-ssh', tag: 'staging', host: 'db', port: 3306, user: 'u', password: 'p',
+      ssh: { enabled: true, host: 'bastion', port: 22, user: 'ec2-user', authMethod: 'password', password: 'sshpw' }
+    })
+    const listed = s.list().find((p) => p.id === saved.id)
+    expect(listed?.ssh).toMatchObject({ enabled: true, host: 'bastion', user: 'ec2-user', authMethod: 'password' })
+    expect((listed?.ssh as Record<string, unknown>).password).toBeUndefined()
+    expect((listed?.ssh as Record<string, unknown>).passphrase).toBeUndefined()
+  })
+
+  it('getConnectConfig は SSH パスワード/パスフレーズを復号して返す', () => {
+    const saved = s.save({
+      name: 'with-ssh', tag: 'staging', host: 'db', port: 3306, user: 'u', password: 'p',
+      ssh: { enabled: true, host: 'bastion', port: 22, user: 'ec2-user', authMethod: 'privateKey', privateKeyPath: '/k', passphrase: 'pp' }
+    })
+    const cfg = s.getConnectConfig(saved.id)
+    expect(cfg.ssh).toMatchObject({ enabled: true, host: 'bastion', authMethod: 'privateKey', privateKeyPath: '/k', passphrase: 'pp' })
+  })
+
+  it('更新時に SSH パスワードが空なら既存の暗号文を保持する', () => {
+    const a = s.save({
+      name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'p',
+      ssh: { enabled: true, host: 'b', port: 22, user: 'u', authMethod: 'password', password: 'sshpw' }
+    })
+    s.save({
+      id: a.id, name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: '',
+      ssh: { enabled: true, host: 'b', port: 22, user: 'u', authMethod: 'password', password: '' }
+    })
+    expect(s.getConnectConfig(a.id).ssh?.password).toBe('sshpw')
+  })
+
+  it('duplicate は SSH 設定（暗号文含む）を引き継ぐ', () => {
+    const a = s.save({
+      name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'p',
+      ssh: { enabled: true, host: 'b', port: 22, user: 'u', authMethod: 'password', password: 'sshpw' }
+    })
+    const copy = s.duplicate(a.id)
+    expect(s.getConnectConfig(copy.id).ssh?.password).toBe('sshpw')
+  })
 })
