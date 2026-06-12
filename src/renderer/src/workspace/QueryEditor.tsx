@@ -4,6 +4,7 @@ import { keymap } from '@codemirror/view'
 import { Prec } from '@codemirror/state'
 import { useMemo } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { useColorScheme } from '../lib/useColorScheme'
 import styles from './QueryEditor.module.css'
 
 export default function QueryEditor(): JSX.Element | null {
@@ -17,6 +18,7 @@ export default function QueryEditor(): JSX.Element | null {
   const explainActiveTab = useAppStore((s) => s.explainActiveTab)
   // 補完用のテーブル→カラムマップ。接続時/テーブル変更時のみ更新される（打鍵では変わらない）。
   const schemaMap = useAppStore((s) => s.schemaMap)
+  const scheme = useColorScheme()
 
   // extensions は安定参照にする（毎レンダー再生成すると CodeMirror が打鍵ごとに reconfigure する）。
   // runActiveTab は zustand の安定参照。schemaMap は接続後にほぼ不変なので再生成は実質起きない。
@@ -55,7 +57,7 @@ export default function QueryEditor(): JSX.Element | null {
         key={activeTabId ?? 'none'}
         value={tab.sql}
         height="100%"
-        theme="light"
+        theme={scheme}
         extensions={extensions}
         basicSetup={{ lineNumbers: true, highlightActiveLine: true }}
         onChange={(value) => setTabSql(tab.id, value)}

@@ -42,10 +42,10 @@
 .connError {
   margin: 0 16px 12px;
   padding: 8px 12px;
-  background: #fff0f0;
-  border: 1px solid #ffd5d5;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
   border-radius: var(--radius);
-  color: #b91c1c;
+  color: var(--danger);
   font-size: 12px;
 }
 .groupInput {

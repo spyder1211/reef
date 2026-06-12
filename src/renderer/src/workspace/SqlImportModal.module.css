@@ -1,7 +1,7 @@
 .backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,12 +11,12 @@
 .modal {
   width: 460px;
   max-width: calc(100vw - 48px);
-  background: #fff;
+  background: var(--menu-bg);
   border-radius: 10px;
   padding: 20px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 40px var(--shadow);
   font-size: 13px;
-  color: #1d1d1f;
+  color: var(--text);
 }
 
 .title {
@@ -33,17 +33,17 @@
 }
 
 .k {
-  color: #6e6e73;
+  color: var(--text-muted);
 }
 
 .warn {
   margin: 12px 0;
   padding: 10px 12px;
-  background: #fff4e5;
-  border: 1px solid #ffd8a8;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
   border-radius: 6px;
   line-height: 1.5;
-  color: #8a5a00;
+  color: var(--warning);
 }
 
 .actions {
@@ -64,23 +64,23 @@
 }
 
 .btn {
-  background: #e8e8ed;
-  color: #1d1d1f;
+  background: var(--bg-subtle);
+  color: var(--text);
 }
 
 .btnPrimary {
-  background: #0071e3;
-  color: #fff;
+  background: var(--accent);
+  color: var(--bg);
 }
 
 .btnDanger {
-  background: #d70015;
-  color: #fff;
+  background: var(--danger-strong);
+  color: var(--bg);
 }
 
 .bar {
   height: 8px;
-  background: #e8e8ed;
+  background: var(--bg-subtle);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 12px;
@@ -88,14 +88,14 @@
 
 .barFill {
   height: 100%;
-  background: #0071e3;
+  background: var(--accent);
   transition: width 0.15s ease;
 }
 
 .preview {
   margin-top: 8px;
   padding: 8px 10px;
-  background: #f5f5f7;
+  background: var(--bg-subtle);
   border-radius: 6px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
@@ -107,18 +107,18 @@
 
 .ok {
   padding: 10px 12px;
-  background: #e6f4ea;
-  border: 1px solid #b7e1c2;
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
   border-radius: 6px;
-  color: #137333;
+  color: var(--success);
 }
 
 .error {
   padding: 10px 12px;
-  background: #fce8e6;
-  border: 1px solid #f5c2c0;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
   border-radius: 6px;
-  color: #c5221f;
+  color: var(--danger);
   line-height: 1.5;
 }
 

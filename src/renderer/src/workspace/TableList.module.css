@@ -44,11 +44,11 @@
   text-align: left;
 }
 .row:hover {
-  background: #e9e9ee;
+  background: var(--bg-subtle);
 }
 .active,
 .active:hover {
-  background: rgba(10, 108, 255, 0.12);
+  background: var(--selected-bg);
 }
 .icon {
   color: var(--text-faint);
@@ -60,7 +60,7 @@
   white-space: nowrap;
 }
 .hl {
-  background: rgba(10, 108, 255, 0.22);
+  background: var(--selected-bg);
   color: inherit;
   border-radius: 3px;
   padding: 0 1px;
@@ -73,10 +73,10 @@
 
 .ctxMenu {
   position: fixed;
-  background: #fff;
-  border: 1px solid #ddd;
+  background: var(--menu-bg);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4px 16px var(--shadow);
   padding: 4px 0;
   z-index: 1000;
   min-width: 200px;
@@ -89,17 +89,17 @@
 }
 
 .ctxItem:hover {
-  background: #2f7bf6;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-fg);
 }
 
 .ctxDanger {
-  color: #ff3b30;
+  color: var(--danger);
 }
 
 .ctxDanger:hover {
-  background: #ff3b30 !important;
-  color: #fff !important;
+  background: var(--danger-strong) !important;
+  color: var(--accent-fg) !important;
 }
 
 .ctxSep {

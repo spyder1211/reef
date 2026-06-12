@@ -40,5 +40,5 @@
   text-align: left;
 }
 .back:hover {
-  background: #e9e9ee;
+  background: var(--bg-subtle);
 }

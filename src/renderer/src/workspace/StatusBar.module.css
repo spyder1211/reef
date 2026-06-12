@@ -30,7 +30,7 @@
   cursor: pointer;
 }
 .toggleOn {
-  background: #eef4ff;
-  border-color: #2f7bf6;
-  color: #2f7bf6;
+  background: var(--selected-bg);
+  border-color: var(--accent);
+  color: var(--accent);
 }

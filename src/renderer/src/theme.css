@@ -1,4 +1,6 @@
 :root {
+  color-scheme: light dark; /* ネイティブ部品（スクロールバー・フォーム等）も OS 外観に追従させる */
+
   --bg: #ffffff;
   --bg-sidebar: #f5f5f7;
   --bg-rail: #f0f0f2;
@@ -9,12 +11,73 @@
   --text-muted: #86868b;
   --text-faint: #9a9aa0;
   --accent: #0a6cff;
+  --accent-hover: #0060e0;
   --accent-fg: #ffffff;
   --row-alt: #fafafb;
+
+  /* ポップオーバー/モーダル/オーバーレイ */
+  --menu-bg: #ffffff;
+  --overlay: rgba(0, 0, 0, 0.18);
+  --shadow: rgba(0, 0, 0, 0.18);
+
+  /* セルの状態色 */
+  --selected-bg: #e6f0ff; /* 選択行/セル */
+  --dirty-bg: #fff3cd; /* 編集ステージング中セル */
+  --dirty-border: #ffcf33;
+
+  /* セマンティック（危険・成功・警告） */
+  --danger: #c0392b;
+  --danger-strong: #ff3b30; /* 削除など強い操作 */
+  --danger-bg: #fdecea;
+  --danger-border: #ffd5d5;
+  --success: #137333;
+  --success-bg: #f0fff4;
+  --success-border: #34c759;
+  --warning: #8a5a00;
+  --warning-bg: #fff4e5;
+  --warning-border: #ffd8a8;
+
   --radius: 8px;
   --radius-lg: 12px;
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "SF Mono", Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1e1e1e;
+    --bg-sidebar: #252526;
+    --bg-rail: #2d2d30;
+    --bg-subtle: #2a2a2d;
+    --border: #3c3c42;
+    --border-soft: #343438;
+    --text: #e4e4e6;
+    --text-muted: #9a9aa0;
+    --text-faint: #76767c;
+    --accent: #4d9fff;
+    --accent-hover: #3d8ae6;
+    --accent-fg: #ffffff;
+    --row-alt: #242427;
+
+    --menu-bg: #2a2a2e;
+    --overlay: rgba(0, 0, 0, 0.5);
+    --shadow: rgba(0, 0, 0, 0.5);
+
+    --selected-bg: #243044;
+    --dirty-bg: #4a4326;
+    --dirty-border: #b89a2e;
+
+    --danger: #ff6b5e;
+    --danger-strong: #ff5b50;
+    --danger-bg: #3a2422;
+    --danger-border: #5a2f2c;
+    --success: #4ade80;
+    --success-bg: #1f3a28;
+    --success-border: #2e7d4f;
+    --warning: #e0a843;
+    --warning-bg: #3a2f1c;
+    --warning-border: #5a4420;
+  }
 }
 
 * { box-sizing: border-box; }

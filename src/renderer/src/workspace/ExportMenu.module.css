@@ -13,7 +13,7 @@
   font-size: 12px;
 }
 .btn:hover {
-  background: #e9e9ee;
+  background: var(--bg-subtle);
 }
 .btn:disabled {
   opacity: 0.4;
@@ -26,10 +26,10 @@
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  background: #fff;
-  border: 1px solid #ddd;
+  background: var(--menu-bg);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4px 16px var(--shadow);
   padding: 4px 0;
   z-index: 1000;
   min-width: 180px;
@@ -41,12 +41,12 @@
   white-space: nowrap;
 }
 .item:hover {
-  background: #2f7bf6;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-fg);
 }
 .sep {
   height: 1px;
-  background: #eee;
+  background: var(--bg-subtle);
   margin: 4px 0;
 }
 .msg {
