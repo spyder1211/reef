@@ -7,6 +7,7 @@ import ResultsGrid from './ResultsGrid'
 import SplitGrids from './SplitGrids'
 import SchemaView from './SchemaView'
 import HistoryPanel from './HistoryPanel'
+import SqlExportButton from './SqlExportButton'
 import EditBar from './EditBar'
 import Pager from './Pager'
 import StatusBar from './StatusBar'
@@ -117,6 +118,7 @@ export default function WorkspaceShell(): JSX.Element {
             )}
             {activeKind === 'sql' && (
               <div className={styles.sqlToolbar}>
+                <SqlExportButton />
                 <button
                   className={historyOpen ? `${styles.toolBtn} ${styles.toolBtnOn}` : styles.toolBtn}
                   onClick={() => toggleHistory()}

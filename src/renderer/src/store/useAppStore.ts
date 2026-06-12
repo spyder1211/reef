@@ -191,6 +191,7 @@ interface AppState {
     tabId: string,
     opts: { scope: 'page' | 'all'; target: 'file' | 'clipboard' }
   ) => Promise<ExportCsvResult>
+  exportSqlResultCsv: (tabId: string) => Promise<ExportCsvResult>
   toggleDetail: () => void
   toggleSplitView: () => void
   toggleHistory: () => void
@@ -952,6 +953,25 @@ export const useAppStore = create<AppState>((set, get) => {
       // target: 'file'
       try {
         const res = await window.api.saveCsv(`${tab.tableName}.csv`, csv)
+        if (!res.ok) return { ok: false, message: res.error.message }
+        if (res.data.canceled) return { ok: true, canceled: true, message: '' }
+        const name = res.data.filePath?.split('/').pop() ?? res.data.filePath ?? ''
+        return { ok: true, message: `保存しました: ${name}` }
+      } catch (err) {
+        return { ok: false, message: err instanceof Error ? err.message : String(err) }
+      }
+    },
+
+    // SQL タブの現在の結果を CSV 保存する。結果が無ければ何もしない。
+    async exportSqlResultCsv(tabId) {
+      const tab = get().tabs.find((t) => t.id === tabId)
+      if (!tab || tab.kind !== 'sql' || !tab.result || tab.result.rows.length === 0) {
+        return { ok: false, message: 'エクスポートする結果がありません' }
+      }
+      const columns = tab.result.columns.map((c) => c.name)
+      const csv = toCsv(columns, tab.result.rows)
+      try {
+        const res = await window.api.saveCsv(`${tab.title}.csv`, csv)
         if (!res.ok) return { ok: false, message: res.error.message }
         if (res.data.canceled) return { ok: true, canceled: true, message: '' }
         const name = res.data.filePath?.split('/').pop() ?? res.data.filePath ?? ''
