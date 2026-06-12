@@ -1,11 +1,30 @@
 import { useState, type ReactNode } from 'react'
-import type { AppError, ConnectionProfileInput, ConnectionTag } from '../../../shared/types'
+import type {
+  AppError,
+  ConnectionProfileInput,
+  ConnectionTag,
+  SshSettings
+} from '../../../shared/types'
 import { useAppStore } from '../store/useAppStore'
 import { TAG_ORDER, TAG_COLORS, TAG_LABELS } from '../lib/tags'
 import styles from './ConnectionFormModal.module.css'
 
 function initialForm(): ConnectionProfileInput {
   return { name: '', tag: 'local', host: '127.0.0.1', port: 3306, user: 'root', password: '', database: '' }
+}
+
+// SSH 設定の既定値（チェックボックス ON 時の初期状態）。
+function defaultSsh(): SshSettings {
+  return {
+    enabled: true,
+    host: '',
+    port: 22,
+    user: '',
+    authMethod: 'password',
+    password: '',
+    privateKeyPath: '',
+    passphrase: ''
+  }
 }
 
 export default function ConnectionFormModal(): JSX.Element {
@@ -26,6 +45,21 @@ export default function ConnectionFormModal(): JSX.Element {
     setForm((f) => ({ ...f, [key]: value }))
     setTestState('idle')
   }
+
+  // SSH 設定の更新。未設定なら既定値から作る。
+  function updateSsh<K extends keyof SshSettings>(key: K, value: SshSettings[K]): void {
+    setForm((f) => ({ ...f, ssh: { ...(f.ssh ?? defaultSsh()), [key]: value } }))
+    setTestState('idle')
+  }
+
+  async function handlePickKey(): Promise<void> {
+    const res = await window.api.pickPrivateKey()
+    if (res.ok && !res.data.canceled && res.data.filePath) {
+      updateSsh('privateKeyPath', res.data.filePath)
+    }
+  }
+
+  const ssh = form.ssh
 
   async function handleSave(): Promise<void> {
     setError(null)
@@ -53,7 +87,8 @@ export default function ConnectionFormModal(): JSX.Element {
       port: form.port,
       user: form.user,
       password: form.password,
-      database: form.database
+      database: form.database,
+      ssh: form.ssh
     })
     if (res.ok) {
       setTestState('ok')
@@ -124,7 +159,104 @@ export default function ConnectionFormModal(): JSX.Element {
           />
         </Field>
 
-        <div className={styles.note}>SSH トンネル / SSL は今後対応</div>
+        <Field label="SSH トンネル">
+          <label className={styles.checkRow}>
+            <input
+              type="checkbox"
+              checked={ssh?.enabled ?? false}
+              onChange={(e) => updateSsh('enabled', e.target.checked)}
+            />
+            踏み台（bastion）経由で接続する
+          </label>
+        </Field>
+
+        {ssh?.enabled && (
+          <>
+            <Field label="SSH Host">
+              <input
+                className={styles.input}
+                value={ssh.host}
+                onChange={(e) => updateSsh('host', e.target.value)}
+                placeholder="bastion.example.com"
+              />
+              <input
+                className={styles.port}
+                type="number"
+                value={ssh.port}
+                onChange={(e) => updateSsh('port', Number(e.target.value))}
+              />
+            </Field>
+
+            <Field label="SSH User">
+              <input
+                className={styles.input}
+                value={ssh.user}
+                onChange={(e) => updateSsh('user', e.target.value)}
+                placeholder="ec2-user"
+              />
+            </Field>
+
+            <Field label="認証方法">
+              <div className={styles.radioRow}>
+                <label className={styles.checkRow}>
+                  <input
+                    type="radio"
+                    name="sshAuth"
+                    checked={ssh.authMethod === 'password'}
+                    onChange={() => updateSsh('authMethod', 'password')}
+                  />
+                  パスワード
+                </label>
+                <label className={styles.checkRow}>
+                  <input
+                    type="radio"
+                    name="sshAuth"
+                    checked={ssh.authMethod === 'privateKey'}
+                    onChange={() => updateSsh('authMethod', 'privateKey')}
+                  />
+                  秘密鍵
+                </label>
+              </div>
+            </Field>
+
+            {ssh.authMethod === 'password' ? (
+              <Field label="SSH Password">
+                <input
+                  className={styles.input}
+                  type="password"
+                  value={ssh.password ?? ''}
+                  placeholder={editing ? '（変更しない場合は空欄）' : ''}
+                  onChange={(e) => updateSsh('password', e.target.value)}
+                />
+              </Field>
+            ) : (
+              <>
+                <Field label="秘密鍵">
+                  <input
+                    className={styles.input}
+                    value={ssh.privateKeyPath ?? ''}
+                    onChange={(e) => updateSsh('privateKeyPath', e.target.value)}
+                    placeholder="~/.ssh/id_ed25519"
+                  />
+                  <button type="button" className={styles.btn} onClick={() => void handlePickKey()}>
+                    選択…
+                  </button>
+                </Field>
+                <Field label="パスフレーズ">
+                  <input
+                    className={styles.input}
+                    type="password"
+                    value={ssh.passphrase ?? ''}
+                    placeholder={editing ? '（変更しない場合は空欄）' : '（任意）'}
+                    onChange={(e) => updateSsh('passphrase', e.target.value)}
+                  />
+                </Field>
+              </>
+            )}
+          </>
+        )}
+
+        <div className={styles.note}>SSL は今後対応</div>
 
         {error && (
           <div className={styles.error}>

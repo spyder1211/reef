@@ -29,6 +29,7 @@ declare global {
       schemaMap: () => Promise<ApiResult<Record<string, string[]>>>
       applyChanges: (statements: SqlStatement[]) => Promise<ApiResult<{ affectedRows: number }>>
       saveCsv: (defaultFileName: string, content: string) => Promise<ApiResult<SaveFileResult>>
+      pickPrivateKey: () => Promise<ApiResult<SaveFileResult>>
       onReturnToConnections: (cb: () => void) => () => void
       onReloadActiveTab: (cb: () => void) => () => void
       sqlImport: {

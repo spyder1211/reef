@@ -3,6 +3,7 @@ import { join } from 'path'
 import { existsSync } from 'fs'
 import { ConnectionManager } from './connection/ConnectionManager'
 import { QueryHistoryStore } from './history/QueryHistoryStore'
+import type { TunnelHolder } from './connection/connectWithTunnel'
 import { registerDbHandlers } from './ipc/registerDbHandlers'
 import { registerConnectionHandlers } from './ipc/registerConnectionHandlers'
 import { registerFileHandlers } from './ipc/registerFileHandlers'
@@ -64,9 +65,11 @@ function createWindow(manager: ConnectionManager): void {
 app.whenReady().then(() => {
   const manager = new ConnectionManager()
   const history = new QueryHistoryStore(app.getPath('userData'))
-  registerDbHandlers(manager, history)
+  // SSH トンネルを connect/disconnect ハンドラ間で共有するためのホルダ。
+  const tunnel: TunnelHolder = { current: null }
+  registerDbHandlers(manager, history, tunnel)
   const { profileStore, groupStore } = createConnectionStores()
-  registerConnectionHandlers(manager, profileStore, groupStore)
+  registerConnectionHandlers(manager, profileStore, groupStore, tunnel)
   registerFileHandlers()
   registerImportHandlers(manager)
   Menu.setApplicationMenu(buildAppMenu(manager))

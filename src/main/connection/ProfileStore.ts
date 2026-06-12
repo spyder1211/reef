@@ -1,4 +1,11 @@
-import type { ConnectionConfig, ConnectionGroup, ConnectionProfile, ConnectionProfileInput } from '../../shared/types'
+import type {
+  ConnectionConfig,
+  ConnectionGroup,
+  ConnectionProfile,
+  ConnectionProfileInput,
+  SshSettings,
+  SshSettingsPublic
+} from '../../shared/types'
 
 export interface SecretBox {
   encrypt(plain: string): string
@@ -7,6 +14,8 @@ export interface SecretBox {
 
 export interface StoredProfile extends ConnectionProfile {
   encryptedPassword: string
+  sshPasswordEnc?: string // SSH パスワードの暗号文（authMethod=password 時）
+  sshPassphraseEnc?: string // 鍵パスフレーズの暗号文（authMethod=privateKey 時）
 }
 
 // connections.json のドキュメント全体（接続とグループを同居させる）
@@ -43,6 +52,18 @@ export class ProfileStore {
     // （フォームは groupId を送らないため、DnD/move で設定した所属を消さない）
     const groupId =
       input.groupId !== undefined ? input.groupId : idx >= 0 ? profiles[idx].groupId : undefined
+    const prev = idx >= 0 ? profiles[idx] : undefined
+    // SSH 設定: 公開部のみ ssh に格納し、秘匿値（password/passphrase）は暗号化して別フィールドへ。
+    // input に ssh が無ければ既存値を保持。更新で秘匿値が空文字なら既存暗号文を保持（DB パスワードと同方式）。
+    let ssh: SshSettingsPublic | undefined = prev?.ssh
+    let sshPasswordEnc: string | undefined = prev?.sshPasswordEnc
+    let sshPassphraseEnc: string | undefined = prev?.sshPassphraseEnc
+    if (input.ssh !== undefined) {
+      const { password: sshPw, passphrase: sshPp, ...pub } = input.ssh
+      ssh = pub
+      sshPasswordEnc = sshPw ? this.deps.secret.encrypt(sshPw) : prev?.sshPasswordEnc
+      sshPassphraseEnc = sshPp ? this.deps.secret.encrypt(sshPp) : prev?.sshPassphraseEnc
+    }
     const stored: StoredProfile = {
       id,
       name: input.name,
@@ -52,7 +73,10 @@ export class ProfileStore {
       user: input.user,
       database: input.database,
       groupId,
-      encryptedPassword
+      ssh,
+      encryptedPassword,
+      sshPasswordEnc,
+      sshPassphraseEnc
     }
     if (idx >= 0) profiles[idx] = stored
     else profiles.push(stored)
@@ -95,17 +119,26 @@ export class ProfileStore {
   getConnectConfig(id: string): ConnectionConfig {
     const p = this.deps.load().profiles.find((x) => x.id === id)
     if (!p) throw new Error(`Profile not found: ${id}`)
+    // SSH 公開部に復号した秘匿値を載せて完全な SshSettings を組み立てる。
+    const ssh: SshSettings | undefined = p.ssh
+      ? {
+          ...p.ssh,
+          password: p.sshPasswordEnc ? this.deps.secret.decrypt(p.sshPasswordEnc) : undefined,
+          passphrase: p.sshPassphraseEnc ? this.deps.secret.decrypt(p.sshPassphraseEnc) : undefined
+        }
+      : undefined
     return {
       host: p.host,
       port: p.port,
       user: p.user,
       password: this.deps.secret.decrypt(p.encryptedPassword),
-      database: p.database
+      database: p.database,
+      ssh
     }
   }
 }
 
 function stripSecret(p: StoredProfile): ConnectionProfile {
-  const { encryptedPassword: _omit, ...rest } = p
+  const { encryptedPassword: _omit, sshPasswordEnc: _s1, sshPassphraseEnc: _s2, ...rest } = p
   return rest
 }

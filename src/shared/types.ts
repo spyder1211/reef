@@ -1,3 +1,18 @@
+// SSH トンネル設定。enabled=false なら他フィールドは無視される。
+export interface SshSettings {
+  enabled: boolean
+  host: string
+  port: number // 既定 22
+  user: string
+  authMethod: 'password' | 'privateKey'
+  password?: string // authMethod=password 時。保存時は暗号化される
+  privateKeyPath?: string // authMethod=privateKey 時の鍵ファイルパス
+  passphrase?: string // 鍵のパスフレーズ。保存時は暗号化される
+}
+
+// renderer へ返す形（秘匿値 password/passphrase を含めない）。
+export type SshSettingsPublic = Omit<SshSettings, 'password' | 'passphrase'>
+
 // main / preload / renderer すべてで共有する型
 export interface ConnectionConfig {
   host: string
@@ -5,6 +20,7 @@ export interface ConnectionConfig {
   user: string
   password: string
   database?: string
+  ssh?: SshSettings // SSH トンネル経由で接続する場合のみ
 }
 
 export interface QueryColumn {
@@ -49,6 +65,7 @@ export interface ConnectionProfile {
   user: string
   database?: string
   groupId?: string // 所属グループ。未設定 = 未分類
+  ssh?: SshSettingsPublic // SSH 設定（秘匿値は含めない）
 }
 
 // 保存・更新の入力（パスワードを含む。保存後はメインのみが暗号化保持）
@@ -62,6 +79,7 @@ export interface ConnectionProfileInput {
   password: string
   database?: string
   groupId?: string // 通常フォームからは送らない。DnD/move 経由で設定
+  ssh?: SshSettings // SSH 設定（password/passphrase を含む。保存時に暗号化）
 }
 
 // フィルター条件

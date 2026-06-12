@@ -4,12 +4,14 @@ import { ProfileStore } from '../connection/ProfileStore'
 import { GroupStore } from '../connection/GroupStore'
 import { validateConnectionConfig } from '../connection/validateConnectionConfig'
 import { normalizeDbError } from '../connection/normalizeDbError'
+import { connectWithTunnel, type TunnelHolder } from '../connection/connectWithTunnel'
 import type { ApiResult, ConnectionGroup, ConnectionProfile, ConnectionProfileInput } from '../../shared/types'
 
 export function registerConnectionHandlers(
   manager: ConnectionManager,
   store: ProfileStore,
-  groups: GroupStore
+  groups: GroupStore,
+  tunnel: TunnelHolder
 ): void {
   ipcMain.handle('connections:list', async (): Promise<ApiResult<ConnectionProfile[]>> => {
     try {
@@ -60,7 +62,7 @@ export function registerConnectionHandlers(
   ipcMain.handle('connections:connect', async (e, id: string): Promise<ApiResult<null>> => {
     try {
       const config = store.getConnectConfig(id)
-      await manager.connect(config)
+      await connectWithTunnel(manager, config, tunnel)
       // 接続成功でテーブル一覧画面へ遷移する。作業領域いっぱいにウィンドウを最大化する。
       BrowserWindow.fromWebContents(e.sender)?.maximize()
       return { ok: true, data: null }
