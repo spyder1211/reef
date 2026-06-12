@@ -1,6 +1,6 @@
 import mysql from 'mysql2/promise'
 import type { Connection as Mysql2Connection } from 'mysql2'
-import type { ConnectionConfig, QueryResult, SqlStatement } from '../../shared/types'
+import type { ConnectionConfig, QueryResult, SqlStatement, TableSchema } from '../../shared/types'
 import { extractTableNames } from './extractTableNames'
 import { fieldTypeName } from './mysqlTypes'
 import { SqlStatementSplitter } from '../import/sqlStatementSplitter'
@@ -83,6 +83,46 @@ export class ConnectionManager {
     return list
       .filter((r) => String(r.Extra ?? '').toLowerCase().includes('auto_increment'))
       .map((r) => String(r.Field))
+  }
+
+  // テーブル構造（カラム・インデックス・DDL）をまとめて取得する（Structure ビュー用）。
+  async tableSchema(table: string): Promise<TableSchema> {
+    if (!this.pool) throw new Error('Not connected')
+    const quoted = '`' + table.replace(/`/g, '``') + '`'
+
+    const [colRows] = await this.pool.query(`SHOW FULL COLUMNS FROM ${quoted}`)
+    const columns = (Array.isArray(colRows) ? (colRows as Record<string, unknown>[]) : []).map(
+      (r) => ({
+        name: String(r.Field),
+        type: String(r.Type),
+        nullable: String(r.Null).toUpperCase() === 'YES',
+        key: String(r.Key ?? ''),
+        default: r.Default === null || r.Default === undefined ? null : String(r.Default),
+        extra: String(r.Extra ?? ''),
+        comment: String(r.Comment ?? '')
+      })
+    )
+
+    const [idxRows] = await this.pool.query(`SHOW INDEX FROM ${quoted}`)
+    const idxList = Array.isArray(idxRows) ? (idxRows as Record<string, unknown>[]) : []
+    const byName = new Map<string, { unique: boolean; cols: { seq: number; col: string }[] }>()
+    for (const r of idxList) {
+      const name = String(r.Key_name)
+      const entry = byName.get(name) ?? { unique: Number(r.Non_unique) === 0, cols: [] }
+      entry.cols.push({ seq: Number(r.Seq_in_index), col: String(r.Column_name) })
+      byName.set(name, entry)
+    }
+    const indexes = [...byName.entries()].map(([name, e]) => ({
+      name,
+      unique: e.unique,
+      columns: e.cols.sort((a, b) => a.seq - b.seq).map((c) => c.col)
+    }))
+
+    const [ddlRows] = await this.pool.query(`SHOW CREATE TABLE ${quoted}`)
+    const ddlRow = (Array.isArray(ddlRows) ? (ddlRows as Record<string, unknown>[]) : [])[0]
+    const ddl = String(ddlRow?.['Create Table'] ?? '')
+
+    return { columns, indexes, ddl }
   }
 
   // 複数の文を1トランザクションで適用。1つでも失敗したら全ロールバックして再 throw。
