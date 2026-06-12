@@ -24,6 +24,15 @@
   align-items: center;
   gap: 6px;
 }
+/* SQL タブ用ツールバー（履歴トグルを右寄せ）。 */
+.sqlToolbar {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 14px;
+}
 /* 「データ / 構造」表示モードのセグメントトグル（左寄せ）。 */
 .viewToggle {
   display: inline-flex;

@@ -6,6 +6,7 @@ import FilterBar from './FilterBar'
 import ResultsGrid from './ResultsGrid'
 import SplitGrids from './SplitGrids'
 import SchemaView from './SchemaView'
+import HistoryPanel from './HistoryPanel'
 import EditBar from './EditBar'
 import Pager from './Pager'
 import StatusBar from './StatusBar'
@@ -23,6 +24,8 @@ export default function WorkspaceShell(): JSX.Element {
   const toggleSplitView = useAppStore((s) => s.toggleSplitView)
   const addInsertRow = useAppStore((s) => s.addInsertRow)
   const setTableView = useAppStore((s) => s.setTableView)
+  const historyOpen = useAppStore((s) => s.historyOpen)
+  const toggleHistory = useAppStore((s) => s.toggleHistory)
   // ツールバーの行追加ボタン用（主キー有無・実行中で出し分け）。
   const tableTab = useAppStore((s) => {
     const t = s.tabs.find((tt) => tt.id === s.activeTabId)
@@ -112,6 +115,22 @@ export default function WorkspaceShell(): JSX.Element {
                 )}
               </div>
             )}
+            {activeKind === 'sql' && (
+              <div className={styles.sqlToolbar}>
+                <button
+                  className={historyOpen ? `${styles.toolBtn} ${styles.toolBtnOn}` : styles.toolBtn}
+                  onClick={() => toggleHistory()}
+                  title="クエリ履歴"
+                  aria-label="クエリ履歴"
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+                    <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.3" />
+                    <line x1="8" y1="8" x2="8" y2="4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                    <line x1="8" y1="8" x2="10.5" y2="9.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+            )}
             {showStructure && tableTab ? (
               <SchemaView tab={tableTab} />
             ) : splitView && activeKind === 'table' ? (
@@ -126,6 +145,7 @@ export default function WorkspaceShell(): JSX.Element {
         )}
       </div>
       {detailOpen && showData && <DetailPane />}
+      {historyOpen && activeKind === 'sql' && <HistoryPanel />}
     </div>
   )
 }

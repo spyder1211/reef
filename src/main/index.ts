@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { ConnectionManager } from './connection/ConnectionManager'
+import { QueryHistoryStore } from './history/QueryHistoryStore'
 import { registerDbHandlers } from './ipc/registerDbHandlers'
 import { registerConnectionHandlers } from './ipc/registerConnectionHandlers'
 import { registerFileHandlers } from './ipc/registerFileHandlers'
@@ -62,7 +63,8 @@ function createWindow(manager: ConnectionManager): void {
 
 app.whenReady().then(() => {
   const manager = new ConnectionManager()
-  registerDbHandlers(manager)
+  const history = new QueryHistoryStore(app.getPath('userData'))
+  registerDbHandlers(manager, history)
   const { profileStore, groupStore } = createConnectionStores()
   registerConnectionHandlers(manager, profileStore, groupStore)
   registerFileHandlers()
