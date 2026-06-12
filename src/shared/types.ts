@@ -160,3 +160,14 @@ export interface TableSchema {
   indexes: SchemaIndex[]
   ddl: string // SHOW CREATE TABLE の結果
 }
+
+// クエリ履歴の1エントリ（main 側で userData に永続化）
+export interface QueryHistoryEntry {
+  id: string
+  sql: string
+  executedAt: string // ISO 8601
+  durationMs: number
+  ok: boolean
+  errorMessage?: string
+  database?: string // 実行時の接続先 DB 名
+}
