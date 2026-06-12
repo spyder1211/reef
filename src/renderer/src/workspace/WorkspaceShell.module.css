@@ -13,10 +13,42 @@
 .gridToolbar {
   flex-shrink: 0;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   gap: 6px;
   padding: 3px 14px;
+}
+/* グリッドツールバー右側の操作ボタン群（行追加・分割・詳細）。 */
+.toolGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* 「データ / 構造」表示モードのセグメントトグル（左寄せ）。 */
+.viewToggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.viewToggleBtn {
+  height: 24px;
+  padding: 0 12px;
+  font-size: 12px;
+  border: none;
+  background: var(--bg);
+  color: var(--text-muted);
+}
+.viewToggleBtn + .viewToggleBtn {
+  border-left: 1px solid var(--border);
+}
+.viewToggleBtn:hover {
+  background: var(--bg-subtle);
+}
+.viewToggleBtnOn,
+.viewToggleBtnOn:hover {
+  background: var(--accent);
+  color: var(--accent-fg);
 }
 .toolBtn {
   display: flex;
