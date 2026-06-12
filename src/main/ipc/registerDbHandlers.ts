@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import { ConnectionManager } from '../connection/ConnectionManager'
+import { QueryHistoryStore } from '../history/QueryHistoryStore'
 import { validateConnectionConfig } from '../connection/validateConnectionConfig'
 import { normalizeDbError } from '../connection/normalizeDbError'
 import type {
@@ -7,10 +8,11 @@ import type {
   ApiResult,
   QueryResult,
   SqlStatement,
-  TableSchema
+  TableSchema,
+  QueryHistoryEntry
 } from '../../shared/types'
 
-export function registerDbHandlers(manager: ConnectionManager): void {
+export function registerDbHandlers(manager: ConnectionManager, history: QueryHistoryStore): void {
   ipcMain.handle(
     'db:connect',
     async (_e, config: ConnectionConfig): Promise<ApiResult<null>> => {
@@ -42,9 +44,13 @@ export function registerDbHandlers(manager: ConnectionManager): void {
     'db:queryScript',
     async (_e, sql: string): Promise<ApiResult<QueryResult>> => {
       try {
-        return { ok: true, data: await manager.queryScript(sql) }
+        const data = await manager.queryScript(sql)
+        history.add({ sql, durationMs: data.durationMs, ok: true })
+        return { ok: true, data }
       } catch (err) {
-        return { ok: false, error: normalizeDbError(err) }
+        const error = normalizeDbError(err)
+        history.add({ sql, durationMs: 0, ok: false, errorMessage: error.message })
+        return { ok: false, error }
       }
     }
   )
@@ -117,4 +123,13 @@ export function registerDbHandlers(manager: ConnectionManager): void {
       }
     }
   )
+
+  ipcMain.handle('history:list', async (): Promise<ApiResult<QueryHistoryEntry[]>> => {
+    return { ok: true, data: history.list() }
+  })
+
+  ipcMain.handle('history:clear', async (): Promise<ApiResult<null>> => {
+    history.clear()
+    return { ok: true, data: null }
+  })
 }

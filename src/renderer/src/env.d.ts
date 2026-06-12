@@ -11,7 +11,8 @@ import type {
   ImportSummary,
   ImportProgress,
   SqlImportRequest,
-  TableSchema
+  TableSchema,
+  QueryHistoryEntry
 } from '../../shared/types'
 
 declare global {
@@ -49,6 +50,10 @@ declare global {
         rename: (id: string, name: string) => Promise<ApiResult<null>>
         delete: (id: string) => Promise<ApiResult<null>>
         reorder: (orderedIds: string[]) => Promise<ApiResult<null>>
+      }
+      history: {
+        list: () => Promise<ApiResult<QueryHistoryEntry[]>>
+        clear: () => Promise<ApiResult<null>>
       }
     }
   }

@@ -11,7 +11,8 @@ import type {
   ImportSummary,
   ImportProgress,
   SqlImportRequest,
-  TableSchema
+  TableSchema,
+  QueryHistoryEntry
 } from '../shared/types'
 
 const api = {
@@ -85,6 +86,10 @@ const api = {
     delete: (id: string): Promise<ApiResult<null>> => ipcRenderer.invoke('groups:delete', id),
     reorder: (orderedIds: string[]): Promise<ApiResult<null>> =>
       ipcRenderer.invoke('groups:reorder', orderedIds)
+  },
+  history: {
+    list: (): Promise<ApiResult<QueryHistoryEntry[]>> => ipcRenderer.invoke('history:list'),
+    clear: (): Promise<ApiResult<null>> => ipcRenderer.invoke('history:clear')
   }
 }
 
