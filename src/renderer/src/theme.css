@@ -37,6 +37,10 @@
   --warning-bg: #fff4e5;
   --warning-border: #ffd8a8;
 
+  /* 本番環境（production）警告バー。塗りつぶしの赤地に白文字。 */
+  --prod-banner-bg: #c0392b;
+  --prod-banner-fg: #ffffff;
+
   --radius: 8px;
   --radius-lg: 12px;
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -77,6 +81,9 @@
     --warning: #e0a843;
     --warning-bg: #3a2f1c;
     --warning-border: #5a4420;
+
+    --prod-banner-bg: #9b271d;
+    --prod-banner-fg: #ffffff;
   }
 }
 

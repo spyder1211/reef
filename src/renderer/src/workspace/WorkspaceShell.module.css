@@ -1,6 +1,38 @@
+/* 接続中ワークスペース全体。本番バナーを最上部に積むため縦並び。 */
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 .shell {
   display: flex;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+}
+/* 本番環境（production）接続中だけ最上部に出す赤い警告バー。 */
+.prodBanner {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  background: var(--prod-banner-bg);
+  color: var(--prod-banner-fg);
+  font-size: 12px;
+}
+.prodIcon {
+  font-size: 13px;
+  line-height: 1;
+}
+.prodLabel {
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.22);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.prodText {
+  font-weight: 500;
 }
 .mainCol {
   flex: 1;
