@@ -132,6 +132,7 @@ interface AppState {
   activeTabId: string | null
   detailOpen: boolean
   splitView: boolean
+  historyOpen: boolean // SQL タブのクエリ履歴パネル開閉
   formOpen: boolean
   editingId: string | null
 
@@ -190,6 +191,7 @@ interface AppState {
   ) => Promise<ExportCsvResult>
   toggleDetail: () => void
   toggleSplitView: () => void
+  toggleHistory: () => void
 }
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -301,6 +303,7 @@ export const useAppStore = create<AppState>((set, get) => {
     activeTabId: null,
     detailOpen: true,
     splitView: false,
+    historyOpen: false,
     formOpen: false,
     editingId: null,
 
@@ -922,6 +925,10 @@ export const useAppStore = create<AppState>((set, get) => {
 
     toggleSplitView() {
       set({ splitView: !get().splitView })
+    },
+
+    toggleHistory() {
+      set({ historyOpen: !get().historyOpen })
     }
   }
 })
