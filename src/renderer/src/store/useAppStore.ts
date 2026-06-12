@@ -10,7 +10,8 @@ import type {
   FilterOperator,
   TableSort,
   RowEdit,
-  PendingInsert
+  PendingInsert,
+  TableSchema
 } from '../../../shared/types'
 import { buildFilteredQuery, buildCountQuery } from './filterBuilder'
 import { toCsv } from '../lib/csv'
@@ -54,6 +55,9 @@ export interface TableTab extends BaseTab {
   selectedRowIndices: number[] // 選択中の行インデックス（統一インデックス空間: 結果行→INSERT行）
   selectionAnchor: number | null // Shift 範囲選択の起点。null = 未設定
   autoIncrementColumns: string[] // auto_increment 列名（複製で除外）
+  view: 'data' | 'structure' // 表示モード。既定 'data'
+  schema: TableSchema | null // 構造ビュー用。未取得は null（lazy load）
+  schemaError: AppError | null // 構造取得失敗のエラー
 }
 export type Tab = SqlTab | TableTab
 
@@ -100,6 +104,9 @@ function makeTableTab(name: string): TableTab {
     selectedRowIndices: [],
     selectionAnchor: null,
     autoIncrementColumns: [],
+    view: 'data',
+    schema: null,
+    schemaError: null,
     result: null,
     error: null,
     // 開いた直後は初回クエリ実行中とみなし、結果ペインのプレースホルダ点滅を防ぐ
@@ -150,6 +157,7 @@ interface AppState {
   setTabSql: (id: string, sql: string) => void
   runActiveTab: () => Promise<void>
   selectTable: (name: string) => Promise<void>
+  setTableView: (tabId: string, view: 'data' | 'structure') => Promise<void>
   truncateTable: (name: string) => Promise<void>
   dropTable: (name: string) => Promise<void>
   addFilter: (tabId: string) => void
@@ -452,7 +460,14 @@ export const useAppStore = create<AppState>((set, get) => {
       if (!tab) return
       if (tab.kind === 'sql') await runSql(tab.id, tab.sql)
       else {
-        patchTableTab(tab.id, (t) => ({ ...t, selectedRowIndices: [], selectionAnchor: null }))
+        // reload では構造キャッシュも破棄し、次に structure を開いた時に再取得させる（ALTER 後の陳腐化対策）。
+        patchTableTab(tab.id, (t) => ({
+          ...t,
+          selectedRowIndices: [],
+          selectionAnchor: null,
+          schema: null,
+          schemaError: null
+        }))
         await runTable(tab.id, { recount: true })
       }
     },
@@ -477,6 +492,21 @@ export const useAppStore = create<AppState>((set, get) => {
         autoIncrementColumns: ai.ok ? ai.data : []
       }))
       await runTable(tab.id, { recount: true })
+    },
+
+    // 表示モードを切り替える。structure へ切り替え時、未取得ならスキーマを lazy load する。
+    async setTableView(tabId, view) {
+      const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
+      if (!tab) return
+      patchTableTab(tabId, (t) => ({ ...t, view }))
+      if (view === 'structure' && !tab.schema) {
+        const res = await window.api.tableSchema(tab.tableName)
+        patchTableTab(tabId, (t) =>
+          res.ok
+            ? { ...t, schema: res.data, schemaError: null }
+            : { ...t, schemaError: res.error }
+        )
+      }
     },
 
     async truncateTable(name) {
