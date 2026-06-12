@@ -18,6 +18,34 @@
   font-size: 12px;
   flex-shrink: 0;
 }
+.jsonToggle {
+  margin-left: auto;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text-muted);
+}
+.jsonToggle:hover {
+  background: var(--bg-subtle);
+}
+.jsonView {
+  margin: 4px 0 0;
+  padding: 8px;
+  max-height: 240px;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  white-space: pre;
+}
 .close {
   border: none;
   background: transparent;
