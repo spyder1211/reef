@@ -25,6 +25,7 @@ import {
 import { rowKeyOf, pkValuesOf } from './rowKey'
 import { pickNextActiveTabId, hasUncommittedChanges } from './helpers'
 import { cycleSort } from './pager'
+import { singleStatementOf } from './explain'
 
 interface BaseTab {
   id: string
@@ -158,6 +159,7 @@ interface AppState {
   setActiveTab: (id: string) => void
   setTabSql: (id: string, sql: string) => void
   runActiveTab: () => Promise<void>
+  explainActiveTab: () => Promise<void>
   selectTable: (name: string) => Promise<void>
   setTableView: (tabId: string, view: 'data' | 'structure') => Promise<void>
   truncateTable: (name: string) => Promise<void>
@@ -462,6 +464,46 @@ export const useAppStore = create<AppState>((set, get) => {
 
     setTabSql(id, sql) {
       set({ tabs: get().tabs.map((t) => (t.id === id && t.kind === 'sql' ? { ...t, sql } : t)) })
+    },
+
+    // アクティブ SQL タブのクエリを EXPLAIN 実行する（単一文のみ）。
+    // 履歴を汚さないよう queryScript ではなく query を直接使う。
+    async explainActiveTab() {
+      const tab = get().tabs.find((t) => t.id === get().activeTabId)
+      if (!tab || tab.kind !== 'sql') return
+      const stmt = singleStatementOf(tab.sql)
+      if (!stmt) {
+        set({
+          tabs: get().tabs.map((t) =>
+            t.id === tab.id
+              ? {
+                  ...t,
+                  result: null,
+                  error: { code: 'EXPLAIN_MULTI', message: 'EXPLAIN は単一文のみ実行できます' }
+                }
+              : t
+          )
+        })
+        return
+      }
+      setTabRunning(tab.id)
+      try {
+        const res = await window.api.query(`EXPLAIN ${stmt}`)
+        set({
+          tabs: get().tabs.map((t) =>
+            t.id === tab.id
+              ? {
+                  ...t,
+                  running: false,
+                  result: res.ok ? res.data : null,
+                  error: res.ok ? null : res.error
+                }
+              : t
+          )
+        })
+      } catch (err) {
+        failTab(tab.id, err)
+      }
     },
 
     async runActiveTab() {

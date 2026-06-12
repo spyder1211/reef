@@ -14,6 +14,7 @@ export default function QueryEditor(): JSX.Element | null {
   })
   const setTabSql = useAppStore((s) => s.setTabSql)
   const runActiveTab = useAppStore((s) => s.runActiveTab)
+  const explainActiveTab = useAppStore((s) => s.explainActiveTab)
   // 補完用のテーブル→カラムマップ。接続時/テーブル変更時のみ更新される（打鍵では変わらない）。
   const schemaMap = useAppStore((s) => s.schemaMap)
 
@@ -32,11 +33,18 @@ export default function QueryEditor(): JSX.Element | null {
               void runActiveTab()
               return true
             }
+          },
+          {
+            key: 'Mod-e',
+            run: () => {
+              void explainActiveTab()
+              return true
+            }
           }
         ])
       )
     ],
-    [runActiveTab, schemaMap]
+    [runActiveTab, explainActiveTab, schemaMap]
   )
 
   if (!tab) return null
@@ -52,7 +60,7 @@ export default function QueryEditor(): JSX.Element | null {
         basicSetup={{ lineNumbers: true, highlightActiveLine: true }}
         onChange={(value) => setTabSql(tab.id, value)}
       />
-      <div className={styles.hint}>⌘↵ で実行</div>
+      <div className={styles.hint}>⌘↵ で実行 ・ ⌘E で EXPLAIN</div>
     </div>
   )
 }
