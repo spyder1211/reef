@@ -23,7 +23,7 @@ import {
   buildDropStatement
 } from './editBuilder'
 import { rowKeyOf, pkValuesOf } from './rowKey'
-import { pickNextActiveTabId, hasUncommittedChanges } from './helpers'
+import { pickNextActiveTabId, hasUncommittedChanges, isProductionProfile } from './helpers'
 import { cycleSort } from './pager'
 import { singleStatementOf } from './explain'
 
@@ -401,6 +401,15 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     async connect(profile) {
+      // 本番環境は誤操作の影響が大きいため、テーブル一覧を開く前に毎回確認を挟む。
+      // キャンセルされたら接続自体を行わず、接続一覧にとどまる。
+      if (isProductionProfile(profile)) {
+        const ok = window.confirm(
+          `「${profile.name}」は本番環境（production）です。\n\n` +
+            '操作ミスは本番データに直接影響します。十分に注意してください。\n\n接続しますか？'
+        )
+        if (!ok) return
+      }
       set({ status: 'connecting', connectError: null })
       const res = await window.api.connections.connect(profile.id)
       if (!res.ok) {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { filterProfiles, pickNextActiveTabId, hasUncommittedChanges } from './helpers'
+import { filterProfiles, pickNextActiveTabId, hasUncommittedChanges, isProductionProfile } from './helpers'
 import { initials } from '../lib/tags'
 
 describe('filterProfiles', () => {
@@ -36,6 +36,22 @@ describe('initials', () => {
   })
   it('日本語名も2文字', () => {
     expect(initials('城下町bot')).toBe('城下')
+  })
+})
+
+describe('isProductionProfile', () => {
+  it('tag が production なら true', () => {
+    expect(isProductionProfile({ tag: 'production' })).toBe(true)
+  })
+  it('production 以外の tag は false', () => {
+    expect(isProductionProfile({ tag: 'staging' })).toBe(false)
+    expect(isProductionProfile({ tag: 'development' })).toBe(false)
+    expect(isProductionProfile({ tag: 'local' })).toBe(false)
+    expect(isProductionProfile({ tag: 'none' })).toBe(false)
+  })
+  it('null / undefined は false', () => {
+    expect(isProductionProfile(null)).toBe(false)
+    expect(isProductionProfile(undefined)).toBe(false)
   })
 })
 

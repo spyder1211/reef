@@ -21,6 +21,12 @@ export function pickNextActiveTabId(
   return (remaining[idx] ?? remaining[remaining.length - 1]).id
 }
 
+// 接続プロファイルが本番環境（tag=production）かどうか。
+// 本番ガードのダイアログと、ワークスペース上部の警告バーで共有する単一の判定基準。
+export function isProductionProfile(profile: { tag: string } | null | undefined): boolean {
+  return profile?.tag === 'production'
+}
+
 // 未コミットのステージング変更（UPDATE/INSERT/DELETE）があるか。
 // SqlTab には該当概念がないため常に false。
 // useAppStore の Tab 型を import すると循環依存になるため構造的型で受ける。
