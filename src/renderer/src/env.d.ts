@@ -16,6 +16,9 @@ import type {
 } from '../../shared/types'
 
 declare global {
+  // electron.vite.config.ts の define で package.json の version を埋め込む。
+  const __APP_VERSION__: string
+
   interface Window {
     api: {
       connect: (config: ConnectionConfig) => Promise<ApiResult<null>>
