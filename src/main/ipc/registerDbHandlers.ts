@@ -3,6 +3,7 @@ import { ConnectionManager } from '../connection/ConnectionManager'
 import { QueryHistoryStore } from '../history/QueryHistoryStore'
 import { validateConnectionConfig } from '../connection/validateConnectionConfig'
 import { normalizeDbError } from '../connection/normalizeDbError'
+import { connectWithTunnel, closeTunnel, type TunnelHolder } from '../connection/connectWithTunnel'
 import type {
   ConnectionConfig,
   ApiResult,
@@ -12,7 +13,11 @@ import type {
   QueryHistoryEntry
 } from '../../shared/types'
 
-export function registerDbHandlers(manager: ConnectionManager, history: QueryHistoryStore): void {
+export function registerDbHandlers(
+  manager: ConnectionManager,
+  history: QueryHistoryStore,
+  tunnel: TunnelHolder
+): void {
   ipcMain.handle(
     'db:connect',
     async (_e, config: ConnectionConfig): Promise<ApiResult<null>> => {
@@ -21,7 +26,7 @@ export function registerDbHandlers(manager: ConnectionManager, history: QueryHis
         return { ok: false, error: { code: 'INVALID_CONFIG', message: errors.join(', ') } }
       }
       try {
-        await manager.connect(config)
+        await connectWithTunnel(manager, config, tunnel)
         return { ok: true, data: null }
       } catch (err) {
         return { ok: false, error: normalizeDbError(err) }
@@ -58,6 +63,7 @@ export function registerDbHandlers(manager: ConnectionManager, history: QueryHis
   ipcMain.handle('db:disconnect', async (): Promise<ApiResult<null>> => {
     try {
       await manager.disconnect()
+      await closeTunnel(tunnel) // DB 切断後に SSH トンネルも閉じる（接続一覧へ戻る時も同経路）
       return { ok: true, data: null }
     } catch (err) {
       return { ok: false, error: normalizeDbError(err) }
