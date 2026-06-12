@@ -137,3 +137,26 @@ export interface SqlImportRequest {
   totalBytes: number
   dbName: string
 }
+
+// テーブル構造表示（Structure ビュー）用のスキーマ情報
+export interface SchemaColumn {
+  name: string
+  type: string // SHOW FULL COLUMNS の Type（例: "varchar(255)", "int unsigned"）
+  nullable: boolean
+  key: string // 'PRI' | 'UNI' | 'MUL' | ''
+  default: string | null
+  extra: string // auto_increment / on update CURRENT_TIMESTAMP 等
+  comment: string
+}
+
+export interface SchemaIndex {
+  name: string
+  columns: string[] // Seq_in_index 順
+  unique: boolean
+}
+
+export interface TableSchema {
+  columns: SchemaColumn[]
+  indexes: SchemaIndex[]
+  ddl: string // SHOW CREATE TABLE の結果
+}

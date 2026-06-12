@@ -2,7 +2,13 @@ import { ipcMain } from 'electron'
 import { ConnectionManager } from '../connection/ConnectionManager'
 import { validateConnectionConfig } from '../connection/validateConnectionConfig'
 import { normalizeDbError } from '../connection/normalizeDbError'
-import type { ConnectionConfig, ApiResult, QueryResult, SqlStatement } from '../../shared/types'
+import type {
+  ConnectionConfig,
+  ApiResult,
+  QueryResult,
+  SqlStatement,
+  TableSchema
+} from '../../shared/types'
 
 export function registerDbHandlers(manager: ConnectionManager): void {
   ipcMain.handle(
@@ -76,6 +82,17 @@ export function registerDbHandlers(manager: ConnectionManager): void {
     async (_e, table: string): Promise<ApiResult<string[]>> => {
       try {
         return { ok: true, data: await manager.autoIncrementColumns(table) }
+      } catch (err) {
+        return { ok: false, error: normalizeDbError(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    'db:tableSchema',
+    async (_e, table: string): Promise<ApiResult<TableSchema>> => {
+      try {
+        return { ok: true, data: await manager.tableSchema(table) }
       } catch (err) {
         return { ok: false, error: normalizeDbError(err) }
       }

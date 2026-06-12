@@ -24,6 +24,9 @@ function seedTableTab(partial: Partial<TableTab> = {}): string {
     selectedRowIndices: [],
     selectionAnchor: null,
     autoIncrementColumns: ['id'],
+    view: 'data',
+    schema: null,
+    schemaError: null,
     result: {
       columns: [
         { name: 'id', type: 'longlong' },
