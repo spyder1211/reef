@@ -10,7 +10,8 @@ import type {
   SaveFileResult,
   ImportSummary,
   ImportProgress,
-  SqlImportRequest
+  SqlImportRequest,
+  TableSchema
 } from '../../shared/types'
 
 declare global {
@@ -23,6 +24,7 @@ declare global {
       listTables: () => Promise<ApiResult<string[]>>
       primaryKey: (table: string) => Promise<ApiResult<string[]>>
       autoIncrementColumns: (table: string) => Promise<ApiResult<string[]>>
+      tableSchema: (table: string) => Promise<ApiResult<TableSchema>>
       applyChanges: (statements: SqlStatement[]) => Promise<ApiResult<{ affectedRows: number }>>
       saveCsv: (defaultFileName: string, content: string) => Promise<ApiResult<SaveFileResult>>
       onReturnToConnections: (cb: () => void) => () => void

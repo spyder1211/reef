@@ -10,7 +10,8 @@ import type {
   SaveFileResult,
   ImportSummary,
   ImportProgress,
-  SqlImportRequest
+  SqlImportRequest,
+  TableSchema
 } from '../shared/types'
 
 const api = {
@@ -27,6 +28,8 @@ const api = {
     ipcRenderer.invoke('db:primaryKey', table),
   autoIncrementColumns: (table: string): Promise<ApiResult<string[]>> =>
     ipcRenderer.invoke('db:autoIncrementColumns', table),
+  tableSchema: (table: string): Promise<ApiResult<TableSchema>> =>
+    ipcRenderer.invoke('db:tableSchema', table),
   applyChanges: (statements: SqlStatement[]): Promise<ApiResult<{ affectedRows: number }>> =>
     ipcRenderer.invoke('db:applyChanges', statements),
   saveCsv: (defaultFileName: string, content: string): Promise<ApiResult<SaveFileResult>> =>
