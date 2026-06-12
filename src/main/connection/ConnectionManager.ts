@@ -125,6 +125,23 @@ export class ConnectionManager {
     return { columns, indexes, ddl }
   }
 
+  // SQL 補完用：接続中 DB の { テーブル名: カラム名[] } を一括取得する。
+  async schemaMap(): Promise<Record<string, string[]>> {
+    if (!this.pool) throw new Error('Not connected')
+    const [rows] = await this.pool.query(
+      `SELECT TABLE_NAME AS t, COLUMN_NAME AS c
+         FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+        ORDER BY TABLE_NAME, ORDINAL_POSITION`
+    )
+    const map: Record<string, string[]> = {}
+    for (const r of Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []) {
+      const t = String(r.t)
+      ;(map[t] ??= []).push(String(r.c))
+    }
+    return map
+  }
+
   // 複数の文を1トランザクションで適用。1つでも失敗したら全ロールバックして再 throw。
   async applyChanges(statements: SqlStatement[]): Promise<{ affectedRows: number }> {
     if (!this.pool) throw new Error('Not connected')

@@ -62,4 +62,9 @@ describe.skipIf(!hasDb)('ConnectionManager.tableSchema (integration)', () => {
     expect(schema.ddl).toContain('CREATE TABLE')
     expect(schema.ddl).toContain('schema_test')
   })
+
+  it('schemaMap が接続中 DB のテーブル→カラム一覧を返す', async () => {
+    const map = await manager.schemaMap()
+    expect(map.schema_test).toEqual(['id', 'email', 'age'])
+  })
 })
