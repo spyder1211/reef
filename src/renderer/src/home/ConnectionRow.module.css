@@ -45,7 +45,7 @@
   color: var(--text-muted);
 }
 .action:hover {
-  background: #e9e9ee;
+  background: var(--bg-subtle);
 }
 .connect {
   border: none;
@@ -57,7 +57,7 @@
   font-weight: 600;
 }
 .connect:hover {
-  background: #0060e0;
+  background: var(--accent-hover);
 }
 .menuBackdrop {
   position: fixed;
@@ -70,7 +70,7 @@
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 8px 24px var(--shadow);
   padding: 4px;
   min-width: 140px;
 }
@@ -90,10 +90,10 @@
   background: var(--bg-subtle);
 }
 .danger {
-  color: #c0392b;
+  color: var(--danger);
 }
 .danger:hover {
-  background: #fdecea;
+  background: var(--danger-bg);
 }
 .menuSep {
   height: 1px;

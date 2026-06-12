@@ -2,7 +2,7 @@
   width: 300px;
   flex-shrink: 0;
   border-left: 1px solid var(--border);
-  background: #fff;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -91,7 +91,7 @@
   border-radius: 6px;
   padding: 4px 8px;
   font: 12px -apple-system, sans-serif;
-  background: #fff;
+  background: var(--bg);
   color: var(--text);
 }
 .val:disabled {
@@ -99,8 +99,8 @@
   color: var(--text-muted);
 }
 .dirty {
-  background: #fff3cd;
-  border-color: #ffcf33;
+  background: var(--dirty-bg);
+  border-color: var(--dirty-border);
 }
 .area {
   min-height: 48px;

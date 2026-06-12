@@ -47,7 +47,7 @@
 .errorBox {
   flex: 1;
   padding: 16px;
-  color: #b91c1c;
+  color: var(--danger);
   font-size: 13px;
   overflow: auto;
 }
@@ -67,12 +67,12 @@
   opacity: 0.8;
 }
 .dirty {
-  background: #fff3cd !important;
-  box-shadow: inset 0 0 0 1px #ffcf33;
+  background: var(--dirty-bg) !important;
+  box-shadow: inset 0 0 0 1px var(--dirty-border);
 }
 .editing {
-  background: #fff !important;
-  box-shadow: inset 0 0 0 2px #2f7bf6;
+  background: var(--bg) !important;
+  box-shadow: inset 0 0 0 2px var(--accent);
   padding: 2px 8px;
 }
 .editWrap {
@@ -98,27 +98,27 @@
   cursor: pointer;
 }
 .grid tbody tr.selected td {
-  background: #e6f0ff;
+  background: var(--selected-bg);
 }
 .insertRow td {
-  background: #f0fff4 !important;
-  color: #1d1d1f;
+  background: var(--success-bg) !important;
+  color: var(--text);
 }
 .insertAutoCell {
-  color: #a0a0a6;
+  color: var(--text-faint);
   font-style: italic;
 }
 .deleteRow td {
-  background: #fff0f0 !important;
+  background: var(--danger-bg) !important;
   text-decoration: line-through;
-  color: #c0392b;
+  color: var(--danger);
 }
 .ctxMenu {
   position: fixed;
-  background: #fff;
-  border: 1px solid #ddd;
+  background: var(--menu-bg);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4px 16px var(--shadow);
   padding: 4px 0;
   z-index: 1000;
   min-width: 160px;
@@ -129,15 +129,15 @@
   cursor: pointer;
 }
 .ctxItem:hover {
-  background: #2f7bf6;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-fg);
 }
 .ctxDanger {
-  color: #ff3b30;
+  color: var(--danger-strong);
 }
 .ctxDanger:hover {
-  background: #ff3b30 !important;
-  color: #fff !important;
+  background: var(--danger-strong) !important;
+  color: var(--accent-fg) !important;
 }
 
 .ctxSep {
