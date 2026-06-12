@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { rowKeyOf } from '../store/rowKey'
+import { tryFormatJson } from '../lib/formatJson'
 import styles from './DetailPane.module.css'
 
 type Row = Record<string, unknown>
@@ -12,6 +14,8 @@ export default function DetailPane(): JSX.Element | null {
   const setCellEdit = useAppStore((s) => s.setCellEdit)
   const setCellNull = useAppStore((s) => s.setCellNull)
   const toggleDetail = useAppStore((s) => s.toggleDetail)
+  // 列名 → JSON 整形ビューの展開状態（読み取り専用の追加表示）。
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
   if (!tab) return null
 
@@ -51,11 +55,23 @@ export default function DetailPane(): JSX.Element | null {
             const text = isNull ? '' : String(value)
             const long = text.length > 40
             const inputCls = [styles.val, isDirty ? styles.dirty : ''].filter(Boolean).join(' ')
+            // JSON のオブジェクト/配列なら整形表示トグルを出す（非 JSON は null）。
+            const formatted = isNull ? null : tryFormatJson(text)
+            const isExpanded = !!expanded[col.name]
             return (
               <div key={col.name} className={styles.field}>
                 <div className={styles.fhead}>
                   <span className={styles.fname}>{col.name}</span>
                   {col.type && <span className={styles.ftype}>{col.type}</span>}
+                  {formatted !== null && (
+                    <button
+                      className={styles.jsonToggle}
+                      onClick={() => setExpanded((m) => ({ ...m, [col.name]: !m[col.name] }))}
+                      title={isExpanded ? 'JSON 整形を閉じる' : 'JSON を整形表示'}
+                    >
+                      {'{ }'}
+                    </button>
+                  )}
                 </div>
                 {long ? (
                   <textarea
@@ -72,6 +88,9 @@ export default function DetailPane(): JSX.Element | null {
                     placeholder={isNull ? 'NULL' : ''}
                     onChange={(e) => setCellEdit(tab.id, row, col.name, e.target.value)}
                   />
+                )}
+                {formatted !== null && isExpanded && (
+                  <pre className={styles.jsonView}>{formatted}</pre>
                 )}
                 {editable && (
                   <div className={styles.nullRow}>
