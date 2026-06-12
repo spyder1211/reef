@@ -25,6 +25,7 @@ declare global {
       primaryKey: (table: string) => Promise<ApiResult<string[]>>
       autoIncrementColumns: (table: string) => Promise<ApiResult<string[]>>
       tableSchema: (table: string) => Promise<ApiResult<TableSchema>>
+      schemaMap: () => Promise<ApiResult<Record<string, string[]>>>
       applyChanges: (statements: SqlStatement[]) => Promise<ApiResult<{ affectedRows: number }>>
       saveCsv: (defaultFileName: string, content: string) => Promise<ApiResult<SaveFileResult>>
       onReturnToConnections: (cb: () => void) => () => void

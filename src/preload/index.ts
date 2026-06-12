@@ -30,6 +30,8 @@ const api = {
     ipcRenderer.invoke('db:autoIncrementColumns', table),
   tableSchema: (table: string): Promise<ApiResult<TableSchema>> =>
     ipcRenderer.invoke('db:tableSchema', table),
+  schemaMap: (): Promise<ApiResult<Record<string, string[]>>> =>
+    ipcRenderer.invoke('db:schemaMap'),
   applyChanges: (statements: SqlStatement[]): Promise<ApiResult<{ affectedRows: number }>> =>
     ipcRenderer.invoke('db:applyChanges', statements),
   saveCsv: (defaultFileName: string, content: string): Promise<ApiResult<SaveFileResult>> =>

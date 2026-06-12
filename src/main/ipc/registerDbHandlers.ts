@@ -99,6 +99,14 @@ export function registerDbHandlers(manager: ConnectionManager): void {
     }
   )
 
+  ipcMain.handle('db:schemaMap', async (): Promise<ApiResult<Record<string, string[]>>> => {
+    try {
+      return { ok: true, data: await manager.schemaMap() }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
+    }
+  })
+
   ipcMain.handle(
     'db:applyChanges',
     async (_e, statements: SqlStatement[]): Promise<ApiResult<{ affectedRows: number }>> => {

@@ -127,6 +127,7 @@ interface AppState {
   connectError: AppError | null
   activeProfile: ConnectionProfile | null
   tables: string[]
+  schemaMap: Record<string, string[]> // SQL 補完用：テーブル名→カラム名[]（接続中のみ）
   tabs: Tab[]
   activeTabId: string | null
   detailOpen: boolean
@@ -220,9 +221,12 @@ export const useAppStore = create<AppState>((set, get) => {
   }
 
   // テーブル一覧を再取得してストアへ反映する。connect と dropTable で共有する。
+  // SQL 補完用の schemaMap も併せて更新し、DROP/TRUNCATE 後も補完候補を同期させる。
   async function refreshTables(): Promise<void> {
     const tbl = await window.api.listTables()
     if (tbl.ok) set({ tables: tbl.data })
+    const sm = await window.api.schemaMap()
+    set({ schemaMap: sm.ok ? sm.data : {} })
   }
 
   async function runSql(tabId: string, sql: string): Promise<void> {
@@ -292,6 +296,7 @@ export const useAppStore = create<AppState>((set, get) => {
     connectError: null,
     activeProfile: null,
     tables: [],
+    schemaMap: {},
     tabs: [],
     activeTabId: null,
     detailOpen: true,
@@ -413,6 +418,7 @@ export const useAppStore = create<AppState>((set, get) => {
         status: 'idle',
         activeProfile: null,
         tables: [],
+        schemaMap: {},
         tabs: [],
         activeTabId: null,
         connectError: null

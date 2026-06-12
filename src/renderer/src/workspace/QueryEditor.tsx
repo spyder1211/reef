@@ -14,12 +14,14 @@ export default function QueryEditor(): JSX.Element | null {
   })
   const setTabSql = useAppStore((s) => s.setTabSql)
   const runActiveTab = useAppStore((s) => s.runActiveTab)
+  // 補完用のテーブル→カラムマップ。接続時/テーブル変更時のみ更新される（打鍵では変わらない）。
+  const schemaMap = useAppStore((s) => s.schemaMap)
 
   // extensions は安定参照にする（毎レンダー再生成すると CodeMirror が打鍵ごとに reconfigure する）。
-  // runActiveTab は zustand の安定参照なので、実質マウント時のみ生成される。
+  // runActiveTab は zustand の安定参照。schemaMap は接続後にほぼ不変なので再生成は実質起きない。
   const extensions = useMemo(
     () => [
-      sql({ dialect: MySQL }),
+      sql({ dialect: MySQL, schema: schemaMap, upperCaseKeywords: true }),
       // Prec.highest で basicSetup の defaultKeymap（Mod-Enter=insertBlankLine）に勝たせる。
       // これが無いと Cmd+Enter が空行挿入に奪われ、実行されない。
       Prec.highest(
@@ -34,7 +36,7 @@ export default function QueryEditor(): JSX.Element | null {
         ])
       )
     ],
-    [runActiveTab]
+    [runActiveTab, schemaMap]
   )
 
   if (!tab) return null
