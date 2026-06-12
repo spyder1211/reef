@@ -122,6 +122,16 @@ export default function TableList(): JSX.Element {
           <div
             className={styles.ctxItem}
             onClick={() => {
+              void navigator.clipboard.writeText(ctxMenu.table)
+              setCtxMenu(null)
+            }}
+          >
+            テーブル名をコピー
+          </div>
+          <div className={styles.ctxSep} />
+          <div
+            className={styles.ctxItem}
+            onClick={() => {
               void truncateTable(ctxMenu.table)
               setCtxMenu(null)
             }}
