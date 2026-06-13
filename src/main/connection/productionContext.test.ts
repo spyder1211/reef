@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import {
   setProductionContext,
   clearProductionContext,
@@ -8,6 +8,7 @@ import {
 
 describe('productionContext', () => {
   beforeEach(() => clearProductionContext())
+  afterEach(() => clearProductionContext())
 
   it('初期状態は null・非 production', () => {
     expect(getProductionContext()).toBeNull()

@@ -44,4 +44,10 @@ describe('confirmProductionAction', () => {
       confirmProductionAction(null, 'catastrophic', 'op', 'db', { showMessageBox })
     ).resolves.toBe(true)
   })
+  it('catastrophic: キャンセルは false', async () => {
+    const showMessageBox = vi.fn().mockResolvedValue({ response: 0, checkboxChecked: false })
+    await expect(
+      confirmProductionAction(null, 'catastrophic', 'op', 'db', { showMessageBox })
+    ).resolves.toBe(false)
+  })
 })

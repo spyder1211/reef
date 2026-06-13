@@ -29,6 +29,7 @@ export async function guardProductionSql(
   sql: string,
   opLabel: string
 ): Promise<boolean> {
+  // 非 production 時は classifyScript を呼ばないための早期判定（guard() 内の再判定は意図的）。
   if (!isProductionConnection()) return true
   const tier = classifyScript(sql)
   if (tier === 'readonly') return true

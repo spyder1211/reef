@@ -27,6 +27,11 @@ describe('classifyStatement', () => {
     expect(classifyStatement('  drop table t')).toBe('catastrophic')
     expect(classifyStatement('(SELECT 1)')).toBe('readonly')
   })
+  it('WITH (CTE) 始まりは write 扱い（本番ガードを迂回させない）', () => {
+    expect(classifyStatement('WITH cte AS (SELECT 1) DELETE FROM t')).toBe('write')
+    expect(classifyStatement('WITH cte AS (SELECT 1) UPDATE t SET a=1')).toBe('write')
+    expect(classifyStatement('WITH cte AS (SELECT 1) INSERT INTO t SELECT * FROM cte')).toBe('write')
+  })
   it('空文字は readonly', () => {
     expect(classifyStatement('')).toBe('readonly')
   })
@@ -44,5 +49,8 @@ describe('classifyScript', () => {
   })
   it('空文字・空白のみ → readonly', () => {
     expect(classifyScript('   ')).toBe('readonly')
+  })
+  it('WITH 始まりの DML を含むスクリプトは write 以上', () => {
+    expect(classifyScript('WITH cte AS (SELECT 1) DELETE FROM t')).toBe('write')
   })
 })
