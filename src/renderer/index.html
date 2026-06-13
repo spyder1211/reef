@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>Table++</title>
-    <!-- CSP は dev の Vite HMR と衝突するため後続プランのハードニングで本番向けに追加する -->
+    <!-- CSP は main 側（本番ビルドのみ session.onHeadersReceived）で付与する -->
   </head>
   <body>
     <div id="root"></div>

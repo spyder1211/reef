@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from 'electron'
+import { app, BrowserWindow, Menu, session, shell } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { ConnectionManager } from './connection/ConnectionManager'
@@ -10,6 +10,14 @@ import { registerFileHandlers } from './ipc/registerFileHandlers'
 import { registerImportHandlers } from './import/registerImportHandlers'
 import { createConnectionStores } from './connection/createProfileStore'
 import { buildAppMenu } from './menu'
+
+// 本番ビルドのレンダラに付与する Content-Security-Policy。
+// script-src 'self'（unsafe-inline/eval なし）が要。style は React/CodeMirror の
+// インラインスタイル用に 'unsafe-inline' を許可（スタイル注入は script より低リスク）。
+const CSP =
+  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+  "img-src 'self' data:; font-src 'self' data:; connect-src 'self'; " +
+  "object-src 'none'; frame-src 'none'; base-uri 'none'"
 
 // アプリの表示名。macOS のアプリメニューやダイアログのタイトルに使われる。
 // dev/prod を問わず確実に反映させるため明示設定する（package.json の
@@ -30,6 +38,19 @@ app.on('before-quit', () => {
   isQuitting = true
 })
 
+// レンダラからのアプリ外遷移・新規ウィンドウ生成を禁止する（防御的。現状アプリは遷移も window.open もしない）。
+app.on('web-contents-created', (_e, contents) => {
+  contents.on('will-navigate', (event, url) => {
+    const devUrl = process.env['ELECTRON_RENDERER_URL']
+    const sameApp = (devUrl && url.startsWith(devUrl)) || url.startsWith('file://')
+    if (!sameApp) event.preventDefault() // アプリ外への遷移を禁止
+  })
+  contents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//.test(url)) void shell.openExternal(url) // 外部 URL は既定ブラウザで開く
+    return { action: 'deny' } // アプリ内に新規ウィンドウは開かない
+  })
+})
+
 function createWindow(manager: ConnectionManager): void {
   const win = new BrowserWindow({
     width: 1100,
@@ -39,7 +60,7 @@ function createWindow(manager: ConnectionManager): void {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true
     }
   })
 
@@ -63,6 +84,15 @@ function createWindow(manager: ConnectionManager): void {
 }
 
 app.whenReady().then(() => {
+  // dev（Vite HMR）では CSP を付けない。本番ビルド（loadFile）でのみ strict CSP を付与する。
+  const isDev = !!process.env['ELECTRON_RENDERER_URL']
+  if (!isDev) {
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': [CSP] }
+      })
+    })
+  }
   const manager = new ConnectionManager()
   const history = new QueryHistoryStore(app.getPath('userData'))
   // SSH トンネルを connect/disconnect ハンドラ間で共有するためのホルダ。
