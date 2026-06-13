@@ -6,6 +6,7 @@ import { once } from 'events'
 import type { ConnectionManager } from './connection/ConnectionManager'
 import { dumpDatabase } from './dump/SqlDumper'
 import { setPendingImport } from './import/importState'
+import { guardProductionMenu } from './guard/productionGuard'
 
 // File →「SQLダンプをエクスポート…」の本体。接続確認 → 保存ダイアログ → ストリーム書き込み → 結果通知。
 async function exportSqlDump(manager: ConnectionManager): Promise<void> {
@@ -17,6 +18,8 @@ async function exportSqlDump(manager: ConnectionManager): Promise<void> {
     })
     return
   }
+  // 本番ではエクスポート（全行のファイル化）前に強い確認。
+  if (!(await guardProductionMenu('catastrophic', 'SQL ダンプのエクスポート'))) return
 
   // 既定ファイル名のため DB 名を取得（失敗時は dump で続行）。
   let dbName = 'dump'
