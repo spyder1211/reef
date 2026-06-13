@@ -47,6 +47,7 @@ declare global {
         delete: (id: string) => Promise<ApiResult<null>>
         connect: (id: string) => Promise<ApiResult<null>>
         move: (profileId: string, groupId: string | null) => Promise<ApiResult<null>>
+        isEncryptionAvailable: () => Promise<ApiResult<boolean>>
       }
       groups: {
         list: () => Promise<ApiResult<ConnectionGroup[]>>
