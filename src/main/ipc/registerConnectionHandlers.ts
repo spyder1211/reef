@@ -5,6 +5,7 @@ import { GroupStore } from '../connection/GroupStore'
 import { validateConnectionConfig } from '../connection/validateConnectionConfig'
 import { normalizeDbError } from '../connection/normalizeDbError'
 import { connectWithTunnel, type TunnelHolder } from '../connection/connectWithTunnel'
+import { setProductionContext } from '../connection/productionContext'
 import type { ApiResult, ConnectionGroup, ConnectionProfile, ConnectionProfileInput } from '../../shared/types'
 
 export function registerConnectionHandlers(
@@ -63,6 +64,9 @@ export function registerConnectionHandlers(
     try {
       const config = store.getConnectConfig(id)
       await connectWithTunnel(manager, config, tunnel)
+      // 接続中の production 判定のため、プロファイルの tag/name を main 側に保持する。
+      const meta = store.list().find((p) => p.id === id)
+      if (meta) setProductionContext({ tag: meta.tag, name: meta.name })
       // 接続成功でテーブル一覧画面へ遷移する。作業領域いっぱいにウィンドウを最大化する。
       BrowserWindow.fromWebContents(e.sender)?.maximize()
       return { ok: true, data: null }

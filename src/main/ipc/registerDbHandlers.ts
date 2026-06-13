@@ -4,6 +4,7 @@ import { QueryHistoryStore } from '../history/QueryHistoryStore'
 import { validateConnectionConfig } from '../connection/validateConnectionConfig'
 import { normalizeDbError } from '../connection/normalizeDbError'
 import { connectWithTunnel, closeTunnel, type TunnelHolder } from '../connection/connectWithTunnel'
+import { clearProductionContext } from '../connection/productionContext'
 import type {
   ConnectionConfig,
   ApiResult,
@@ -27,6 +28,7 @@ export function registerDbHandlers(
       }
       try {
         await connectWithTunnel(manager, config, tunnel)
+        clearProductionContext() // テスト接続はタグ不明のため非 production 扱い
         return { ok: true, data: null }
       } catch (err) {
         return { ok: false, error: normalizeDbError(err) }
@@ -64,6 +66,7 @@ export function registerDbHandlers(
     try {
       await manager.disconnect()
       await closeTunnel(tunnel) // DB 切断後に SSH トンネルも閉じる（接続一覧へ戻る時も同経路）
+      clearProductionContext()
       return { ok: true, data: null }
     } catch (err) {
       return { ok: false, error: normalizeDbError(err) }
