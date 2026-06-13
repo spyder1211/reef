@@ -5,6 +5,7 @@ import { validateConnectionConfig } from '../connection/validateConnectionConfig
 import { normalizeDbError } from '../connection/normalizeDbError'
 import { connectWithTunnel, closeTunnel, type TunnelHolder } from '../connection/connectWithTunnel'
 import { clearProductionContext } from '../connection/productionContext'
+import { guardProductionSql, guardProductionTier } from '../guard/productionGuard'
 import type {
   ConnectionConfig,
   ApiResult,
@@ -19,6 +20,9 @@ export function registerDbHandlers(
   history: QueryHistoryStore,
   tunnel: TunnelHolder
 ): void {
+  // 本番ガードでキャンセルされた時の戻り値（renderer は code==='CANCELLED' を静かに扱う）。
+  const CANCELLED = { ok: false as const, error: { code: 'CANCELLED', message: '' } }
+
   ipcMain.handle(
     'db:connect',
     async (_e, config: ConnectionConfig): Promise<ApiResult<null>> => {
@@ -38,7 +42,8 @@ export function registerDbHandlers(
 
   ipcMain.handle(
     'db:query',
-    async (_e, sql: string, params?: unknown[]): Promise<ApiResult<QueryResult>> => {
+    async (e, sql: string, params?: unknown[]): Promise<ApiResult<QueryResult>> => {
+      if (!(await guardProductionSql(e, sql, 'SQL の実行'))) return CANCELLED
       try {
         return { ok: true, data: await manager.query(sql, params) }
       } catch (err) {
@@ -49,7 +54,8 @@ export function registerDbHandlers(
 
   ipcMain.handle(
     'db:queryScript',
-    async (_e, sql: string): Promise<ApiResult<QueryResult>> => {
+    async (e, sql: string): Promise<ApiResult<QueryResult>> => {
+      if (!(await guardProductionSql(e, sql, 'SQL の実行'))) return CANCELLED
       try {
         const data = await manager.queryScript(sql)
         history.add({ sql, durationMs: data.durationMs, ok: true })
@@ -124,7 +130,8 @@ export function registerDbHandlers(
 
   ipcMain.handle(
     'db:applyChanges',
-    async (_e, statements: SqlStatement[]): Promise<ApiResult<{ affectedRows: number }>> => {
+    async (e, statements: SqlStatement[]): Promise<ApiResult<{ affectedRows: number }>> => {
+      if (!(await guardProductionTier(e, 'write', '変更の適用（コミット）'))) return CANCELLED
       try {
         return { ok: true, data: await manager.applyChanges(statements) }
       } catch (err) {
