@@ -1,6 +1,7 @@
 import { app, safeStorage } from 'electron'
 import { randomUUID } from 'crypto'
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+import { readFileSync, existsSync, mkdirSync } from 'fs'
+import { writeFileSecure } from '../util/writeFileSecure'
 import { join, dirname } from 'path'
 import { ProfileStore, type StoreDeps, type StoredDoc, type StoredProfile } from './ProfileStore'
 import { GroupStore } from './GroupStore'
@@ -23,10 +24,9 @@ export function createConnectionStores(): { profileStore: ProfileStore; groupSto
     },
     persist(doc: StoredDoc): void {
       mkdirSync(dirname(filePath), { recursive: true })
-      writeFileSync(
+      writeFileSecure(
         filePath,
-        JSON.stringify({ profiles: doc.profiles, groups: doc.groups }, null, 2),
-        'utf-8'
+        JSON.stringify({ profiles: doc.profiles, groups: doc.groups }, null, 2)
       )
     },
     secret: {

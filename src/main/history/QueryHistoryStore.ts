@@ -1,6 +1,7 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
+import { readFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
+import { writeFileSecure } from '../util/writeFileSecure'
 import type { QueryHistoryEntry } from '../../shared/types'
 
 const MAX_ENTRIES = 500
@@ -27,7 +28,7 @@ export class QueryHistoryStore {
   }
 
   private persist(): void {
-    writeFileSync(this.filePath, JSON.stringify(this.entries))
+    writeFileSecure(this.filePath, JSON.stringify(this.entries))
   }
 
   add(input: Omit<QueryHistoryEntry, 'id' | 'executedAt'>): QueryHistoryEntry {

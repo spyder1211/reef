@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { QueryHistoryStore } from './QueryHistoryStore'
@@ -41,5 +41,12 @@ describe('QueryHistoryStore', () => {
     store.add({ sql: 'SELECT 1', durationMs: 5, ok: true })
     store.clear()
     expect(store.list()).toHaveLength(0)
+  })
+
+  it('履歴ファイルを 0o600 で書く', () => {
+    const store = new QueryHistoryStore(dir)
+    store.add({ sql: 'SELECT 1', durationMs: 5, ok: true })
+    const p = join(dir, 'query-history.json')
+    expect(statSync(p).mode & 0o777).toBe(0o600)
   })
 })
