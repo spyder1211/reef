@@ -43,6 +43,7 @@ export default function SqlImportModal(): JSX.Element | null {
     const res = await window.api.sqlImport.start()
     if (isCancelled(res)) {
       // 本番ガードでキャンセル: エラー表示せず確認画面へ戻す。
+      setProgress(null)
       setPhase('confirm')
       return
     }

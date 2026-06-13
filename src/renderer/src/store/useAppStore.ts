@@ -241,6 +241,7 @@ export const useAppStore = create<AppState>((set, get) => {
       const res = await window.api.queryScript(sql)
       if (isCancelled(res)) {
         // 本番ガードでキャンセル: 実行前なので結果は変えず running だけ戻す。
+        // SqlTab は patchTableTab（table 専用）が使えないため直接 set で running だけ戻す。
         set({ tabs: get().tabs.map((t) => (t.id === tabId ? { ...t, running: false } : t)) })
         return
       }
