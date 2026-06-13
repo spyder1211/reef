@@ -4,12 +4,17 @@ import { normalizeDbError } from '../connection/normalizeDbError'
 import type { ApiResult, ImportSummary } from '../../shared/types'
 import { importSqlDump } from './SqlImporter'
 import { consumePendingImport, isImporting, setImporting } from './importState'
+import { guardProductionTier } from '../guard/productionGuard'
 
 // 進捗 push の throttle 間隔（ミリ秒）。大きな dump で IPC を溢れさせない。
 const PROGRESS_THROTTLE_MS = 100
 
 export function registerImportHandlers(manager: ConnectionManager): void {
   ipcMain.handle('sqlImport:start', async (e): Promise<ApiResult<ImportSummary>> => {
+    // 本番では実行前に強い確認（pending を消費する前にガードする）。
+    if (!(await guardProductionTier(e, 'catastrophic', 'SQL ダンプの import / restore'))) {
+      return { ok: false, error: { code: 'CANCELLED', message: '' } }
+    }
     const filePath = consumePendingImport()
     if (!filePath) {
       return {
