@@ -9,7 +9,7 @@ function freshDeps(): StoreDeps {
     persist: (d) => {
       doc = d
     },
-    secret: { encrypt: (s) => `enc:${s}`, decrypt: (s) => s.replace(/^enc:/, '') },
+    secret: { isAvailable: () => true, encrypt: (s) => `enc:${s}`, decrypt: (s) => s.replace(/^enc:/, '') },
     genId: () => `id-${++counter}`
   }
 }
@@ -121,7 +121,7 @@ describe('ProfileStore', () => {
     const deps: StoreDeps = {
       load: () => doc,
       persist: (d) => { doc = d },
-      secret: { encrypt: (s) => `enc:${s}`, decrypt: (s) => s.replace(/^enc:/, '') },
+      secret: { isAvailable: () => true, encrypt: (s) => `enc:${s}`, decrypt: (s) => s.replace(/^enc:/, '') },
       genId: () => 'pid-1'
     }
     const store = new ProfileStore(deps)
@@ -170,5 +170,37 @@ describe('ProfileStore', () => {
     })
     const copy = s.duplicate(a.id)
     expect(s.getConnectConfig(copy.id).ssh?.password).toBe('sshpw')
+  })
+
+  it('暗号化不可なら新規の非空パスワードは保存しない（平文を残さない）', () => {
+    let doc: StoredDoc = { profiles: [], groups: [] }
+    const deps: StoreDeps = {
+      load: () => doc,
+      persist: (d) => { doc = d },
+      secret: { isAvailable: () => false, encrypt: (s) => `enc:${s}`, decrypt: (s) => s.replace(/^enc:/, '') },
+      genId: () => 'id-1'
+    }
+    const store = new ProfileStore(deps)
+    const a = store.save({ name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'secret' })
+    // 暗号化できないので保存されず、接続時は空パスワード。平文 'secret' はディスクに残らない。
+    expect(store.getConnectConfig(a.id).password).toBe('')
+    expect(doc.profiles[0].encryptedPassword).toBe('')
+  })
+
+  it('暗号化不可でも既存の暗号化パスワードを上書きで消さない', () => {
+    let available = true
+    let doc: StoredDoc = { profiles: [], groups: [] }
+    const deps: StoreDeps = {
+      load: () => doc,
+      persist: (d) => { doc = d },
+      secret: { isAvailable: () => available, encrypt: (s) => `enc:${s}`, decrypt: (s) => s.replace(/^enc:/, '') },
+      genId: () => 'id-1'
+    }
+    const store = new ProfileStore(deps)
+    const a = store.save({ name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'secret' })
+    available = false
+    // 暗号化不可の状態で非空パスワードで更新しても既存暗号文は維持される
+    store.save({ id: a.id, name: 'a2', tag: 'staging', host: 'h', port: 3306, user: 'u', password: 'newpw' })
+    expect(store.getConnectConfig(a.id).password).toBe('secret')
   })
 })
