@@ -10,7 +10,7 @@ function freshDeps(): StoreDeps {
     persist: (d) => {
       doc = d
     },
-    secret: { encrypt: (s) => `enc:${s}`, decrypt: (s) => s.replace(/^enc:/, '') },
+    secret: { isAvailable: () => true, encrypt: (s) => `enc:${s}`, decrypt: (s) => s.replace(/^enc:/, '') },
     genId: () => `id-${++counter}`
   }
 }

@@ -30,6 +30,7 @@ export function createConnectionStores(): { profileStore: ProfileStore; groupSto
       )
     },
     secret: {
+      isAvailable: () => safeStorage.isEncryptionAvailable(),
       encrypt(plain: string): string {
         if (!safeStorage.isEncryptionAvailable()) return ''
         return safeStorage.encryptString(plain).toString('base64')
