@@ -7,7 +7,9 @@
 //
 // script-src 'self'（unsafe-inline/eval なし）が最重要の防御。
 // style は React/CodeMirror のインラインスタイル用に 'unsafe-inline' を許可（script より低リスク）。
+// 注: frame-ancestors は <meta> では無効（HTTP ヘッダ専用）で meta 配信時に警告が出るうえ、
+//     スタンドアロン Electron アプリでは埋め込み防止の実益が無いため含めない。
 export const CSP =
   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
   "img-src 'self' data:; font-src 'self' data:; connect-src 'self'; " +
-  "object-src 'none'; frame-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+  "object-src 'none'; frame-src 'none'; base-uri 'none'"
