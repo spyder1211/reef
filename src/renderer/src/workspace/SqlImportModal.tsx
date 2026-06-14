@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ImportProgress, ImportSummary, SqlImportRequest } from '../../../shared/types'
 import styles from './SqlImportModal.module.css'
+import { isCancelled } from '../store/helpers'
 
 type Phase = 'closed' | 'confirm' | 'running' | 'result'
 
@@ -40,6 +41,12 @@ export default function SqlImportModal(): JSX.Element | null {
     setPhase('running')
     setProgress({ executedCount: 0, bytesRead: 0, totalBytes: req!.totalBytes })
     const res = await window.api.sqlImport.start()
+    if (isCancelled(res)) {
+      // 本番ガードでキャンセル: エラー表示せず確認画面へ戻す。
+      setProgress(null)
+      setPhase('confirm')
+      return
+    }
     if (res.ok) setSummary(res.data)
     else setFatal(`${res.error.code}: ${res.error.message}`)
     setPhase('result')

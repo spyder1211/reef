@@ -23,7 +23,7 @@ import {
   buildDropStatement
 } from './editBuilder'
 import { rowKeyOf, pkValuesOf } from './rowKey'
-import { pickNextActiveTabId, hasUncommittedChanges, isProductionProfile } from './helpers'
+import { pickNextActiveTabId, hasUncommittedChanges, isProductionProfile, isCancelled } from './helpers'
 import { cycleSort } from './pager'
 import { singleStatementOf } from './explain'
 
@@ -239,6 +239,12 @@ export const useAppStore = create<AppState>((set, get) => {
     try {
       // SQL エディタは複数文を1回で全実行する（; で分割して逐次実行）。
       const res = await window.api.queryScript(sql)
+      if (isCancelled(res)) {
+        // 本番ガードでキャンセル: 実行前なので結果は変えず running だけ戻す。
+        // SqlTab は patchTableTab（table 専用）が使えないため直接 set で running だけ戻す。
+        set({ tabs: get().tabs.map((t) => (t.id === tabId ? { ...t, running: false } : t)) })
+        return
+      }
       set({
         tabs: get().tabs.map((t) =>
           t.id === tabId
@@ -581,6 +587,7 @@ export const useAppStore = create<AppState>((set, get) => {
       try {
         const { sql, params } = buildTruncateStatement(name)
         const res = await window.api.query(sql, params)
+        if (isCancelled(res)) return // 本番ガードでキャンセル: 何もしない
         if (!res.ok) {
           window.alert(res.error.message)
           return
@@ -618,6 +625,7 @@ export const useAppStore = create<AppState>((set, get) => {
       try {
         const { sql, params } = buildDropStatement(name)
         const res = await window.api.query(sql, params)
+        if (isCancelled(res)) return // 本番ガードでキャンセル: 何もしない
         if (!res.ok) {
           window.alert(res.error.message)
           return
@@ -838,6 +846,11 @@ export const useAppStore = create<AppState>((set, get) => {
       setTabRunning(tabId)
       try {
         const res = await window.api.applyChanges(statements)
+        if (isCancelled(res)) {
+          // 本番ガードでキャンセル: ステージング変更は保持し running だけ戻す。
+          patchTableTab(tabId, (t) => ({ ...t, running: false }))
+          return
+        }
         if (!res.ok) {
           // 失敗時はグリッドを潰さず EditBar にエラー表示。ステージは保持して再試行可能。
           set({

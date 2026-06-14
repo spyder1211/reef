@@ -1,3 +1,5 @@
+import type { ApiResult } from '../../../shared/types'
+
 export function filterProfiles<T extends { name: string; host: string; database?: string }>(
   profiles: T[],
   search: string
@@ -25,6 +27,13 @@ export function pickNextActiveTabId(
 // 本番ガードのダイアログと、ワークスペース上部の警告バーで共有する単一の判定基準。
 export function isProductionProfile(profile: { tag: string } | null | undefined): boolean {
   return profile?.tag === 'production'
+}
+
+// IPC 結果が本番ガードのキャンセル（CANCELLED）かどうか。
+// 失敗だがエラー表示せず静かに中止するために使う。
+// 引数は ApiResult<unknown>（成功 {ok:true;data} もそのまま渡せる）。
+export function isCancelled(res: ApiResult<unknown>): boolean {
+  return !res.ok && res.error.code === 'CANCELLED'
 }
 
 // 未コミットのステージング変更（UPDATE/INSERT/DELETE）があるか。

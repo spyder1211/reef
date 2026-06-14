@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { filterProfiles, pickNextActiveTabId, hasUncommittedChanges, isProductionProfile } from './helpers'
+import { filterProfiles, pickNextActiveTabId, hasUncommittedChanges, isProductionProfile, isCancelled } from './helpers'
 import { initials } from '../lib/tags'
 
 describe('filterProfiles', () => {
@@ -75,5 +75,17 @@ describe('hasUncommittedChanges', () => {
   })
   it('SqlTab は常に false', () => {
     expect(hasUncommittedChanges({ kind: 'sql' })).toBe(false)
+  })
+})
+
+describe('isCancelled', () => {
+  it('CANCELLED の失敗結果は true', () => {
+    expect(isCancelled({ ok: false, error: { code: 'CANCELLED', message: '' } })).toBe(true)
+  })
+  it('他のエラーコードは false', () => {
+    expect(isCancelled({ ok: false, error: { code: 'DB_ERROR', message: 'x' } })).toBe(false)
+  })
+  it('成功結果は false', () => {
+    expect(isCancelled({ ok: true, data: null })).toBe(false)
   })
 })
