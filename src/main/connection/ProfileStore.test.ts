@@ -203,4 +203,27 @@ describe('ProfileStore', () => {
     store.save({ id: a.id, name: 'a2', tag: 'staging', host: 'h', port: 3306, user: 'u', password: 'newpw' })
     expect(store.getConnectConfig(a.id).password).toBe('secret')
   })
+
+  it('暗号化不可なら SSH 秘匿値（password/passphrase）も平文を残さない', () => {
+    let doc: StoredDoc = { profiles: [], groups: [] }
+    const deps: StoreDeps = {
+      load: () => doc,
+      persist: (d) => { doc = d },
+      secret: { isAvailable: () => false, encrypt: (s) => `enc:${s}`, decrypt: (s) => s.replace(/^enc:/, '') },
+      genId: () => 'id-1'
+    }
+    const store = new ProfileStore(deps)
+    const a = store.save({
+      name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: '',
+      ssh: {
+        enabled: true, host: 'bastion', port: 22, user: 'ec2',
+        authMethod: 'password', password: 'sshpw', passphrase: 'pp'
+      }
+    })
+    // SSH 公開部は保存されるが、秘匿値は暗号化できないため保存されない（平文を残さない）。
+    expect(doc.profiles[0].sshPasswordEnc).toBeUndefined()
+    expect(doc.profiles[0].sshPassphraseEnc).toBeUndefined()
+    expect(store.getConnectConfig(a.id).ssh?.password).toBeUndefined()
+    expect(store.getConnectConfig(a.id).ssh?.passphrase).toBeUndefined()
+  })
 })
