@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <title>Table++</title>
-    <!-- CSP は dev の Vite HMR と衝突するため後続プランのハードニングで本番向けに追加する -->
+    <!-- CSP は本番ビルドのみ二重で付与する: main の session.onHeadersReceived（HTTPヘッダ）
+         ＋ ビルド時に注入する <meta http-equiv>（electron.vite.config.ts の cspMetaPlugin）。
+         dev では HMR 維持のため付与しない。 -->
   </head>
   <body>
     <div id="root"></div>
