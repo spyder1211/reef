@@ -32,8 +32,17 @@ describe('classifyStatement', () => {
     expect(classifyStatement('WITH cte AS (SELECT 1) UPDATE t SET a=1')).toBe('write')
     expect(classifyStatement('WITH cte AS (SELECT 1) INSERT INTO t SELECT * FROM cte')).toBe('write')
   })
-  it('空文字は readonly', () => {
+  it('先頭コメント付きの破壊的文を迂回させない（実キーワードで判定）', () => {
+    expect(classifyStatement('-- 古いテーブルを削除\nDROP TABLE users')).toBe('catastrophic')
+    expect(classifyStatement('# cleanup\nTRUNCATE TABLE orders')).toBe('catastrophic')
+    expect(classifyStatement('/* cleanup */ DROP TABLE t')).toBe('catastrophic')
+    expect(classifyStatement('/* a */ -- b\n  DELETE FROM t')).toBe('write')
+    expect(classifyStatement('-- 単なるコメント\nSELECT 1')).toBe('readonly')
+  })
+  it('コメントのみ・空文字は readonly', () => {
     expect(classifyStatement('')).toBe('readonly')
+    expect(classifyStatement('-- comment only')).toBe('readonly')
+    expect(classifyStatement('/* block only */')).toBe('readonly')
   })
 })
 
@@ -52,5 +61,9 @@ describe('classifyScript', () => {
   })
   it('WITH 始まりの DML を含むスクリプトは write 以上', () => {
     expect(classifyScript('WITH cte AS (SELECT 1) DELETE FROM t')).toBe('write')
+  })
+  it('コメント始まりの破壊的文を含むスクリプトを迂回させない', () => {
+    expect(classifyScript('SELECT 1; -- c\nDROP TABLE t;')).toBe('catastrophic')
+    expect(classifyScript('/* x */ TRUNCATE TABLE t;')).toBe('catastrophic')
   })
 })

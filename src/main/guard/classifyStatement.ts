@@ -10,9 +10,19 @@ const WRITE = new Set([
   'WITH'   // CTE: WITH ... DML（先頭は WITH）。本番ガードを迂回させないため write 扱い
 ])
 
-// 1文の先頭キーワードを大文字で取り出す。先頭の空白・開き括弧は除去。
+// 1文の先頭キーワードを大文字で取り出す。先頭の空白・開き括弧・コメントは除去。
+// SqlStatementSplitter はコメントを残したまま文を返すため、`-- drop\nDROP TABLE t` の
+// ようなコメント始まりの破壊的文で本番ガードを迂回させないよう、実キーワードまで剥がす。
 function leadingKeyword(sql: string): string {
-  const m = sql.trim().replace(/^\(+\s*/, '').match(/^[A-Za-z_]+/)
+  let s = sql.trim()
+  for (;;) {
+    const before = s
+    s = s.replace(/^\(+\s*/, '') // 開き括弧
+    s = s.replace(/^(?:--|#)[^\n]*\n?\s*/, '') // 行コメント（-- / #）
+    s = s.replace(/^\/\*[\s\S]*?\*\/\s*/, '') // ブロックコメント /* ... */
+    if (s === before) break // これ以上剥がせなくなったら確定
+  }
+  const m = s.match(/^[A-Za-z_]+/)
   return m ? m[0].toUpperCase() : ''
 }
 
