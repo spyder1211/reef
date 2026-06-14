@@ -10,14 +10,7 @@ import { registerFileHandlers } from './ipc/registerFileHandlers'
 import { registerImportHandlers } from './import/registerImportHandlers'
 import { createConnectionStores } from './connection/createProfileStore'
 import { buildAppMenu } from './menu'
-
-// 本番ビルドのレンダラに付与する Content-Security-Policy。
-// script-src 'self'（unsafe-inline/eval なし）が要。style は React/CodeMirror の
-// インラインスタイル用に 'unsafe-inline' を許可（スタイル注入は script より低リスク）。
-const CSP =
-  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
-  "img-src 'self' data:; font-src 'self' data:; connect-src 'self'; " +
-  "object-src 'none'; frame-src 'none'; base-uri 'none'"
+import { CSP } from '../shared/csp'
 
 // アプリの表示名。macOS のアプリメニューやダイアログのタイトルに使われる。
 // dev/prod を問わず確実に反映させるため明示設定する（package.json の
