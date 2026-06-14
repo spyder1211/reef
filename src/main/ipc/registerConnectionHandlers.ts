@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { ipcMain, BrowserWindow, safeStorage } from 'electron'
 import { ConnectionManager } from '../connection/ConnectionManager'
 import { ProfileStore } from '../connection/ProfileStore'
 import { GroupStore } from '../connection/GroupStore'
@@ -88,6 +88,10 @@ export function registerConnectionHandlers(
       }
     }
   )
+
+  ipcMain.handle('connections:isEncryptionAvailable', async (): Promise<ApiResult<boolean>> => {
+    return { ok: true, data: safeStorage.isEncryptionAvailable() }
+  })
 
   ipcMain.handle('groups:list', async (): Promise<ApiResult<ConnectionGroup[]>> => {
     try {

@@ -8,6 +8,7 @@ import type {
 } from '../../shared/types'
 
 export interface SecretBox {
+  isAvailable(): boolean
   encrypt(plain: string): string
   decrypt(cipher: string): string
 }
@@ -43,26 +44,27 @@ export class ProfileStore {
     const profiles = doc.profiles
     const id = input.id ?? this.deps.genId()
     const idx = profiles.findIndex((p) => p.id === id)
-    // 更新時にパスワードが空なら既存の暗号化パスワードを保持する。
-    const encryptedPassword =
-      input.password === '' && idx >= 0
-        ? profiles[idx].encryptedPassword
-        : this.deps.secret.encrypt(input.password)
-    // groupId は input に明示された場合のみ反映し、無ければ既存値を保持する。
-    // （フォームは groupId を送らないため、DnD/move で設定した所属を消さない）
-    const groupId =
-      input.groupId !== undefined ? input.groupId : idx >= 0 ? profiles[idx].groupId : undefined
     const prev = idx >= 0 ? profiles[idx] : undefined
-    // SSH 設定: 公開部のみ ssh に格納し、秘匿値（password/passphrase）は暗号化して別フィールドへ。
-    // input に ssh が無ければ既存値を保持。更新で秘匿値が空文字なら既存暗号文を保持（DB パスワードと同方式）。
+
+    // 暗号化できない時は平文を書かず既存値を保持する（既存暗号文の上書き消失・平文化を防ぐ）。
+    const encOrKeep = (plain: string | undefined, existing: string | undefined): string | undefined => {
+      if (!plain) return existing
+      if (!this.deps.secret.isAvailable()) return existing
+      return this.deps.secret.encrypt(plain)
+    }
+
+    const encryptedPassword = encOrKeep(input.password, prev?.encryptedPassword) ?? ''
+    // groupId は input に明示された場合のみ反映し、無ければ既存値を保持する。
+    const groupId = input.groupId !== undefined ? input.groupId : prev?.groupId
+    // SSH 設定: 公開部のみ ssh に格納し、秘匿値は暗号化して別フィールドへ。input に ssh が無ければ既存値を保持。
     let ssh: SshSettingsPublic | undefined = prev?.ssh
     let sshPasswordEnc: string | undefined = prev?.sshPasswordEnc
     let sshPassphraseEnc: string | undefined = prev?.sshPassphraseEnc
     if (input.ssh !== undefined) {
       const { password: sshPw, passphrase: sshPp, ...pub } = input.ssh
       ssh = pub
-      sshPasswordEnc = sshPw ? this.deps.secret.encrypt(sshPw) : prev?.sshPasswordEnc
-      sshPassphraseEnc = sshPp ? this.deps.secret.encrypt(sshPp) : prev?.sshPassphraseEnc
+      sshPasswordEnc = encOrKeep(sshPw, prev?.sshPasswordEnc)
+      sshPassphraseEnc = encOrKeep(sshPp, prev?.sshPassphraseEnc)
     }
     const stored: StoredProfile = {
       id,

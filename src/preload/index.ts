@@ -77,7 +77,9 @@ const api = {
     delete: (id: string): Promise<ApiResult<null>> => ipcRenderer.invoke('connections:delete', id),
     connect: (id: string): Promise<ApiResult<null>> => ipcRenderer.invoke('connections:connect', id),
     move: (profileId: string, groupId: string | null): Promise<ApiResult<null>> =>
-      ipcRenderer.invoke('connections:move', profileId, groupId)
+      ipcRenderer.invoke('connections:move', profileId, groupId),
+    isEncryptionAvailable: (): Promise<ApiResult<boolean>> =>
+      ipcRenderer.invoke('connections:isEncryptionAvailable')
   },
   groups: {
     list: (): Promise<ApiResult<ConnectionGroup[]>> => ipcRenderer.invoke('groups:list'),

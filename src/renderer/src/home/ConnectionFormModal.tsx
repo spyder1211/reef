@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import type {
   AppError,
   ConnectionProfileInput,
@@ -40,6 +40,14 @@ export default function ConnectionFormModal(): JSX.Element {
   )
   const [error, setError] = useState<AppError | null>(null)
   const [testState, setTestState] = useState<'idle' | 'testing' | 'ok'>('idle')
+  // safeStorage が使えない環境（暗号化不可）では認証情報を保存できない旨を注記する。
+  // 既定 true = 注記を出さない（取得できた場合のみ false で注記）。
+  const [encAvailable, setEncAvailable] = useState(true)
+  useEffect(() => {
+    void window.api.connections.isEncryptionAvailable().then((res) => {
+      if (res.ok) setEncAvailable(res.data)
+    })
+  }, [])
 
   function update<K extends keyof ConnectionProfileInput>(key: K, value: ConnectionProfileInput[K]): void {
     setForm((f) => ({ ...f, [key]: value }))
@@ -150,6 +158,12 @@ export default function ConnectionFormModal(): JSX.Element {
             onChange={(e) => update('password', e.target.value)}
           />
         </Field>
+
+        {!encAvailable && (
+          <div className={styles.encWarn}>
+            この環境では認証情報（パスワード・SSH 秘匿値）を暗号化保存できないため、保存されません。
+          </div>
+        )}
 
         <Field label="Database">
           <input
