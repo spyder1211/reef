@@ -4,9 +4,13 @@ import type { ConnectionConfig, QueryResult, SqlStatement, TableSchema } from '.
 import { extractTableNames } from './extractTableNames'
 import { fieldTypeName } from './mysqlTypes'
 import { SqlStatementSplitter } from '../import/sqlStatementSplitter'
+import { QueryCancelledError, isQueryInterrupted } from './queryCancellation'
 
 export class ConnectionManager {
   private pool: mysql.Pool | null = null
+
+  // tabId → 実行中クエリの MySQL スレッドID。cancel() の KILL QUERY 対象を引くため。
+  private runningQueries = new Map<string, number>()
 
   async connect(config: ConnectionConfig): Promise<void> {
     this.pool = mysql.createPool({
@@ -25,10 +29,20 @@ export class ConnectionManager {
     conn.release()
   }
 
-  async query(sql: string, params?: unknown[]): Promise<QueryResult> {
+  async query(sql: string, params?: unknown[], tabId?: string): Promise<QueryResult> {
     if (!this.pool) throw new Error('Not connected')
+    if (tabId) return this.runCancellable(tabId, (conn) => this.runOne(conn, sql, params))
+    return this.runOne(this.pool, sql, params)
+  }
+
+  // execer（Pool でも PoolConnection でも可）で1文実行し QueryResult へ整形する。
+  private async runOne(
+    execer: mysql.Pool | mysql.PoolConnection,
+    sql: string,
+    params?: unknown[]
+  ): Promise<QueryResult> {
     const start = Date.now()
-    const [rows, fields] = await this.pool.query(sql, params)
+    const [rows, fields] = await execer.query(sql, params)
     const durationMs = Date.now() - start
     const dataRows = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
     const columns = (fields ?? []).map((f) => {
@@ -38,21 +52,63 @@ export class ConnectionManager {
     return { columns, rows: dataRows, rowCount: dataRows.length, durationMs }
   }
 
+  // tabId 付きクエリを pool の専用接続で実行し、threadId を登録する。
+  // 中断（KILL QUERY）された文は QueryCancelledError に翻訳する。
+  // KILL QUERY は接続を殺さないので finally は release（destroy ではない）。
+  private async runCancellable<T>(
+    tabId: string,
+    fn: (conn: mysql.PoolConnection) => Promise<T>
+  ): Promise<T> {
+    if (!this.pool) throw new Error('Not connected')
+    const conn = await this.pool.getConnection()
+    try {
+      let threadId = conn.threadId
+      if (threadId == null) {
+        const [rows] = await conn.query('SELECT CONNECTION_ID() AS id')
+        threadId = Number((rows as Array<{ id: number }>)[0]?.id)
+      }
+      this.runningQueries.set(tabId, threadId)
+      return await fn(conn)
+    } catch (err) {
+      if (isQueryInterrupted(err)) throw new QueryCancelledError()
+      throw err
+    } finally {
+      this.runningQueries.delete(tabId)
+      conn.release()
+    }
+  }
+
+  // 実行中クエリを別接続から KILL QUERY で中断する。実行中でなければ no-op。
+  async cancel(tabId: string): Promise<void> {
+    const threadId = this.runningQueries.get(tabId)
+    if (threadId == null || !this.pool) return
+    await this.pool.query('KILL QUERY ?', [threadId])
+  }
+
   // SQL エディタ用：入力全体を ; で文単位に分割し、先頭から順に実行する。
   // mysql2 の multipleStatements は無効なので、1回の Cmd+Enter で複数文を流すにはここで分割する。
   // 表示するのは最後の文の結果（複数 SELECT のうち最後）。所要時間は全文の合計。
   // 途中の文が失敗したら即 throw し、以降の文は実行しない（autocommit のため既実行分は確定済み）。
   // ※ splitter はコメントを除去するため、実行 SQL からコメントは取り除かれる。
-  async queryScript(sql: string): Promise<QueryResult> {
+  async queryScript(sql: string, tabId?: string): Promise<QueryResult> {
     if (!this.pool) throw new Error('Not connected')
     const splitter = new SqlStatementSplitter()
     const statements = [...splitter.push(sql), ...splitter.end()]
-    // 空入力やコメントのみはエラーにせず空結果を返す。
     if (statements.length === 0) return { columns: [], rows: [], rowCount: 0, durationMs: 0 }
+    if (tabId) return this.runCancellable(tabId, (conn) => this.runScript(conn, statements))
+    return this.runScript(this.pool, statements)
+  }
+
+  // 分割済みの文を execer 上で順次実行し、最後の文の結果＋全体所要時間を返す。
+  // 途中で中断 reject が起きたら呼び出し元（runCancellable）へ伝播し残り文は実行しない。
+  private async runScript(
+    execer: mysql.Pool | mysql.PoolConnection,
+    statements: string[]
+  ): Promise<QueryResult> {
     const start = Date.now()
     let last: QueryResult = { columns: [], rows: [], rowCount: 0, durationMs: 0 }
     for (const stmt of statements) {
-      last = await this.query(stmt)
+      last = await this.runOne(execer, stmt)
     }
     return { ...last, durationMs: Date.now() - start }
   }
