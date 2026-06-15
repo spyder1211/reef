@@ -41,9 +41,22 @@ export default function ResultsGrid(): JSX.Element {
   const stageDeleteMany = useAppStore((s) => s.stageDeleteMany)
   const duplicateRows = useAppStore((s) => s.duplicateRows)
   const quickFilter = useAppStore((s) => s.quickFilter)
+  const cancelTab = useAppStore((s) => s.cancelTab)
 
   if (!tab) return <div className={styles.placeholder} />
-  if (tab.running) return <div className={styles.placeholder}>実行中…</div>
+  if (tab.running)
+    return (
+      <div className={styles.runningBox}>
+        <span>実行中…</span>
+        <button
+          className={styles.stopButton}
+          disabled={tab.canceling}
+          onClick={() => void cancelTab(tab.id)}
+        >
+          {tab.canceling ? '停止中…' : '停止'}
+        </button>
+      </div>
+    )
   if (tab.error) {
     return (
       <div className={styles.errorBox}>
