@@ -145,3 +145,27 @@
   background: var(--border);
   margin: 4px 0;
 }
+
+.runningBox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  color: var(--text-faint, #888);
+  font-size: 13px;
+}
+
+.stopButton {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 4px;
+  background: var(--bg-sidebar, #fff);
+  color: var(--text, #222);
+  cursor: pointer;
+}
+
+.stopButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

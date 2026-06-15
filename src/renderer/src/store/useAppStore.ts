@@ -32,6 +32,7 @@ interface BaseTab {
   result: QueryResult | null
   error: AppError | null
   running: boolean
+  canceling: boolean // 停止要求送信中（停止ボタンの「停止中…」表示用）
 }
 export interface SqlTab extends BaseTab {
   kind: 'sql'
@@ -81,7 +82,8 @@ function makeSqlTab(index: number): SqlTab {
     sql: 'SELECT 1 AS one;',
     result: null,
     error: null,
-    running: false
+    running: false,
+    canceling: false
   }
 }
 
@@ -111,7 +113,8 @@ function makeTableTab(name: string): TableTab {
     result: null,
     error: null,
     // 開いた直後は初回クエリ実行中とみなし、結果ペインのプレースホルダ点滅を防ぐ
-    running: true
+    running: true,
+    canceling: false
   }
 }
 
@@ -159,6 +162,7 @@ interface AppState {
   setActiveTab: (id: string) => void
   setTabSql: (id: string, sql: string) => void
   runActiveTab: () => Promise<void>
+  cancelTab: (tabId: string) => Promise<void>
   explainActiveTab: () => Promise<void>
   selectTable: (name: string) => Promise<void>
   setTableView: (tabId: string, view: 'data' | 'structure') => Promise<void>
@@ -205,7 +209,11 @@ export const useAppStore = create<AppState>((set, get) => {
   }
 
   function setTabRunning(tabId: string): void {
-    set({ tabs: get().tabs.map((t) => (t.id === tabId ? { ...t, running: true, error: null } : t)) })
+    set({
+      tabs: get().tabs.map((t) =>
+        t.id === tabId ? { ...t, running: true, canceling: false, error: null } : t
+      )
+    })
   }
 
   // TableTab のみを id 一致で書き換える共通ヘルパー。
@@ -220,7 +228,9 @@ export const useAppStore = create<AppState>((set, get) => {
     const message = err instanceof Error ? err.message : String(err)
     set({
       tabs: get().tabs.map((t) =>
-        t.id === tabId ? { ...t, running: false, result: null, error: { code: 'CLIENT_ERROR', message } } : t
+        t.id === tabId
+          ? { ...t, running: false, canceling: false, result: null, error: { code: 'CLIENT_ERROR', message } }
+          : t
       )
     })
   }
@@ -238,11 +248,13 @@ export const useAppStore = create<AppState>((set, get) => {
     setTabRunning(tabId)
     try {
       // SQL エディタは複数文を1回で全実行する（; で分割して逐次実行）。
-      const res = await window.api.queryScript(sql)
+      const res = await window.api.queryScript(tabId, sql)
       if (isCancelled(res)) {
         // 本番ガードでキャンセル: 実行前なので結果は変えず running だけ戻す。
         // SqlTab は patchTableTab（table 専用）が使えないため直接 set で running だけ戻す。
-        set({ tabs: get().tabs.map((t) => (t.id === tabId ? { ...t, running: false } : t)) })
+        set({
+          tabs: get().tabs.map((t) => (t.id === tabId ? { ...t, running: false, canceling: false } : t))
+        })
         return
       }
       set({
@@ -251,6 +263,7 @@ export const useAppStore = create<AppState>((set, get) => {
             ? {
                 ...t,
                 running: false,
+                canceling: false,
                 result: res.ok ? res.data : null,
                 error: res.ok ? null : res.error
               }
@@ -273,14 +286,19 @@ export const useAppStore = create<AppState>((set, get) => {
         limit: tab.pageSize,
         offset
       })
-      const res = await window.api.query(sql, params)
+      const res = await window.api.query(tabId, sql, params)
+      if (isCancelled(res)) {
+        patchTableTab(tabId, (t) => ({ ...t, running: false, canceling: false }))
+        return
+      }
 
       // 件数はフィルタ/テーブル変更時のみ取り直す（ソート・ページ送りでは不変）。
       // ページクエリが失敗したときは COUNT を打たず、直前の total を維持する。
       let total = tab.total
       if (opts.recount && res.ok) {
         const c = buildCountQuery(tab.tableName, tab.columns, tab.filters)
-        const cres = await window.api.query(c.sql, c.params)
+        // COUNT は内部クエリのため tabId を渡さない（空 tabId = 非キャンセル対象）。
+        const cres = await window.api.query('', c.sql, c.params)
         // mysql2 は COUNT を bigint で返す場合があるが、現実的な行数なら Number() で安全。
         total = cres.ok ? Number(cres.data.rows[0]?.total ?? 0) : null
       }
@@ -288,14 +306,23 @@ export const useAppStore = create<AppState>((set, get) => {
       set({
         tabs: get().tabs.map((t) => {
           if (t.id !== tabId || t.kind !== 'table') return t
-          if (!res.ok) return { ...t, running: false, result: null, error: res.error }
+          if (!res.ok) return { ...t, running: false, canceling: false, result: null, error: res.error }
           const columns = t.columns.length > 0 ? t.columns : res.data.columns.map((col) => col.name)
-          return { ...t, running: false, result: res.data, error: null, columns, total }
+          return { ...t, running: false, canceling: false, result: res.data, error: null, columns, total }
         })
       })
     } catch (err) {
       failTab(tabId, err)
     }
+  }
+
+  // 実行中クエリの停止要求を送る。running の解除は、停止された query/queryScript が
+  // CANCELLED で解決した時に runSql/runTable 側で行われる（ここでは canceling だけ立てる）。
+  async function cancelTab(tabId: string): Promise<void> {
+    const tab = get().tabs.find((t) => t.id === tabId)
+    if (!tab || !tab.running || tab.canceling) return
+    set({ tabs: get().tabs.map((t) => (t.id === tabId ? { ...t, canceling: true } : t)) })
+    await window.api.cancelQuery(tabId)
   }
 
   return {
@@ -504,13 +531,14 @@ export const useAppStore = create<AppState>((set, get) => {
       }
       setTabRunning(tab.id)
       try {
-        const res = await window.api.query(`EXPLAIN ${stmt}`)
+        const res = await window.api.query('', `EXPLAIN ${stmt}`)
         set({
           tabs: get().tabs.map((t) =>
             t.id === tab.id
               ? {
                   ...t,
                   running: false,
+                  canceling: false,
                   result: res.ok ? res.data : null,
                   error: res.ok ? null : res.error
                 }
@@ -538,6 +566,8 @@ export const useAppStore = create<AppState>((set, get) => {
         await runTable(tab.id, { recount: true })
       }
     },
+
+    cancelTab,
 
     async selectTable(name) {
       const existing = get().tabs.find(
@@ -586,7 +616,7 @@ export const useAppStore = create<AppState>((set, get) => {
       }
       try {
         const { sql, params } = buildTruncateStatement(name)
-        const res = await window.api.query(sql, params)
+        const res = await window.api.query('', sql, params)
         if (isCancelled(res)) return // 本番ガードでキャンセル: 何もしない
         if (!res.ok) {
           window.alert(res.error.message)
@@ -624,7 +654,7 @@ export const useAppStore = create<AppState>((set, get) => {
       }
       try {
         const { sql, params } = buildDropStatement(name)
-        const res = await window.api.query(sql, params)
+        const res = await window.api.query('', sql, params)
         if (isCancelled(res)) return // 本番ガードでキャンセル: 何もしない
         if (!res.ok) {
           window.alert(res.error.message)
@@ -848,7 +878,7 @@ export const useAppStore = create<AppState>((set, get) => {
         const res = await window.api.applyChanges(statements)
         if (isCancelled(res)) {
           // 本番ガードでキャンセル: ステージング変更は保持し running だけ戻す。
-          patchTableTab(tabId, (t) => ({ ...t, running: false }))
+          patchTableTab(tabId, (t) => ({ ...t, running: false, canceling: false }))
           return
         }
         if (!res.ok) {
@@ -856,7 +886,7 @@ export const useAppStore = create<AppState>((set, get) => {
           set({
             tabs: get().tabs.map((t) =>
               t.id === tabId && t.kind === 'table'
-                ? { ...t, running: false, editError: res.error }
+                ? { ...t, running: false, canceling: false, editError: res.error }
                 : t
             )
           })
@@ -945,7 +975,7 @@ export const useAppStore = create<AppState>((set, get) => {
           limit: null
         })
         try {
-          const res = await window.api.query(sql, params)
+          const res = await window.api.query('', sql, params)
           if (!res.ok) return { ok: false, message: res.error.message }
           columns = res.data.columns.map((c) => c.name)
           rows = res.data.rows

@@ -176,4 +176,22 @@ describe.skipIf(!hasDb)('ConnectionManager (integration)', () => {
     const after = await mgr.query('SELECT id FROM mix_rb ORDER BY id')
     expect(after.rows.map((r) => r.id)).toEqual([1])
   })
+
+  it('cancel: 実行中クエリを速やかに中断し、接続は再利用できる', async () => {
+    const started = Date.now()
+    const p = mgr.query('SELECT SLEEP(10) AS s', [], 'cancel-1')
+    // クエリがサーバに届き runningQueries に登録されるまで少し待つ
+    await new Promise((r) => setTimeout(r, 500))
+    await mgr.cancel('cancel-1')
+    // 中断されるので 10 秒待たずに settle する（SLEEP は 1 を返す/重い文は 1317 で reject、どちらも可）
+    await p.catch(() => undefined)
+    expect(Date.now() - started).toBeLessThan(5000)
+    // KILL QUERY は接続を殺さないので後続クエリが通る
+    const r = await mgr.query('SELECT 1 AS one', [], 'cancel-2')
+    expect(Number(r.rows[0]?.one)).toBe(1)
+  }, 15000)
+
+  it('cancel: 実行中でない tabId は no-op（reject しない）', async () => {
+    await expect(mgr.cancel('no-such-tab')).resolves.toBeUndefined()
+  })
 })
