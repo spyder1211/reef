@@ -3,6 +3,7 @@ import { ConnectionManager } from '../connection/ConnectionManager'
 import { QueryHistoryStore } from '../history/QueryHistoryStore'
 import { validateConnectionConfig } from '../connection/validateConnectionConfig'
 import { normalizeDbError } from '../connection/normalizeDbError'
+import { QueryCancelledError } from '../connection/queryCancellation'
 import { connectWithTunnel, closeTunnel, type TunnelHolder } from '../connection/connectWithTunnel'
 import { clearProductionContext } from '../connection/productionContext'
 import { guardProductionSql, guardProductionTier } from '../guard/productionGuard'
@@ -42,11 +43,12 @@ export function registerDbHandlers(
 
   ipcMain.handle(
     'db:query',
-    async (e, sql: string, params?: unknown[]): Promise<ApiResult<QueryResult>> => {
+    async (e, tabId: string, sql: string, params?: unknown[]): Promise<ApiResult<QueryResult>> => {
       if (!(await guardProductionSql(e, sql, 'SQL の実行'))) return CANCELLED
       try {
-        return { ok: true, data: await manager.query(sql, params) }
+        return { ok: true, data: await manager.query(sql, params, tabId) }
       } catch (err) {
+        if (err instanceof QueryCancelledError) return CANCELLED
         return { ok: false, error: normalizeDbError(err) }
       }
     }
@@ -54,20 +56,31 @@ export function registerDbHandlers(
 
   ipcMain.handle(
     'db:queryScript',
-    async (e, sql: string): Promise<ApiResult<QueryResult>> => {
+    async (e, tabId: string, sql: string): Promise<ApiResult<QueryResult>> => {
       if (!(await guardProductionSql(e, sql, 'SQL の実行'))) return CANCELLED
-      // キャンセルは実行前なので履歴には残さない（成功/失敗時のみ history.add する）。
+      // キャンセル（実行前ガード／実行中 KILL）は履歴に残さない。成功/失敗時のみ history.add。
       try {
-        const data = await manager.queryScript(sql)
+        const data = await manager.queryScript(sql, tabId)
         history.add({ sql, durationMs: data.durationMs, ok: true })
         return { ok: true, data }
       } catch (err) {
+        if (err instanceof QueryCancelledError) return CANCELLED
         const error = normalizeDbError(err)
         history.add({ sql, durationMs: 0, ok: false, errorMessage: error.message })
         return { ok: false, error }
       }
     }
   )
+
+  // 実行中クエリの停止。自分のクエリの KILL QUERY は破壊的でないので本番ガードは通さない。
+  ipcMain.handle('db:cancel', async (_e, tabId: string): Promise<ApiResult<null>> => {
+    try {
+      await manager.cancel(tabId)
+      return { ok: true, data: null }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
+    }
+  })
 
   ipcMain.handle('db:disconnect', async (): Promise<ApiResult<null>> => {
     clearProductionContext() // 切断時は本番判定を必ず落とす（pool.end 失敗時も残さない）
