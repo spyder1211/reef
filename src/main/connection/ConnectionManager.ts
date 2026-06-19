@@ -5,6 +5,8 @@ import { extractTableNames } from './extractTableNames'
 import { fieldTypeName } from './mysqlTypes'
 import { SqlStatementSplitter } from '../import/sqlStatementSplitter'
 import { QueryCancelledError, isQueryInterrupted } from './queryCancellation'
+import { maybeApplyAutoLimit } from './autoLimit'
+import { MAX_RESULT_ROWS } from '../../shared/queryLimits'
 
 export class ConnectionManager {
   private pool: mysql.Pool | null = null
@@ -90,27 +92,55 @@ export class ConnectionManager {
   // 表示するのは最後の文の結果（複数 SELECT のうち最後）。所要時間は全文の合計。
   // 途中の文が失敗したら即 throw し、以降の文は実行しない（autocommit のため既実行分は確定済み）。
   // ※ splitter はコメントを除去するため、実行 SQL からコメントは取り除かれる。
-  async queryScript(sql: string, tabId?: string): Promise<QueryResult> {
+  async queryScript(
+    sql: string,
+    tabId?: string,
+    opts?: { skipAutoLimit?: boolean }
+  ): Promise<QueryResult> {
     if (!this.pool) throw new Error('Not connected')
     const splitter = new SqlStatementSplitter()
     const statements = [...splitter.push(sql), ...splitter.end()]
     if (statements.length === 0) return { columns: [], rows: [], rowCount: 0, durationMs: 0 }
-    if (tabId) return this.runCancellable(tabId, (conn) => this.runScript(conn, statements))
-    return this.runScript(this.pool, statements)
+    if (tabId) return this.runCancellable(tabId, (conn) => this.runScript(conn, statements, opts))
+    return this.runScript(this.pool, statements, opts)
   }
 
   // 分割済みの文を execer 上で順次実行し、最後の文の結果＋全体所要時間を返す。
-  // 途中で中断 reject が起きたら呼び出し元（runCancellable）へ伝播し残り文は実行しない。
+  // 単一の素SELECT（!skipAutoLimit）には LIMIT 500 を自動付与し autoLimited を立てる。
+  // 最終結果が MAX_RESULT_ROWS を超えたら slice して truncated を立てる（SQLタブ専用ガード）。
   private async runScript(
     execer: mysql.Pool | mysql.PoolConnection,
-    statements: string[]
+    statements: string[],
+    opts?: { skipAutoLimit?: boolean }
   ): Promise<QueryResult> {
     const start = Date.now()
     let last: QueryResult = { columns: [], rows: [], rowCount: 0, durationMs: 0 }
+    const useAutoLimit = statements.length === 1 && !opts?.skipAutoLimit
+    let autoLimited = false
     for (const stmt of statements) {
-      last = await this.runOne(execer, stmt)
+      let toRun = stmt
+      if (useAutoLimit) {
+        const r = maybeApplyAutoLimit(stmt, statements.length)
+        toRun = r.sql
+        autoLimited = r.applied
+      }
+      last = await this.runOne(execer, toRun)
     }
-    return { ...last, durationMs: Date.now() - start }
+    let rows = last.rows
+    let truncated = false
+    if (rows.length > MAX_RESULT_ROWS) {
+      rows = rows.slice(0, MAX_RESULT_ROWS)
+      truncated = true
+    }
+    const result: QueryResult = {
+      ...last,
+      rows,
+      rowCount: rows.length,
+      durationMs: Date.now() - start
+    }
+    if (autoLimited) result.autoLimited = true
+    if (truncated) result.truncated = true
+    return result
   }
 
   async listTables(): Promise<string[]> {

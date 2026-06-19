@@ -38,4 +38,28 @@ describe('ConnectionManager.queryScript', () => {
     expect(query).not.toHaveBeenCalled()
     expect(res).toEqual({ columns: [], rows: [], rowCount: 0, durationMs: 0 })
   })
+
+  it('単一の素SELECTには LIMIT 500 を付けて実行し autoLimited=true', async () => {
+    const { mgr, query } = withQueryPool(() => [[{ a: 1 }], [{ name: 'a' }]])
+    const res = await mgr.queryScript('SELECT 1 AS a')
+    expect(query).toHaveBeenCalledWith('SELECT 1 AS a LIMIT 500', undefined)
+    expect(res.autoLimited).toBe(true)
+  })
+
+  it('skipAutoLimit=true なら LIMIT を付けない', async () => {
+    const { mgr, query } = withQueryPool(() => [[{ a: 1 }], [{ name: 'a' }]])
+    const res = await mgr.queryScript('SELECT 1 AS a', undefined, { skipAutoLimit: true })
+    expect(query).toHaveBeenCalledWith('SELECT 1 AS a', undefined)
+    expect(res.autoLimited).toBeUndefined()
+  })
+
+  it('結果が MAX_RESULT_ROWS を超えたら打ち切り truncated=true', async () => {
+    const big = Array.from({ length: 10001 }, (_v, i) => ({ id: i }))
+    const { mgr } = withQueryPool(() => [big, [{ name: 'id' }]])
+    // 明示LIMITありにして自動LIMITを回避し、ハード上限のみ効かせる
+    const res = await mgr.queryScript('SELECT id FROM t LIMIT 100000')
+    expect(res.rowCount).toBe(10000)
+    expect(res.rows).toHaveLength(10000)
+    expect(res.truncated).toBe(true)
+  })
 })

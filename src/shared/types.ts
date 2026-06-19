@@ -33,6 +33,8 @@ export interface QueryResult {
   rows: Record<string, unknown>[]
   rowCount: number
   durationMs: number
+  autoLimited?: boolean // 単一素SELECTに自動 LIMIT 500 を付与した（SQLタブのみ）
+  truncated?: boolean // 結果が MAX_RESULT_ROWS を超えたため打ち切った（SQLタブのみ）
 }
 
 export interface AppError {

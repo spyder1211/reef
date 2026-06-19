@@ -194,4 +194,35 @@ describe.skipIf(!hasDb)('ConnectionManager (integration)', () => {
   it('cancel: 実行中でない tabId は no-op（reject しない）', async () => {
     await expect(mgr.cancel('no-such-tab')).resolves.toBeUndefined()
   })
+
+  it('SQLタブ: 単一の素SELECTは自動 LIMIT 500 が効き autoLimited=true', async () => {
+    await mgr.query('CREATE TABLE IF NOT EXISTS al_demo (id INT)')
+    await mgr.query('DELETE FROM al_demo')
+    const values = Array.from({ length: 600 }, (_v, i) => `(${i})`).join(',')
+    await mgr.query(`INSERT INTO al_demo (id) VALUES ${values}`)
+
+    const res = await mgr.queryScript('SELECT * FROM al_demo')
+    expect(res.rowCount).toBe(500)
+    expect(res.autoLimited).toBe(true)
+  })
+
+  it('SQLタブ: skipAutoLimit=true なら全件返る（autoLimited なし）', async () => {
+    const res = await mgr.queryScript('SELECT * FROM al_demo', undefined, { skipAutoLimit: true })
+    expect(res.rowCount).toBe(600)
+    expect(res.autoLimited).toBeUndefined()
+  })
+
+  it('SQLタブ: 明示の巨大LIMITは MAX_RESULT_ROWS=10000 で打ち切る', async () => {
+    await mgr.query('CREATE TABLE IF NOT EXISTS hc_demo (id INT)')
+    await mgr.query('DELETE FROM hc_demo')
+    // 10001 行を挿入（1000 件ずつ）
+    for (let base = 0; base < 10001; base += 1000) {
+      const cnt = Math.min(1000, 10001 - base)
+      const vals = Array.from({ length: cnt }, (_v, i) => `(${base + i})`).join(',')
+      await mgr.query(`INSERT INTO hc_demo (id) VALUES ${vals}`)
+    }
+    const res = await mgr.queryScript('SELECT id FROM hc_demo LIMIT 100000')
+    expect(res.rowCount).toBe(10000)
+    expect(res.truncated).toBe(true)
+  })
 })
