@@ -23,7 +23,7 @@ declare global {
     api: {
       connect: (config: ConnectionConfig) => Promise<ApiResult<null>>
       query: (tabId: string, sql: string, params?: unknown[]) => Promise<ApiResult<QueryResult>>
-      queryScript: (tabId: string, sql: string) => Promise<ApiResult<QueryResult>>
+      queryScript: (tabId: string, sql: string, skipAutoLimit?: boolean) => Promise<ApiResult<QueryResult>>
       cancelQuery: (tabId: string) => Promise<ApiResult<null>>
       disconnect: () => Promise<ApiResult<null>>
       listTables: () => Promise<ApiResult<string[]>>

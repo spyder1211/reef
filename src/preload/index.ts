@@ -20,9 +20,9 @@ const api = {
     ipcRenderer.invoke('db:connect', config),
   query: (tabId: string, sql: string, params?: unknown[]): Promise<ApiResult<QueryResult>> =>
     ipcRenderer.invoke('db:query', tabId, sql, params),
-  // SQL エディタ用：複数文を ; で分割して順に実行（main 側）。
-  queryScript: (tabId: string, sql: string): Promise<ApiResult<QueryResult>> =>
-    ipcRenderer.invoke('db:queryScript', tabId, sql),
+  // SQL エディタ用：複数文を ; で分割して順に実行（main 側）。skipAutoLimit で自動LIMITを外す。
+  queryScript: (tabId: string, sql: string, skipAutoLimit?: boolean): Promise<ApiResult<QueryResult>> =>
+    ipcRenderer.invoke('db:queryScript', tabId, sql, skipAutoLimit),
   // 実行中クエリを停止（KILL QUERY）。
   cancelQuery: (tabId: string): Promise<ApiResult<null>> =>
     ipcRenderer.invoke('db:cancel', tabId),

@@ -56,11 +56,12 @@ export function registerDbHandlers(
 
   ipcMain.handle(
     'db:queryScript',
-    async (e, tabId: string, sql: string): Promise<ApiResult<QueryResult>> => {
+    async (e, tabId: string, sql: string, skipAutoLimit?: boolean): Promise<ApiResult<QueryResult>> => {
       if (!(await guardProductionSql(e, sql, 'SQL の実行'))) return CANCELLED
       // キャンセル（実行前ガード／実行中 KILL）は履歴に残さない。成功/失敗時のみ history.add。
+      // 履歴にはユーザー原文 sql を残す（自動付与した LIMIT 入りではない）。
       try {
-        const data = await manager.queryScript(sql, tabId)
+        const data = await manager.queryScript(sql, tabId, { skipAutoLimit })
         history.add({ sql, durationMs: data.durationMs, ok: true })
         return { ok: true, data }
       } catch (err) {
