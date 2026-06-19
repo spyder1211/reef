@@ -225,4 +225,19 @@ describe.skipIf(!hasDb)('ConnectionManager (integration)', () => {
     expect(res.rowCount).toBe(10000)
     expect(res.truncated).toBe(true)
   })
+
+  it('isolation: query()/CSV経路は 10000 行ハード上限で打ち切られない', async () => {
+    await mgr.query('CREATE TABLE IF NOT EXISTS iso_demo (id INT)')
+    await mgr.query('DELETE FROM iso_demo')
+    // 10001 行を挿入（1000 件ずつ）
+    for (let base = 0; base < 10001; base += 1000) {
+      const cnt = Math.min(1000, 10001 - base)
+      const vals = Array.from({ length: cnt }, (_v, i) => `(${base + i})`).join(',')
+      await mgr.query(`INSERT INTO iso_demo (id) VALUES ${vals}`)
+    }
+    // query() は runOne を使う（SQL タブの runScript とは別経路）
+    const res = await mgr.query('SELECT id FROM iso_demo')
+    expect(res.rowCount).toBe(10001)
+    expect((res as { truncated?: unknown }).truncated).toBeUndefined()
+  })
 })
