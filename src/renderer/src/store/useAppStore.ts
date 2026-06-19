@@ -162,6 +162,7 @@ interface AppState {
   setActiveTab: (id: string) => void
   setTabSql: (id: string, sql: string) => void
   runActiveTab: () => Promise<void>
+  rerunWithoutAutoLimit: (tabId: string) => Promise<void>
   cancelTab: (tabId: string) => Promise<void>
   explainActiveTab: () => Promise<void>
   selectTable: (name: string) => Promise<void>
@@ -244,11 +245,15 @@ export const useAppStore = create<AppState>((set, get) => {
     set({ schemaMap: sm.ok ? sm.data : {} })
   }
 
-  async function runSql(tabId: string, sql: string): Promise<void> {
+  async function runSql(
+    tabId: string,
+    sql: string,
+    opts?: { skipAutoLimit?: boolean }
+  ): Promise<void> {
     setTabRunning(tabId)
     try {
       // SQL エディタは複数文を1回で全実行する（; で分割して逐次実行）。
-      const res = await window.api.queryScript(tabId, sql)
+      const res = await window.api.queryScript(tabId, sql, opts?.skipAutoLimit)
       if (isCancelled(res)) {
         // 本番ガードでキャンセル: 実行前なので結果は変えず running だけ戻す。
         // SqlTab は patchTableTab（table 専用）が使えないため直接 set で running だけ戻す。
@@ -565,6 +570,13 @@ export const useAppStore = create<AppState>((set, get) => {
         }))
         await runTable(tab.id, { recount: true })
       }
+    },
+
+    // 注記の「自動LIMITを外して再実行」ボタン用。同じ SQL を skipAutoLimit=true で再実行する。
+    async rerunWithoutAutoLimit(tabId: string) {
+      const tab = get().tabs.find((t) => t.id === tabId)
+      if (!tab || tab.kind !== 'sql') return
+      await runSql(tabId, tab.sql, { skipAutoLimit: true })
     },
 
     cancelTab,
