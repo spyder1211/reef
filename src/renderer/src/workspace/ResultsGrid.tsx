@@ -12,6 +12,7 @@ import type {
   PendingInsert,
   FilterOperator
 } from '../../../shared/types'
+import { DEFAULT_SQL_LIMIT, MAX_RESULT_ROWS } from '../../../shared/queryLimits'
 import { useAppStore } from '../store/useAppStore'
 import { rowKeyOf, pkValuesOf } from '../store/rowKey'
 import { toTsv } from '../lib/csv'
@@ -42,6 +43,7 @@ export default function ResultsGrid(): JSX.Element {
   const duplicateRows = useAppStore((s) => s.duplicateRows)
   const quickFilter = useAppStore((s) => s.quickFilter)
   const cancelTab = useAppStore((s) => s.cancelTab)
+  const rerunWithoutAutoLimit = useAppStore((s) => s.rerunWithoutAutoLimit)
 
   if (!tab) return <div className={styles.placeholder} />
   if (tab.running)
@@ -88,36 +90,55 @@ export default function ResultsGrid(): JSX.Element {
         void quickFilter(tab.id, column, operator, value)
     : undefined
 
+  const notice =
+    tab.kind === 'sql' && tab.result?.autoLimited ? (
+      <div className={styles.limitNotice}>
+        <span>先頭 {DEFAULT_SQL_LIMIT} 件を表示中（自動LIMIT・全件ではありません）</span>
+        <button className={styles.limitNoticeButton} onClick={() => void rerunWithoutAutoLimit(tab.id)}>
+          自動LIMITを外して再実行
+        </button>
+      </div>
+    ) : tab.kind === 'sql' && tab.result?.truncated ? (
+      <div className={styles.limitNotice}>
+        <span>
+          結果が大きいため先頭 {MAX_RESULT_ROWS} 件で打ち切りました。全件はCSVエクスポートを使用してください。
+        </span>
+      </div>
+    ) : null
+
   return (
-    <Grid
-      result={tab.result}
-      sort={sort}
-      onSort={onSort}
-      editable={editable}
-      primaryKey={primaryKey}
-      edits={edits}
-      inserts={inserts}
-      deletes={deletes}
-      selectedRowIndices={selectedRowIndices}
-      selectionAnchor={selectionAnchor}
-      rowCount={tab.result?.rows.length ?? 0}
-      onSetSelection={onSetSelection}
-      onEdit={editable ? (row, col, val) => setCellEdit(tab.id, row, col, val) : undefined}
-      onNull={editable ? (row, col) => setCellNull(tab.id, row, col) : undefined}
-      onUpdateInsert={
-        editable ? (localId, col, val) => updateInsertCell(tab.id, localId, col, val) : undefined
-      }
-      onRemoveInsert={editable ? (localId) => removeInsertRow(tab.id, localId) : undefined}
-      onStageDeleteMany={
-        editable
-          ? (entries): void => stageDeleteMany(tab.id, entries)
-          : undefined
-      }
-      onDuplicateRows={
-        editable ? (indices): void => duplicateRows(tab.id, indices) : undefined
-      }
-      onQuickFilter={onQuickFilter}
-    />
+    <div className={styles.wrapper}>
+      {notice}
+      <Grid
+        result={tab.result}
+        sort={sort}
+        onSort={onSort}
+        editable={editable}
+        primaryKey={primaryKey}
+        edits={edits}
+        inserts={inserts}
+        deletes={deletes}
+        selectedRowIndices={selectedRowIndices}
+        selectionAnchor={selectionAnchor}
+        rowCount={tab.result?.rows.length ?? 0}
+        onSetSelection={onSetSelection}
+        onEdit={editable ? (row, col, val) => setCellEdit(tab.id, row, col, val) : undefined}
+        onNull={editable ? (row, col) => setCellNull(tab.id, row, col) : undefined}
+        onUpdateInsert={
+          editable ? (localId, col, val) => updateInsertCell(tab.id, localId, col, val) : undefined
+        }
+        onRemoveInsert={editable ? (localId) => removeInsertRow(tab.id, localId) : undefined}
+        onStageDeleteMany={
+          editable
+            ? (entries): void => stageDeleteMany(tab.id, entries)
+            : undefined
+        }
+        onDuplicateRows={
+          editable ? (indices): void => duplicateRows(tab.id, indices) : undefined
+        }
+        onQuickFilter={onQuickFilter}
+      />
+    </div>
   )
 }
 

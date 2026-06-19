@@ -169,3 +169,35 @@
   opacity: 0.6;
   cursor: default;
 }
+
+.wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.limitNotice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  font-size: 12px;
+  background: var(--notice-bg, #3a3320);
+  color: var(--notice-fg, #e8d8a0);
+  border-bottom: 1px solid var(--border, #444);
+}
+
+.limitNoticeButton {
+  padding: 2px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid var(--border, #666);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+}
+
+.limitNoticeButton:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
