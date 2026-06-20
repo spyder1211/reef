@@ -13,6 +13,7 @@ import type {
   FilterOperator
 } from '../../../shared/types'
 import { DEFAULT_SQL_LIMIT, MAX_RESULT_ROWS } from '../../../shared/queryLimits'
+import { estimateColumnWidths } from './columnWidths'
 import { useAppStore } from '../store/useAppStore'
 import { rowKeyOf, pkValuesOf } from '../store/rowKey'
 import { toTsv } from '../lib/csv'
@@ -251,6 +252,27 @@ function Grid({
     getCoreRowModel: getCoreRowModel()
   })
 
+  // カラム幅を内容から実測して固定する（仮想化でスクロール時に max-content が再計算され
+  // 幅がガタつくのを防ぐ）。canvas measureText を注入し、estimateColumnWidths は純関数のまま保つ。
+  const colWidths = useMemo(() => {
+    const family =
+      typeof document !== 'undefined'
+        ? getComputedStyle(document.body).fontFamily || 'sans-serif'
+        : 'sans-serif'
+    const ctx = document.createElement('canvas').getContext('2d')
+    // セルは .grid の font-size: 12px で描画される
+    const font = `12px ${family}`
+    const measure = ctx
+      ? (text: string): number => {
+          ctx.font = font
+          return ctx.measureText(text).width
+        }
+      : (text: string): number => text.length * 7 // canvas 不可時の粗い近似
+    return estimateColumnWidths(result.columns, result.rows as Row[], measure)
+  }, [result.columns, result.rows])
+
+  const totalWidth = useMemo(() => colWidths.reduce((sum, w) => sum + w, 0), [colWidths])
+
   if (result.columns.length === 0) {
     return <div className={styles.placeholder}>結果なし（{result.rowCount} 行）</div>
   }
@@ -286,7 +308,12 @@ function Grid({
         }
       }}
     >
-      <table className={styles.grid}>
+      <table className={styles.grid} style={{ width: totalWidth }}>
+        <colgroup>
+          {result.columns.map((c, i) => (
+            <col key={c.name} style={{ width: colWidths[i] }} />
+          ))}
+        </colgroup>
         <thead>
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
