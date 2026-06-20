@@ -6,7 +6,7 @@
 .grid {
   border-collapse: collapse;
   font-size: 12px;
-  width: max-content;
+  table-layout: fixed;
   min-width: 100%;
 }
 .grid th {
@@ -23,14 +23,24 @@
   white-space: nowrap;
 }
 .grid td {
-  padding: 5px 12px;
+  height: 25px; /* = ROW_HEIGHT (columnWidths.ts)。仮想化のスペーサ計算と一致必須 */
+  box-sizing: border-box;
+  padding: 4px 12px; /* 上下4 + line 16 + border-bottom 1 = 25 */
+  line-height: 16px;
   border-bottom: 1px solid var(--border-soft);
   border-right: 1px solid var(--border-soft);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
 }
-.grid tbody tr:nth-child(even) {
+.rowAlt {
   background: var(--row-alt);
+}
+.grid td.spacer {
+  padding: 0;
+  border: none;
+  height: auto;
 }
 .null {
   color: var(--text-faint);
@@ -74,6 +84,7 @@
   background: var(--bg) !important;
   box-shadow: inset 0 0 0 2px var(--accent);
   padding: 2px 8px;
+  overflow: visible;
 }
 .editWrap {
   display: inline-flex;

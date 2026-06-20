@@ -13,6 +13,8 @@ import type {
   FilterOperator
 } from '../../../shared/types'
 import { DEFAULT_SQL_LIMIT, MAX_RESULT_ROWS } from '../../../shared/queryLimits'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { estimateColumnWidths, ROW_HEIGHT } from './columnWidths'
 import { useAppStore } from '../store/useAppStore'
 import { rowKeyOf, pkValuesOf } from '../store/rowKey'
 import { toTsv } from '../lib/csv'
@@ -251,6 +253,34 @@ function Grid({
     getCoreRowModel: getCoreRowModel()
   })
 
+  // カラム幅を内容から実測して固定する（仮想化でスクロール時に max-content が再計算され
+  // 幅がガタつくのを防ぐ）。canvas measureText を注入し、estimateColumnWidths は純関数のまま保つ。
+  const colWidths = useMemo(() => {
+    const family =
+      typeof document !== 'undefined'
+        ? getComputedStyle(document.body).fontFamily || 'sans-serif'
+        : 'sans-serif'
+    const ctx = document.createElement('canvas').getContext('2d')
+    // セルは .grid の font-size: 12px で描画される
+    const font = `12px ${family}`
+    const measure = ctx
+      ? (text: string): number => {
+          ctx.font = font
+          return ctx.measureText(text).width
+        }
+      : (text: string): number => text.length * 7 // canvas 不可時の粗い近似
+    return estimateColumnWidths(result.columns, result.rows as Row[], measure)
+  }, [result.columns, result.rows])
+
+  const totalWidth = useMemo(() => colWidths.reduce((sum, w) => sum + w, 0), [colWidths])
+
+  const rowVirtualizer = useVirtualizer({
+    count: result.rows.length,
+    getScrollElement: () => gridWrapRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 12
+  })
+
   if (result.columns.length === 0) {
     return <div className={styles.placeholder}>結果なし（{result.rowCount} 行）</div>
   }
@@ -279,14 +309,31 @@ function Grid({
           const next = nextArrowSelection(rowCount, selectionAnchor, lead, dir, e.shiftKey)
           if (!next) return
           onSetSelection(next.indices, next.anchor)
-          // アクティブ行を可視領域へスクロール
-          gridWrapRef.current
-            ?.querySelector(`tr[data-row-index="${next.lead}"]`)
-            ?.scrollIntoView({ block: 'nearest' })
+          // アクティブ行を可視領域へスクロール。sticky thead が同一スクロールコンテナの
+          // 上端を覆うため、ヘッダ高さぶん補正して行がヘッダ下/下端に隠れないようにする
+          // （virtualizer に scrollMargin を入れて動作中のスペーサ計算を崩すより局所的）。
+          const scrollEl = gridWrapRef.current
+          if (scrollEl) {
+            const headerH = scrollEl.querySelector('thead')?.offsetHeight ?? 0
+            const rowTop = headerH + next.lead * ROW_HEIGHT // 行 top の content-offset（tbody は header の下から始まる）
+            const rowBottom = rowTop + ROW_HEIGHT
+            if (rowTop < scrollEl.scrollTop + headerH) {
+              // sticky header の下に隠れている → 行が header 直下に来るまで上スクロール
+              scrollEl.scrollTop = rowTop - headerH
+            } else if (rowBottom > scrollEl.scrollTop + scrollEl.clientHeight) {
+              // 下端の外 → 行 bottom が表示下端に揃うまで下スクロール
+              scrollEl.scrollTop = rowBottom - scrollEl.clientHeight
+            }
+          }
         }
       }}
     >
-      <table className={styles.grid}>
+      <table className={styles.grid} style={{ width: totalWidth }}>
+        <colgroup>
+          {result.columns.map((c, i) => (
+            <col key={c.name} style={{ width: colWidths[i] }} />
+          ))}
+        </colgroup>
         <thead>
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
@@ -311,114 +358,138 @@ function Grid({
           ))}
         </thead>
         <tbody>
-          {table.getRowModel().rows.map((r) => {
-            const original = r.original as Row
-            const rowKey = editable ? rowKeyOf(primaryKey, original) : ''
-            const isDeleted = editable && rowKey in deletes
-            const rowEdit = editable ? edits[rowKey] : undefined
+          {(() => {
+            const rows = table.getRowModel().rows
+            const virtualItems = rowVirtualizer.getVirtualItems()
+            const totalSize = rowVirtualizer.getTotalSize()
+            const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0
+            const paddingBottom =
+              virtualItems.length > 0 ? totalSize - virtualItems[virtualItems.length - 1].end : 0
 
             return (
-              <tr
-                key={r.id}
-                data-row-index={r.index}
-                className={
-                  isDeleted
+              <>
+                {paddingTop > 0 && (
+                  <tr aria-hidden="true">
+                    <td className={styles.spacer} colSpan={result.columns.length} style={{ height: paddingTop }} />
+                  </tr>
+                )}
+                {virtualItems.map((vi) => {
+                  const r = rows[vi.index]
+                  const original = r.original as Row
+                  const rowKey = editable ? rowKeyOf(primaryKey, original) : ''
+                  const isDeleted = editable && rowKey in deletes
+                  const rowEdit = editable ? edits[rowKey] : undefined
+
+                  const stripe = vi.index % 2 === 1 ? styles.rowAlt : ''
+                  const state = isDeleted
                     ? styles.deleteRow
                     : selectedSet.has(r.index)
                       ? styles.selected
-                      : undefined
-                }
-                onMouseDown={(e) => handleRowMouseDown(r.index, e)}
-              >
-                {r.getVisibleCells().map((cell) => {
-                  const colId = cell.column.id
-                  const isDirty = rowEdit ? colId in rowEdit.values : false
-                  const value = isDirty ? rowEdit!.values[colId] : (cell.getValue() as unknown)
-                  const isEditingThis = editing?.rowKey === rowKey && editing?.column === colId
-
-                  const startEdit = (): void => {
-                    if (!editable) return
-                    committedRef.current = false
-                    setEditing({ rowKey, column: colId })
-                    setDraft(value === null || value === undefined ? '' : String(value))
-                  }
-                  const confirm = (): void => {
-                    if (committedRef.current) return
-                    committedRef.current = true
-                    onEdit?.(original, colId, draft)
-                    setEditing(null)
-                  }
-                  const cancel = (): void => {
-                    committedRef.current = true
-                    setEditing(null)
-                  }
-                  const setNull = (): void => {
-                    committedRef.current = true
-                    onNull?.(original, colId)
-                    setEditing(null)
-                  }
-
-                  const cls =
-                    [isDirty ? styles.dirty : '', isEditingThis ? styles.editing : '']
-                      .filter(Boolean)
-                      .join(' ') || undefined
+                      : ''
+                  const rowCls = [stripe, state].filter(Boolean).join(' ') || undefined
 
                   return (
-                    <td
-                      key={cell.id}
-                      className={cls}
-                      onDoubleClick={editable && !isDeleted ? startEdit : undefined}
-                      onContextMenu={
-                        onQuickFilter
-                          ? (e) => {
-                              e.preventDefault()
-                              // 右クリック行が選択に含まれていなければ単一選択に畳む。含まれていれば選択維持。
-                              if (!selectedSet.has(r.index)) onSetSelection?.([r.index], r.index)
-                              setCtxMenu({
-                                kind: 'cell',
-                                x: e.clientX,
-                                y: e.clientY,
-                                column: colId,
-                                value: original[colId]
-                              })
-                            }
-                          : undefined
-                      }
+                    <tr
+                      key={r.id}
+                      className={rowCls}
+                      onMouseDown={(e) => handleRowMouseDown(r.index, e)}
                     >
-                      {isEditingThis ? (
-                        <span className={styles.editWrap}>
-                          <input
-                            autoFocus
-                            className={styles.editInput}
-                            value={draft}
-                            onChange={(e) => setDraft(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') confirm()
-                              else if (e.key === 'Escape') cancel()
-                            }}
-                            onBlur={confirm}
-                          />
-                          <button
-                            className={styles.nullBtn}
-                            onMouseDown={(e) => {
-                              e.preventDefault()
-                              setNull()
-                            }}
+                      {r.getVisibleCells().map((cell) => {
+                        const colId = cell.column.id
+                        const isDirty = rowEdit ? colId in rowEdit.values : false
+                        const value = isDirty ? rowEdit!.values[colId] : (cell.getValue() as unknown)
+                        const isEditingThis = editing?.rowKey === rowKey && editing?.column === colId
+
+                        const startEdit = (): void => {
+                          if (!editable) return
+                          committedRef.current = false
+                          setEditing({ rowKey, column: colId })
+                          setDraft(value === null || value === undefined ? '' : String(value))
+                        }
+                        const confirm = (): void => {
+                          if (committedRef.current) return
+                          committedRef.current = true
+                          onEdit?.(original, colId, draft)
+                          setEditing(null)
+                        }
+                        const cancel = (): void => {
+                          committedRef.current = true
+                          setEditing(null)
+                        }
+                        const setNull = (): void => {
+                          committedRef.current = true
+                          onNull?.(original, colId)
+                          setEditing(null)
+                        }
+
+                        const cls =
+                          [isDirty ? styles.dirty : '', isEditingThis ? styles.editing : '']
+                            .filter(Boolean)
+                            .join(' ') || undefined
+
+                        return (
+                          <td
+                            key={cell.id}
+                            className={cls}
+                            onDoubleClick={editable && !isDeleted ? startEdit : undefined}
+                            onContextMenu={
+                              onQuickFilter
+                                ? (e) => {
+                                    e.preventDefault()
+                                    if (!selectedSet.has(r.index)) onSetSelection?.([r.index], r.index)
+                                    setCtxMenu({
+                                      kind: 'cell',
+                                      x: e.clientX,
+                                      y: e.clientY,
+                                      column: colId,
+                                      value: original[colId]
+                                    })
+                                  }
+                                : undefined
+                            }
                           >
-                            NULL
-                          </button>
-                        </span>
-                      ) : value === null || value === undefined ? (
-                        <span className={styles.null}>NULL</span>
-                      ) : (
-                        String(value)
-                      )}
-                    </td>
+                            {isEditingThis ? (
+                              <span className={styles.editWrap}>
+                                <input
+                                  autoFocus
+                                  className={styles.editInput}
+                                  value={draft}
+                                  onChange={(e) => setDraft(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') confirm()
+                                    else if (e.key === 'Escape') cancel()
+                                  }}
+                                  onBlur={confirm}
+                                />
+                                <button
+                                  className={styles.nullBtn}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault()
+                                    setNull()
+                                  }}
+                                >
+                                  NULL
+                                </button>
+                              </span>
+                            ) : value === null || value === undefined ? (
+                              <span className={styles.null}>NULL</span>
+                            ) : (
+                              String(value)
+                            )}
+                          </td>
+                        )
+                      })}
+                    </tr>
                   )
                 })}
-              </tr>
+                {paddingBottom > 0 && (
+                  <tr aria-hidden="true">
+                    <td className={styles.spacer} colSpan={result.columns.length} style={{ height: paddingBottom }} />
+                  </tr>
+                )}
+              </>
             )
-          })}
+          })()}
         </tbody>
         <tbody>
           {inserts.map((insert, insertIndex) => (
