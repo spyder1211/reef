@@ -11,6 +11,8 @@ beforeEach(() => {
       }
     }
   })
+  vi.resetModules()
+  setLocaleMock.mockClear()
 })
 
 describe('useAppStore i18n', () => {
