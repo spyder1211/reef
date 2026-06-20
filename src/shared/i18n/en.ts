@@ -172,5 +172,20 @@ export const en = {
   'workspace.importByteProgress': '{pct}% ({read} / {total})',
   'workspace.importDone': 'Done: executed {count} statements ({ms} ms)',
   'workspace.importFailed': 'Failed: error at statement {index} ({executed} applied so far)',
-  'workspace.splitDivider': 'Drag to resize'
+  'workspace.splitDivider': 'Drag to resize',
+  'workspace.filterContains': 'Contains',
+  'workspace.filterNotContains': 'Not contains',
+  'store.confirmDiscard': 'You have uncommitted changes. Discard and continue?',
+  'store.confirmDiscardReturn': 'You have uncommitted changes. Discard and return to connections?',
+  'store.confirmDiscardClose': 'You have uncommitted changes. Discard and close this tab?',
+  'store.confirmProdConnect': '"{name}" is a production environment.\n\nMistakes will directly affect production data. Proceed?',
+  'store.confirmTruncate': 'This will empty table "{name}". All rows will be deleted and cannot be undone. Continue?',
+  'store.confirmDrop': 'This will drop table "{name}". This action cannot be undone. Continue?',
+  'store.confirmExportLarge': 'Export {count} rows?',
+  'store.exportNoResult': 'No result to export.',
+  'store.exportSqlNoResult': 'No result to export.',
+  'store.exportCopied': 'Copied to clipboard',
+  'store.exportSaved': 'Saved: {name}',
+  'store.explainMultiError': 'EXPLAIN can only run a single statement',
+  'store.noInputToCommit': 'No values entered. Please fill in the new row before committing.'
 } as const

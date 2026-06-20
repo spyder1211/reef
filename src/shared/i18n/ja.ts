@@ -174,5 +174,20 @@ export const ja: Record<TranslationKey, string> = {
   'workspace.importByteProgress': '{pct}%（{read} / {total}）',
   'workspace.importDone': '完了：{count} 文を実行しました（{ms} ms）',
   'workspace.importFailed': '失敗：{index} 文目でエラー（ここまで {executed} 文を適用済み）',
-  'workspace.splitDivider': 'ドラッグで幅を調整'
+  'workspace.splitDivider': 'ドラッグで幅を調整',
+  'workspace.filterContains': '含む',
+  'workspace.filterNotContains': '含まない',
+  'store.confirmDiscard': '未コミットの変更があります。破棄して移動しますか？',
+  'store.confirmDiscardReturn': '未コミットの変更があります。破棄して接続一覧に戻りますか？',
+  'store.confirmDiscardClose': '未コミットの変更があります。破棄してタブを閉じますか？',
+  'store.confirmProdConnect': '「{name}」は本番環境（production）です。\n\n操作ミスは本番データに直接影響します。十分に注意してください。\n\n接続しますか？',
+  'store.confirmTruncate': 'テーブル「{name}」を空にします。全データが削除され、取り消せません。よろしいですか？',
+  'store.confirmDrop': 'テーブル「{name}」を削除します。この操作は取り消せません。よろしいですか？',
+  'store.confirmExportLarge': '{count} 件をエクスポートします。よろしいですか？',
+  'store.exportNoResult': 'エクスポートできる結果がありません。',
+  'store.exportSqlNoResult': 'エクスポートする結果がありません',
+  'store.exportCopied': 'クリップボードにコピーしました',
+  'store.exportSaved': '保存しました: {name}',
+  'store.explainMultiError': 'EXPLAIN は単一文のみ実行できます',
+  'store.noInputToCommit': '入力された値がありません。新規行に値を入力してください。'
 }

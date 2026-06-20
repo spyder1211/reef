@@ -76,7 +76,7 @@ export default function FilterBar(): JSX.Element | null {
               >
                 {OPERATORS.map((o) => (
                   <option key={o.value} value={o.value}>
-                    {o.label}
+                    {o.labelKey ? t(o.labelKey) : o.label}
                   </option>
                 ))}
               </select>
