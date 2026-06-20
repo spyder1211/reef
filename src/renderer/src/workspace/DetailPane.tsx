@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { rowKeyOf } from '../store/rowKey'
 import { tryFormatJson } from '../lib/formatJson'
+import { useT } from '../i18n/useT'
 import styles from './DetailPane.module.css'
 
 type Row = Record<string, unknown>
 
 export default function DetailPane(): JSX.Element | null {
+  const { t } = useT()
   const tab = useAppStore((s) => {
-    const t = s.tabs.find((t) => t.id === s.activeTabId)
-    return t && t.kind === 'table' ? t : null
+    const tt = s.tabs.find((t) => t.id === s.activeTabId)
+    return tt && tt.kind === 'table' ? tt : null
   })
   const setCellEdit = useAppStore((s) => s.setCellEdit)
   const setCellNull = useAppStore((s) => s.setCellNull)
@@ -33,18 +35,18 @@ export default function DetailPane(): JSX.Element | null {
   return (
     <div className={styles.pane}>
       <div className={styles.head}>
-        <span>レコード詳細</span>
-        <button className={styles.close} onClick={() => toggleDetail()} title="閉じる">
+        <span>{t('workspace.detailTitle')}</span>
+        <button className={styles.close} onClick={() => toggleDetail()} title={t('common.close')}>
           ✕
         </button>
       </div>
       {isInsertRow ? (
-        <div className={styles.placeholder}>新規行はグリッドで編集してください</div>
+        <div className={styles.placeholder}>{t('workspace.detailInsertHint')}</div>
       ) : !row || !result ? (
-        <div className={styles.placeholder}>行を選択してください</div>
+        <div className={styles.placeholder}>{t('workspace.detailSelectHint')}</div>
       ) : isDeleted ? (
         <div className={styles.placeholder}>
-          削除予定の行です。取り消しはグリッドの右クリックメニューから行えます。
+          {t('workspace.detailDeletedHint')}
         </div>
       ) : (
         <div className={styles.body}>
@@ -67,7 +69,7 @@ export default function DetailPane(): JSX.Element | null {
                     <button
                       className={styles.jsonToggle}
                       onClick={() => setExpanded((m) => ({ ...m, [col.name]: !m[col.name] }))}
-                      title={isExpanded ? 'JSON 整形を閉じる' : 'JSON を整形表示'}
+                      title={isExpanded ? t('workspace.detailJsonCollapse') : t('workspace.detailJsonExpand')}
                     >
                       {'{ }'}
                     </button>
@@ -101,7 +103,7 @@ export default function DetailPane(): JSX.Element | null {
                         className={styles.nullBtn}
                         onClick={() => setCellNull(tab.id, row, col.name)}
                       >
-                        NULL に設定
+                        {t('workspace.detailSetNull')}
                       </button>
                     )}
                   </div>

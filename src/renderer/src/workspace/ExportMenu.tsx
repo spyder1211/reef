@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { useT } from '../i18n/useT'
 import styles from './ExportMenu.module.css'
 
 type Scope = 'page' | 'all'
@@ -8,6 +9,7 @@ type Target = 'file' | 'clipboard'
 // テーブルタブのレコードを CSV としてエクスポートするメニュー。
 // 範囲（現在ページ/全件）× 受け渡し（保存/コピー）の 4 通りをドロップダウンで提供する。
 export default function ExportMenu({ disabled }: { disabled: boolean }): JSX.Element {
+  const { t } = useT()
   const activeTabId = useAppStore((s) => s.activeTabId)
   const exportCsv = useAppStore((s) => s.exportCsv)
   const [open, setOpen] = useState(false)
@@ -43,7 +45,7 @@ export default function ExportMenu({ disabled }: { disabled: boolean }): JSX.Ele
     try {
       const res = await exportCsv(activeTabId, { scope, target })
       if (!res.ok) {
-        window.alert(`エクスポートに失敗しました: ${res.message}`)
+        window.alert(t('workspace.exportError', { message: res.message ?? '' }))
       } else if (res.message) {
         showMessage(res.message)
       }
@@ -57,22 +59,22 @@ export default function ExportMenu({ disabled }: { disabled: boolean }): JSX.Ele
     <div className={styles.wrap} onMouseDown={(e) => e.stopPropagation()}>
       {msg && <span className={styles.msg}>{msg}</span>}
       <button className={styles.btn} disabled={disabled || busy} onClick={() => setOpen((v) => !v)}>
-        エクスポート ▾
+        {t('workspace.exportBtn')}
       </button>
       {open && (
         <div className={styles.menu}>
           <div className={styles.item} onClick={() => void run('page', 'file')}>
-            現在のページを CSV 保存
+            {t('workspace.exportPageFile')}
           </div>
           <div className={styles.item} onClick={() => void run('page', 'clipboard')}>
-            現在のページをコピー
+            {t('workspace.exportPageClip')}
           </div>
           <div className={styles.sep} />
           <div className={styles.item} onClick={() => void run('all', 'file')}>
-            全件を CSV 保存
+            {t('workspace.exportAllFile')}
           </div>
           <div className={styles.item} onClick={() => void run('all', 'clipboard')}>
-            全件をコピー
+            {t('workspace.exportAllClip')}
           </div>
         </div>
       )}

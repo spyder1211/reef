@@ -19,6 +19,7 @@ import { useAppStore } from '../store/useAppStore'
 import { rowKeyOf, pkValuesOf } from '../store/rowKey'
 import { toTsv } from '../lib/csv'
 import { deriveLead, nextArrowSelection } from './gridSelection'
+import { useT } from '../i18n/useT'
 import styles from './ResultsGrid.module.css'
 
 type Row = Record<string, unknown>
@@ -34,6 +35,7 @@ type CtxMenu =
   | { kind: 'insert'; x: number; y: number; localId: string }
 
 export default function ResultsGrid(): JSX.Element {
+  const { t } = useT()
   const tab = useAppStore((s) => s.tabs.find((t) => t.id === s.activeTabId) ?? null)
   const setSort = useAppStore((s) => s.setSort)
   const setCellEdit = useAppStore((s) => s.setCellEdit)
@@ -51,13 +53,13 @@ export default function ResultsGrid(): JSX.Element {
   if (tab.running)
     return (
       <div className={styles.runningBox}>
-        <span>実行中…</span>
+        <span>{t('workspace.running')}</span>
         <button
           className={styles.stopButton}
           disabled={tab.canceling}
           onClick={() => void cancelTab(tab.id)}
         >
-          {tab.canceling ? '停止中…' : '停止'}
+          {tab.canceling ? t('workspace.stopping') : t('workspace.stop')}
         </button>
       </div>
     )
@@ -69,7 +71,7 @@ export default function ResultsGrid(): JSX.Element {
     )
   }
   if (!tab.result) {
-    return <div className={styles.placeholder}>クエリを実行してください（⌘↵）</div>
+    return <div className={styles.placeholder}>{t('workspace.noResult')}</div>
   }
 
   const isTable = tab.kind === 'table'
@@ -95,15 +97,15 @@ export default function ResultsGrid(): JSX.Element {
   const notice =
     tab.kind === 'sql' && tab.result?.autoLimited ? (
       <div className={styles.limitNotice}>
-        <span>先頭 {DEFAULT_SQL_LIMIT} 件を表示中（自動LIMIT・全件ではありません）</span>
+        <span>{t('workspace.autoLimitBanner', { limit: String(DEFAULT_SQL_LIMIT) })}</span>
         <button className={styles.limitNoticeButton} onClick={() => void rerunWithoutAutoLimit(tab.id)}>
-          自動LIMITを外して再実行
+          {t('workspace.autoLimitRerun')}
         </button>
       </div>
     ) : tab.kind === 'sql' && tab.result?.truncated ? (
       <div className={styles.limitNotice}>
         <span>
-          結果が大きいため先頭 {MAX_RESULT_ROWS} 件で打ち切りました。全件はCSVエクスポートを使用してください。
+          {t('workspace.truncatedBanner', { limit: String(MAX_RESULT_ROWS) })}
         </span>
       </div>
     ) : null
@@ -185,6 +187,7 @@ function Grid({
   onDuplicateRows?: (indices: number[]) => void
   onQuickFilter?: (column: string, operator: FilterOperator, value: unknown) => void
 }): JSX.Element {
+  const { t, tPlural } = useT()
   const [editing, setEditing] = useState<{ rowKey: string; column: string } | null>(null)
   const [draft, setDraft] = useState('')
   // Enter/Esc 確定後に trailing blur が再度 confirm するのを防ぐ（編集開始ごとにリセット）
@@ -282,7 +285,7 @@ function Grid({
   })
 
   if (result.columns.length === 0) {
-    return <div className={styles.placeholder}>結果なし（{result.rowCount} 行）</div>
+    return <div className={styles.placeholder}>{t('workspace.resultEmpty', { count: String(result.rowCount) })}</div>
   }
 
   return (
@@ -611,7 +614,7 @@ function Grid({
                       setCtxMenu(null)
                     }}
                   >
-                    = この値で絞り込む
+                    {t('workspace.quickFilterEq')}
                   </div>
                   <div
                     className={styles.ctxItem}
@@ -620,7 +623,7 @@ function Grid({
                       setCtxMenu(null)
                     }}
                   >
-                    ≠ この値
+                    {t('workspace.quickFilterNeq')}
                   </div>
                   <div
                     className={styles.ctxItem}
@@ -629,7 +632,7 @@ function Grid({
                       setCtxMenu(null)
                     }}
                   >
-                    含む
+                    {t('workspace.quickFilterContains')}
                   </div>
                 </>
               )}
@@ -653,7 +656,9 @@ function Grid({
                         setCtxMenu(null)
                       }}
                     >
-                      {allStaged ? `削除を取り消す（${n} 行）` : `選択 ${n} 行を削除`}
+                      {allStaged
+                        ? tPlural('workspace.deleteUndo', n, { count: String(n) })
+                        : tPlural('workspace.deleteStage', n, { count: String(n) })}
                     </div>
                     <div
                       className={styles.ctxItem}
@@ -662,7 +667,7 @@ function Grid({
                         setCtxMenu(null)
                       }}
                     >
-                      選択 {n} 行を複製
+                      {tPlural('workspace.duplicateRows', n, { count: String(n) })}
                     </div>
                     <div
                       className={styles.ctxItem}
@@ -671,7 +676,7 @@ function Grid({
                         setCtxMenu(null)
                       }}
                     >
-                      選択 {n} 行をコピー
+                      {tPlural('workspace.copyRows', n, { count: String(n) })}
                     </div>
                   </>
                 )
@@ -686,7 +691,7 @@ function Grid({
                 setCtxMenu(null)
               }}
             >
-              この新規行を破棄
+              {t('workspace.discardInsertRow')}
             </div>
           )}
         </div>

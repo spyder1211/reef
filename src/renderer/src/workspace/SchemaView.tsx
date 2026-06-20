@@ -1,27 +1,29 @@
 import type { TableTab } from '../store/useAppStore'
+import { useT } from '../i18n/useT'
 import styles from './SchemaView.module.css'
 
 // テーブルの構造（カラム・インデックス・DDL）を表示する読み取り専用ビュー。
 // スキーマの取得は store の setTableView が lazy load する（ここでは tab.schema を描画するだけ）。
 export default function SchemaView({ tab }: { tab: TableTab }): JSX.Element {
+  const { t } = useT()
   if (tab.schemaError) return <div className={styles.message}>{tab.schemaError.message}</div>
-  if (!tab.schema) return <div className={styles.message}>読み込み中…</div>
+  if (!tab.schema) return <div className={styles.message}>{t('workspace.schemaLoading')}</div>
   const { columns, indexes, ddl } = tab.schema
 
   return (
     <div className={styles.root}>
       <section className={styles.section}>
-        <h3 className={styles.heading}>カラム</h3>
+        <h3 className={styles.heading}>{t('workspace.schemaColumns')}</h3>
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>名前</th>
-              <th>型</th>
-              <th>NULL</th>
-              <th>キー</th>
-              <th>デフォルト</th>
-              <th>Extra</th>
-              <th>コメント</th>
+              <th>{t('workspace.schemaColName')}</th>
+              <th>{t('workspace.schemaColType')}</th>
+              <th>{t('workspace.schemaColNull')}</th>
+              <th>{t('workspace.schemaColKey')}</th>
+              <th>{t('workspace.schemaColDefault')}</th>
+              <th>{t('workspace.schemaColExtra')}</th>
+              <th>{t('workspace.schemaColComment')}</th>
             </tr>
           </thead>
           <tbody>
@@ -41,16 +43,16 @@ export default function SchemaView({ tab }: { tab: TableTab }): JSX.Element {
       </section>
 
       <section className={styles.section}>
-        <h3 className={styles.heading}>インデックス</h3>
+        <h3 className={styles.heading}>{t('workspace.schemaIndexes')}</h3>
         {indexes.length === 0 ? (
-          <div className={styles.empty}>インデックスはありません</div>
+          <div className={styles.empty}>{t('workspace.schemaNoIndexes')}</div>
         ) : (
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>名前</th>
-                <th>カラム</th>
-                <th>ユニーク</th>
+                <th>{t('workspace.schemaIndexName')}</th>
+                <th>{t('workspace.schemaIndexCols')}</th>
+                <th>{t('workspace.schemaIndexUnique')}</th>
               </tr>
             </thead>
             <tbody>
@@ -67,7 +69,7 @@ export default function SchemaView({ tab }: { tab: TableTab }): JSX.Element {
       </section>
 
       <section className={styles.section}>
-        <h3 className={styles.heading}>DDL</h3>
+        <h3 className={styles.heading}>{t('workspace.schemaDdl')}</h3>
         <pre className={styles.ddl}>{ddl}</pre>
       </section>
     </div>
