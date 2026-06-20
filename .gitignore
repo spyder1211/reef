@@ -1,5 +1,6 @@
-# ブレインストーミングのモックアップ（ローカル作業用）
+# 設計 spec/plan・ブレインストーミングのモックアップ（ローカル作業用・公開リポには含めない）
 .superpowers/
+docs/superpowers/
 
 # 依存・ビルド成果物
 node_modules/

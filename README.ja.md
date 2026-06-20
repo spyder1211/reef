@@ -121,13 +121,6 @@ src/
 
 IPC の戻り値は例外を投げず、`ApiResult<T>`（`{ ok: true; data } | { ok: false; error }`）の判別共用体で返す設計です（`src/shared/types.ts`）。
 
-## 設計ドキュメント
-
-機能ごとの設計（spec）と実装計画（plan）は `docs/superpowers/` 配下にあります。
-
-- `docs/superpowers/specs/` — 各機能の設計ドキュメント
-- `docs/superpowers/plans/` — 各機能の実装計画
-
 ## リリースノート
 
 [RELEASE_NOTES.ja.md](RELEASE_NOTES.ja.md)（[English](RELEASE_NOTES.md)）を参照してください。

@@ -121,13 +121,6 @@ src/
 
 IPC return values never throw; they are returned as an `ApiResult<T>` discriminated union (`{ ok: true; data } | { ok: false; error }`) — see `src/shared/types.ts`.
 
-## Design documents
-
-Per-feature design (spec) and implementation plans live under `docs/superpowers/`.
-
-- `docs/superpowers/specs/` — design documents per feature
-- `docs/superpowers/plans/` — implementation plans per feature
-
 ## Release notes
 
 See [RELEASE_NOTES.md](RELEASE_NOTES.md) ([日本語](RELEASE_NOTES.ja.md)).
