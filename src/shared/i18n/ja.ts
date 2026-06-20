@@ -3,8 +3,12 @@ import type { TranslationKey } from './index'
 export const ja: Record<TranslationKey, string> = {
   'common.cancel': 'キャンセル',
   'common.execute': '実行',
+  'common.close': '閉じる',
   'home.newConnection': '新規接続',
   'home.settings': '設定',
+  'settings.title': '設定',
+  'settings.language': '言語',
+  'settings.language.auto': '自動（システム）',
   'home.searchConnections': '接続を検索…',
   'menu.file': 'File',
   'menu.exportSqlDump': 'SQLダンプをエクスポート…',

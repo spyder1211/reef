@@ -1,8 +1,12 @@
 export const en = {
   'common.cancel': 'Cancel',
   'common.execute': 'Run',
+  'common.close': 'Close',
   'home.newConnection': 'New Connection',
   'home.settings': 'Settings',
+  'settings.title': 'Settings',
+  'settings.language': 'Language',
+  'settings.language.auto': 'Auto (system)',
   'home.searchConnections': 'Search connections…',
   'menu.file': 'File',
   'menu.exportSqlDump': 'Export SQL Dump…',
