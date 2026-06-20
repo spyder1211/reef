@@ -10,15 +10,15 @@ export function createSettingsStore(): SettingsStore {
   const filePath = join(app.getPath('userData'), 'settings.json')
   const deps: SettingsDeps = {
     load(): AppSettings {
-      if (!existsSync(filePath)) return DEFAULT
+      if (!existsSync(filePath)) return { ...DEFAULT }
       try {
         const parsed = JSON.parse(readFileSync(filePath, 'utf-8'))
         const pref = parsed?.localePreference
         return pref === 'en' || pref === 'ja' || pref === 'auto'
           ? { localePreference: pref }
-          : DEFAULT
+          : { ...DEFAULT }
       } catch {
-        return DEFAULT
+        return { ...DEFAULT }
       }
     },
     persist(settings: AppSettings): void {
