@@ -48,7 +48,7 @@
 ```ts
 export const ROW_HEIGHT = 25            // 単一行セルの固定行高（px）。CSS の行高と一致させる
 export const MIN_COL_WIDTH = 48         // 列幅の下限（px）
-export const MAX_COL_WIDTH = 480        // 列幅の上限（px）。これを超える内容は省略せず横はみ出し（既存どおり nowrap）
+export const MAX_COL_WIDTH = 480        // 列幅の上限（px）。これを超える内容はセル内で ellipsis 省略（全文は編集/コピーで取得）
 const SAMPLE_ROWS = 200                 // 幅計測に使う先頭サンプル行数
 const CELL_PADDING = 24                 // td の左右パディング相当の余白（px）
 
@@ -65,7 +65,7 @@ export function estimateColumnWidths(
 - `null`/`undefined` は `"NULL"`、その他は `String(value)` として計測（セル表示と一致）。
 - 空結果（行 0）はヘッダのみで算出。列 0 は空配列を返す。
 
-適用: `<table>` を `table-layout: fixed` にし、`<colgroup>` の各 `<col style={{ width }}>` に実測幅を設定。テーブル全体幅は実測幅の合計（`width` に設定、`min-width: 100%`）→ 合計が広ければ従来どおり横スクロール。
+適用: `<table>` を `table-layout: fixed` にし、`<colgroup>` の各 `<col style={{ width }}>` に実測幅を設定。テーブル全体幅は実測幅の合計（`width` に設定、`min-width: 100%`）→ 合計が広ければ従来どおり横スクロール。固定幅超過のセル内容は `overflow: hidden; text-overflow: ellipsis` で省略表示（編集中セル `.editing` のみ `overflow: visible`）。全文は従来どおりダブルクリック編集・コピーで取得可能。
 
 再計算は `result.columns` / `result.rows`（参照）が変わったときのみ（`useMemo`）。
 
@@ -126,6 +126,6 @@ const rowVirtualizer = useVirtualizer({
 ## 6. リスクと既知の限界
 
 - **行高の前提**: 単一行（`nowrap`）固定高に依存。将来セル折返しを入れる場合は動的計測（`measureElement`）へ拡張が必要（現状スコープ外）。
-- **列幅サンプリング**: 先頭 `SAMPLE_ROWS` 行のみ計測のため、`SAMPLE_ROWS` 以降に極端に長い値があると `MAX_COL_WIDTH` 未満でも見切れ得る。`nowrap` で内容は欠落せず横はみ出すだけ（許容）。`MAX_COL_WIDTH` で過大幅も抑制。
+- **列幅サンプリング**: 先頭 `SAMPLE_ROWS` 行のみ計測のため、`SAMPLE_ROWS` 以降に極端に長い値があると `MAX_COL_WIDTH` 未満でも見切れ得る。セルは `overflow: hidden; text-overflow: ellipsis` で省略表示（データは保持、ダブルクリック編集・コピーで全文取得可）。`MAX_COL_WIDTH` で過大幅も抑制。
 - **canvas 計測の近似**: `measureText` は等幅でないフォントでも実用上十分。1〜2px のずれは `CELL_PADDING` の余白で吸収。
 - **横方向は非仮想化**: 列数が極端に多い表（数百列）では `<colgroup>` と各行のセル数がボトルネックになり得るが、対象外（現実的な列数では問題なし）。
