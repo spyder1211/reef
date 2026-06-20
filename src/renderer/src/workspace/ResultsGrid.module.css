@@ -34,8 +34,13 @@
   text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
 }
-.grid tbody tr:nth-child(even) {
+.rowAlt {
   background: var(--row-alt);
+}
+.grid td.spacer {
+  padding: 0;
+  border: none;
+  height: auto;
 }
 .null {
   color: var(--text-faint);
