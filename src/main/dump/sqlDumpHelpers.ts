@@ -66,7 +66,7 @@ export function buildDropAndCreate(table: string, createTableSql: string): strin
 // ダンプ先頭のコメント＋セッション設定。
 export function dumpHeader(dbName: string, generatedAt: string): string {
   return (
-    `-- TablePlus SQL Dump\n` +
+    `-- Reef SQL Dump\n` +
     `-- Database: ${dbName}\n` +
     `-- Generated: ${generatedAt}\n\n` +
     `SET NAMES utf8mb4;\n` +

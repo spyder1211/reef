@@ -18,7 +18,7 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
       className={styles.row}
       draggable
       onDragStart={(e) => {
-        e.dataTransfer.setData('application/x-tableplus-conn', profile.id)
+        e.dataTransfer.setData('application/x-reef-conn', profile.id)
         e.dataTransfer.effectAllowed = 'move'
       }}
       onDoubleClick={() => void connect(profile)}

@@ -7,21 +7,21 @@ import { importSqlDump, type ImportExecutor } from './SqlImporter'
 
 const tmpFiles: string[] = []
 function writeTmp(name: string, content: string): string {
-  const p = join(tmpdir(), `tableplus-import-test-${name}-${process.pid}.sql`)
+  const p = join(tmpdir(), `reef-import-test-${name}-${process.pid}.sql`)
   writeFileSync(p, content, 'utf-8')
   tmpFiles.push(p)
   return p
 }
 // gzip 圧縮した .sql.gz の一時ファイルを書き出す。
 function writeTmpGz(name: string, content: string): string {
-  const p = join(tmpdir(), `tableplus-import-test-${name}-${process.pid}.sql.gz`)
+  const p = join(tmpdir(), `reef-import-test-${name}-${process.pid}.sql.gz`)
   writeFileSync(p, gzipSync(Buffer.from(content, 'utf-8')))
   tmpFiles.push(p)
   return p
 }
 // 生バイトをそのまま .sql.gz として書き出す（壊れた gzip の検証用）。
 function writeTmpRawGz(name: string, buf: Buffer): string {
-  const p = join(tmpdir(), `tableplus-import-test-${name}-${process.pid}.sql.gz`)
+  const p = join(tmpdir(), `reef-import-test-${name}-${process.pid}.sql.gz`)
   writeFileSync(p, buf)
   tmpFiles.push(p)
   return p

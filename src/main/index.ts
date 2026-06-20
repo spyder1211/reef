@@ -15,7 +15,7 @@ import { CSP } from '../shared/csp'
 // アプリの表示名。macOS のアプリメニューやダイアログのタイトルに使われる。
 // dev/prod を問わず確実に反映させるため明示設定する（package.json の
 // productName はビルド時のバンドル名用で、ランタイムの解決に依存しないようにする）。
-app.setName('Table++')
+app.setName('Reef')
 
 // dev モードの Dock アイコン。パッケージ版は .icns がバンドルに焼き込まれるため不要だが、
 // electron-vite dev では Electron 既定アイコンになるので、リポジトリの build/icon.png を使う。

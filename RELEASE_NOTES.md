@@ -1,125 +1,127 @@
-# リリースノート
+# Release Notes
 
-## v0.4.0 (2026-06-20) — クエリキャンセル × 大規模データ × 開発基盤
+[English](RELEASE_NOTES.md) · [日本語](RELEASE_NOTES.ja.md)
 
-v0.3.0 で固めた「安全に使うための土台」に続き、v0.4 は**重い・大きいクエリを安全かつ快適に扱う操作性**と、**壊れた変更を弾く開発基盤**を整えます。大量データに触れても固まらず、いつでも止められ、誤って巨大な結果を流し込まない——日常的に production を覗くワークフローの摩擦を減らすバッチです。
+## v0.4.0 (2026-06-20) — Query cancellation × large data × dev foundation
 
-### 長時間クエリのキャンセル (#44)
-- 重いクエリを流している最中に、結果エリアの「実行中…」横の**停止ボタン**で中断できるようにしました。対象は SQL タブ（複数文の実行）とテーブル閲覧の両方です。
-- 仕組みは**専用接続で `KILL QUERY`**：クエリ実行接続の `threadId` を捕捉しておき、別接続から該当スレッドを kill します。MySQL 側の中断（`ER_QUERY_INTERRUPTED`）はエラー表示せず**静かに停止**し、編集中のステージング変更は保持します。
-- 内部クエリ（件数取得・`EXPLAIN`・DDL・CSV 取得）はキャンセル対象外。既知の制限として、コネクションプール枯渇時は kill 用接続が取れない場合があります。
+Following the "foundation for using power safely" laid in v0.3.0, v0.4 focuses on **the ergonomics of handling heavy, large queries safely and comfortably** and **a development foundation that rejects broken changes**. It doesn't freeze when you touch large data, you can stop a query at any time, and you won't accidentally pour a huge result set into the app — a batch that reduces the friction of a workflow that peeks at production daily.
 
-### SQL タブの自動 LIMIT ＋ 結果上限ガード (#45)
-- これまで SQL タブは書いた SQL を **`LIMIT` なしでそのまま実行**していたため、`SELECT * FROM huge_table` で全行を読み込み固まる恐れがありました。テーブル閲覧（自動 LIMIT 100 ＋ ページング）だけが守られ、SQL タブは無防備でした。
-- **多層防御**を導入：単一の素の `SELECT`（先頭 `SELECT`／`WITH … SELECT` でトップレベルに `LIMIT` 無し）に**自動で `LIMIT 500`** を付与（第一防御）。さらに自動 LIMIT を回避したケースの最終防御として、結果を**10000 行で打ち切り**ます。
-- 自動 LIMIT 適用時は「先頭 500 件を表示中」バナーと**「自動 LIMIT を外して再実行」ボタン**を表示。10000 行打ち切り時はその旨を明示し、全件取得は CSV エクスポートへ誘導します。クエリ履歴には**原文の SQL** を保存します。
-- 自動 LIMIT は素の `SELECT` のみが対象（`SHOW`/`DESCRIBE`/DML/DDL や明示的な `LIMIT` 付きクエリには付けません）。テーブル閲覧・CSV エクスポート（全件取得）の経路は**従来どおり不変**です。
+### Cancel long-running queries (#44)
+- You can now interrupt a heavy query mid-flight with a **Stop button** next to the "Running…" indicator in the result area. It applies to both SQL tabs (multi-statement execution) and table browsing.
+- The mechanism is **`KILL QUERY` over a dedicated connection**: the executing connection's `threadId` is captured, and a separate connection kills that thread. The server-side interruption (`ER_QUERY_INTERRUPTED`) **stops quietly** without an error, and in-progress staged edits are preserved.
+- Internal queries (row count, `EXPLAIN`, DDL, CSV fetch) are not cancellable. Known limitation: when the connection pool is exhausted, a connection for the kill may not be available.
 
-### 結果グリッドの行仮想化 (#46)
-- 結果グリッドが**表示行をすべて DOM 化**していたため、上限の 10000 行ともなると描画・スクロール・選択が重くなっていました。**行の仮想スクロール**（`@tanstack/react-virtual`）を導入し、**可視範囲＋わずかな先読みの行だけを描画**するように変更。行数に関わらず DOM ノード数が一定になり、大量データでも滑らかにスクロールできます。
-- カラム幅は**内容から実測して固定**（ヘッダと先行サンプル行の文字幅を計測）するため、スクロールしても幅がガタつかずヘッダと整合します。幅を超える長いセルは省略表示（…）にし、全文はダブルクリック編集・コピーで取得できます。
-- 行選択・⌘A・矢印キー移動・セル編集・右クリックメニュー・クイックフィルタ・行追加/削除といった既存操作はすべて維持。テーブル閲覧・CSV エクスポートにも影響はありません。
+### Auto `LIMIT` + result-cap guard for SQL tabs (#45)
+- Until now, SQL tabs ran your SQL **as-is, without any `LIMIT`**, so `SELECT * FROM huge_table` risked loading every row and freezing the app. Only table browsing (auto `LIMIT 100` + pagination) was protected; SQL tabs were exposed.
+- A **layered defense** was introduced: a single bare `SELECT` (a leading `SELECT` / `WITH … SELECT` with no top-level `LIMIT`) gets an **automatic `LIMIT 500`** (first line of defense). As a last resort for cases that bypass the auto `LIMIT`, the result is **capped at 10,000 rows**.
+- When the auto `LIMIT` is applied, a "showing the first 500 rows" banner and a **"Re-run without auto LIMIT" button** are shown. When the 10,000-row cap kicks in, it's stated explicitly and you're directed to CSV export for the full result. The query history stores the **original SQL**.
+- The auto `LIMIT` only targets bare `SELECT`s (it is not added to `SHOW`/`DESCRIBE`/DML/DDL or queries with an explicit `LIMIT`). The table-browsing and CSV-export (full fetch) paths are **unchanged**.
+
+### Virtualized result grid (#46)
+- The result grid used to **render every visible row into the DOM**, so at the 10,000-row cap, rendering, scrolling, and selection became sluggish. **Row virtualization** (`@tanstack/react-virtual`) was introduced to **render only the visible window of rows plus a small overscan**. The DOM node count stays constant regardless of row count, so large data scrolls smoothly.
+- Column widths are **measured from content and fixed** (by measuring the character width of the header and a leading sample of rows), so widths don't jitter on scroll and stay aligned with the header. Cells wider than the fixed width are truncated with an ellipsis (…); the full value is available via double-click editing or copy.
+- Existing interactions — row selection, ⌘A, arrow-key navigation, cell editing, the right-click menu, quick filters, and row insert/delete — are all preserved. Table browsing and CSV export are unaffected.
 
 ### GitHub Actions CI (#43)
-- `push`/PR で **typecheck → test → build** を 3 ジョブ並列で実行する CI を整備しました。これまでローカルでしか走らなかった**MySQL 統合テストを CI サービス（`mysql:8.0`）で常時実行**へ転換し、壊れた変更を早期に弾きます。
+- Set up CI that runs **typecheck → test → build** as three parallel jobs on `push`/PR. The **MySQL integration tests**, which previously ran only locally, now **run continuously on a CI service (`mysql:8.0`)**, rejecting broken changes early.
 
-### 今後の予定（次バッチ候補）
-- Biome による Lint/Format 整備 / タブ切り替えショートカット / モーダル・コンテキストメニューのアクセシビリティ改善 / 外部キージャンプ・エクスポート形式追加・設定画面 ほか
-
----
-
-## v0.3.0 (2026-06-14) — 本番運用の安全性ハードニング
-
-v0.2.0 で本番接続・SSH・ダンプ入出力という「強い力」を入れた直後のリリースとして、**入れた力を安全に使うための土台**を固めます。第一弾は安全性（Tier 1）に集中し、レンダラ（画面側）を信頼しない多層防御へ作り変えました。
-
-### 本番ガードを main プロセスで強制 (#39)
-- これまで本番ガードは画面側にしか無く、SQL タブの破壊的実行・`DROP`/`TRUNCATE`・ダンプの import/export・編集コミットが**本番でも無確認でバイパス可能**でした（特に import はネイティブメニュー起動のため画面側の確認を物理的に通らない）。本リリースでガードを main プロセスへ移し、**書き込み・破壊系のすべての境界で確認を強制**します。
-- SQL を「読み取り専用 / 書き込み / 壊滅的」に自動分類。本番接続時は、通常の書き込み（`INSERT`/`UPDATE`/`DELETE`/`ALTER` 等）は OK/キャンセル確認、**壊滅的操作（`DROP`/`TRUNCATE`・ダンプ import/restore・dump export）は「本番だと理解した」チェックボックス必須の赤い確認ダイアログ**を表示します。
-- 読み取り専用（`SELECT`/`SHOW`/`EXPLAIN` 等）は従来どおり確認なし。非 production（staging/development/local）では追加確認は一切出ません。
-- `WITH`（CTE）始まりの DML や、**先頭にコメントを付けた破壊的文**（`-- 削除\nDROP TABLE ...`）でもガードを迂回できないよう分類を厳格化。
-- 確認をキャンセルした場合はエラー表示せず静かに中止し、編集中のステージング変更は保持します。
-
-### 認証情報・ファイルのハードニング (#40)
-- 接続情報（`connections.json`）とクエリ履歴（`query-history.json`）を**所有者のみ読み書き可（`0o600`）**で保存。書き込みは一時ファイル経由のアトミック方式とし、旧バージョンが残した緩いパーミッションのファイルも**アプリ起動時に自動で締め直し**ます。
-- macOS の `safeStorage` で暗号化できない環境（Linux で keyring 無し等）では、**認証情報を平文でディスクに書かず**、接続フォームにその旨を注記。あわせて、暗号化不可時に既存の暗号化パスワードを空文字で上書きして消してしまう不具合も修正しました。
-
-### Electron セキュリティハードニング (#41)
-- 本番ビルドに strict な **Content-Security-Policy** を付与（`script-src 'self'`・`object-src`/`frame-src 'none'` ほか）。HTTP ヘッダと `<meta>` タグの二重適用で、`file://` ロード環境でも確実に効かせます。開発モードでは HMR 維持のため付与しません。
-- レンダラを **`sandbox: true`** で実行し、画面側の侵害がメインプロセス権限へ昇格しにくくしました（`contextIsolation: true` / `nodeIntegration: false` は維持）。
-- アプリ外への画面遷移・新規ウィンドウ生成を禁止し、外部リンク（http/https）は既定ブラウザで開くようロックダウン。
-
-### 今後の予定（v0.3 の後続バッチ）
-- 長時間クエリのキャンセル / 行の仮想スクロール + SQL タブの自動 LIMIT / CI・Lint 整備 / モーダル・コンテキストメニューのアクセシビリティ改善 ほか
+### Coming next (candidate batch)
+- Lint/format with Biome / tab-switching shortcuts / accessibility improvements for modals and context menus / foreign-key jump, more export formats, a settings screen, and more
 
 ---
 
-## v0.2.0 (2026-06-12) — 開発者向け機能強化
+## v0.3.0 (2026-06-14) — Hardening for production safety
 
-Web エンジニアの日常業務（スキーマ確認・クエリ調査・本番接続）を支える機能をまとめて追加しました。
+As the release right after v0.2.0 added "strong powers" (production connections, SSH, dump import/export), this one solidifies **the foundation for using that power safely**. The first installment concentrates on safety (Tier 1), rebuilding things into a layered defense that does not trust the renderer (the UI side).
 
-### スキーマ・SQL エディタ強化
-- テーブルタブに「データ / 構造」切り替えを追加。構造ビューでカラム（型・NULL 可否・キー・デフォルト・Extra・コメント）、インデックス、`SHOW CREATE TABLE` の DDL を表示 (#24)
-- SQL エディタにテーブル名・カラム名の補完（接続中 DB の構造を `information_schema` から取得） (#25)
-- クエリ履歴。実行した SQL を永続化し、SQL タブの履歴パネルで検索・再利用（最大 500 件） (#26)
-- `Cmd+E` で `EXPLAIN` 実行（単一文）。実行計画を結果グリッドに表示 (#27)
+### Enforce the production guard in the main process (#39)
+- The production guard previously existed only on the UI side, so destructive execution in SQL tabs, `DROP`/`TRUNCATE`, dump import/export, and edit commits could **bypass confirmation even against production** (import in particular launches from the native menu, so it physically never passes the UI-side confirmation). This release moves the guard into the main process to **enforce confirmation at every write/destructive boundary**.
+- SQL is automatically classified as read-only / write / catastrophic. On a production connection, ordinary writes (`INSERT`/`UPDATE`/`DELETE`/`ALTER`, etc.) show an OK/Cancel confirmation, while **catastrophic operations (`DROP`/`TRUNCATE`, dump import/restore, dump export) show a red confirmation dialog requiring an "I understand this is production" checkbox**.
+- Read-only statements (`SELECT`/`SHOW`/`EXPLAIN`, etc.) require no confirmation, as before. No extra confirmation appears for non-production (staging/development/local).
+- Classification was tightened so the guard can't be bypassed via DML that starts with `WITH` (CTE) or a **destructive statement prefixed with a comment** (`-- delete\nDROP TABLE ...`).
+- Canceling a confirmation aborts quietly without showing an error and preserves in-progress staged edits.
 
-### 接続強化
-- SSH トンネル接続。踏み台（bastion）経由で staging/production の MySQL に接続。パスワード認証 / 秘密鍵認証（パスフレーズ対応）の両対応で、SSH の秘匿値も `safeStorage` で暗号化保存 (#31)
-- 本番環境（`production` タグ）の接続ガード。接続のたびに確認ダイアログを表示（キャンセルで接続中止）し、接続中はワークスペース上部に赤い「PRODUCTION」警告バーを常時表示して誤操作を抑止 (#35)
+### Credential & file hardening (#40)
+- Connection info (`connections.json`) and query history (`query-history.json`) are saved as **owner read/write only (`0o600`)**. Writes are atomic via a temp file, and files left with loose permissions by older versions are **re-tightened automatically on app startup**.
+- In environments where macOS `safeStorage` can't encrypt (e.g. Linux without a keyring), credentials are **never written to disk in plaintext**, with a note to that effect on the connection form. A bug where an existing encrypted password could be overwritten with an empty string (erasing it) when encryption was unavailable was also fixed.
 
-### UI 強化
-- ダークモード。macOS のシステム外観（ライト/ダーク）に自動追従。CodeMirror エディタもリアルタイム追従 (#30)
-- 詳細ペインで JSON カラム・JSON 文字列を整形表示するトグル (#29)
-- SQL タブの実行結果も CSV エクスポート可能に（これまではテーブルタブのみ） (#28)
-- テーブル一覧の右クリックメニューに「テーブル名をコピー」を追加 (#33)
+### Electron security hardening (#41)
+- A strict **Content-Security-Policy** is applied to production builds (`script-src 'self'`, `object-src`/`frame-src 'none'`, and more). It is applied twice — via an HTTP header and a `<meta>` tag — to take effect reliably even under `file://` loading. It is not applied in development to keep HMR working.
+- The renderer runs with **`sandbox: true`**, making it harder for a compromise on the UI side to escalate to main-process privileges (`contextIsolation: true` / `nodeIntegration: false` are kept).
+- Navigation away from the app and new-window creation are forbidden; external links (http/https) are locked down to open in the default browser.
 
-### v0.3.0 以降の予定（本リリース対象外）
-- PostgreSQL 対応 / ER 図・外部キージャンプ / キーボードショートカットのカスタマイズ / 自動再接続 / ダークモードの手動切り替え / SSL 対応
+### Coming next (the v0.3 follow-up batch)
+- Cancel long-running queries / row virtualization + auto `LIMIT` for SQL tabs / CI & Lint setup / accessibility improvements for modals and context menus, and more
 
 ---
 
-## v0.1.0 (2026-06-11) — 初回リリース
+## v0.2.0 (2026-06-12) — Developer feature enhancements
 
-**Table++** の最初のリリースです。TablePlus ライクな操作感の、タブ無制限な MySQL クライアント（macOS デスクトップアプリ）。Electron + React + TypeScript で構築しています。
+A batch of features supporting a web engineer's daily work (checking schemas, investigating queries, connecting to production).
 
-### 接続管理
-- 接続プロファイルの保存（パスワードは Electron `safeStorage` で暗号化して `userData` に保持）
-- 2 階層のグループ化（ユーザー作成グループ × 環境タグ `production` / `staging` / `development` / `local` から自動導出されるサブグループ）と、ドラッグ＆ドロップによる移動・並び替え (#17)
-- 接続行の右クリックメニュー（複製 / 編集 / 削除）。複製は暗号化パスワード・タグ・グループ割り当てごとコピー (#20)
-- 接続時にウィンドウを最大化 (#21)
-- ウィンドウを閉じると接続中は接続一覧へ戻る（誤終了の防止） (#9)
+### Schema & SQL-editor enhancements
+- Added a "Data / Structure" toggle to table tabs. The structure view shows columns (type, nullability, key, default, Extra, comment), indexes, and the `SHOW CREATE TABLE` DDL (#24)
+- Table-name and column-name completion in the SQL editor (the connected DB's structure is fetched from `information_schema`) (#25)
+- Query history. Executed SQL is persisted, and you can search and reuse it from the SQL tab's history panel (up to 500 entries) (#26)
+- `Cmd+E` runs `EXPLAIN` (single statement). The execution plan is shown in the result grid (#27)
 
-### テーブル閲覧
-- テーブル一覧と、名前による検索ジャンプ (#12)
-- レコードのソート・ページング・総件数表示 (#2)
-- フィルターバー、およびカラム右クリックからのクイックフィルタ（`=` `<>` `<` `>` `contains` `in` `between` `is null` ほか） (#1, #13)
-- レコードの左右分割ビュー（同じテーブルを左右に表示・スクロール位置のみ独立・中央仕切りはドラッグでリサイズ可能） (#21)
-- 行の詳細ペイン表示（右ペインでの閲覧・編集） (#5)
-- グリッド上ツールバーに行追加 / 分割 / 詳細トグルをアイコン集約 (#21)
+### Connection enhancements
+- SSH tunnel connections. Connect to staging/production MySQL via a bastion. Both password auth and private-key auth (with passphrase) are supported, and SSH secrets are also stored encrypted with `safeStorage` (#31)
+- A connection guard for production (`production` tag). A confirmation dialog appears on every connect (cancel aborts the connection), and while connected a red "PRODUCTION" warning bar is always shown at the top of the workspace to deter mistakes (#35)
 
-### テーブル編集
-- セル編集（`UPDATE`） (#3)
-- 行追加（`INSERT`） / 行削除（`DELETE`） (#6)
-- 複数行選択 + 右クリックでバルク削除 / 複製 / コピー (#18)
-- テーブル一覧の右クリックメニューから `TRUNCATE` / `DROP` (#15)
+### UI enhancements
+- Dark mode. Follows the macOS system appearance (light/dark) automatically. The CodeMirror editor follows in real time too (#30)
+- A toggle in the detail pane to pretty-print JSON columns / JSON strings (#29)
+- SQL-tab results can now also be exported to CSV (previously table tabs only) (#28)
+- Added "Copy table name" to the table list's right-click menu (#33)
 
-### SQL エディタ
-- CodeMirror ベースの SQL エディタ（シンタックスハイライト）
-- `Cmd+Enter` で実行。複数文（セミコロン区切り）をまとめて順次実行 (#20)
+### Planned for v0.3.0 and beyond (out of scope for this release)
+- PostgreSQL support / ER diagrams & foreign-key jump / customizable keyboard shortcuts / auto-reconnect / manual dark-mode toggle / SSL support
 
-### インポート / エクスポート（File メニュー）
-- 結果の CSV エクスポート (#7)
-- SQL ダンプのエクスポート（ストリーミング + 進捗表示） (#8)
-- SQL ダンプの import / restore。`.sql` および gzip 圧縮 `.sql.gz` に対応し、import 時は外部キー制約を無効化、進捗・結果サマリを表示 (#14, #16)
+---
 
-### アプリケーション / 配布
-- アプリ名を **Table++** に統一、専用アプリアイコン（T++）を追加
-- macOS (Apple Silicon / arm64) 向けの `.app` / `.dmg` パッケージ化（`npm run dist:mac`）
-- 未署名配布時の Gatekeeper「壊れている」エラーを緩和（バンドル全体を ad-hoc 署名し直し）※ 初回起動は右クリック →「開く」が必要
-- `Cmd+R` をフルリロードからアクティブタブの再読み込みに変更 (#19)
+## v0.1.0 (2026-06-11) — Initial release
 
-### ドキュメント
-- プロジェクト README を追加 (#22)
+The first release of **Reef**. A tab-unlimited MySQL client (macOS desktop app), built with Electron + React + TypeScript.
 
-### 技術スタック
+### Connection management
+- Saved connection profiles (passwords encrypted with Electron `safeStorage` and stored in `userData`)
+- Two-level grouping (user-created groups × subgroups auto-derived from the environment tag `production` / `staging` / `development` / `local`), with drag-and-drop move and reorder (#17)
+- Right-click menu on a connection row (duplicate / edit / delete); duplicate copies the encrypted password, tags, and group assignment (#20)
+- Window maximizes on connect (#21)
+- Closing the window while connected returns to the connection list (prevents accidental quit) (#9)
+
+### Table browsing
+- Table list with name-based search jump (#12)
+- Record sorting, paging, and total-count display (#2)
+- A filter bar, plus quick filters from a column's right-click menu (`=` `<>` `<` `>` `contains` `in` `between` `is null`, and more) (#1, #13)
+- Side-by-side split view of records (the same table shown left and right, with independent scroll positions only; the center divider is drag-resizable) (#21)
+- Row detail pane (view/edit in the right pane) (#5)
+- Add-row / split / detail-toggle consolidated as icons in the on-grid toolbar (#21)
+
+### Table editing
+- Cell editing (`UPDATE`) (#3)
+- Row insert (`INSERT`) / row delete (`DELETE`) (#6)
+- Multi-row selection + right-click for bulk delete / duplicate / copy (#18)
+- `TRUNCATE` / `DROP` from the table list's right-click menu (#15)
+
+### SQL editor
+- CodeMirror-based SQL editor (syntax highlighting)
+- Run with `Cmd+Enter`; multiple statements (semicolon-separated) run sequentially (#20)
+
+### Import / export (File menu)
+- Export results to CSV (#7)
+- Export SQL dumps (streaming, with progress) (#8)
+- Import / restore SQL dumps. Supports `.sql` and gzip-compressed `.sql.gz`, disables foreign-key checks during import, and shows progress and a result summary (#14, #16)
+
+### Application / distribution
+- Unified the app name as **Reef** and added a dedicated app icon
+- Packaging as `.app` / `.dmg` for macOS (Apple Silicon / arm64) (`npm run dist:mac`)
+- Mitigated the Gatekeeper "damaged" error on unsigned distribution (ad-hoc re-signing of the whole bundle) — first launch requires right-click → "Open"
+- Changed `Cmd+R` from a full reload to reloading the active tab (#19)
+
+### Documentation
+- Added a project README (#22)
+
+### Tech stack
 - Electron 31 / electron-vite / Vite 5 / React 18 / TypeScript 5 / zustand / @tanstack/react-table / CodeMirror / mysql2

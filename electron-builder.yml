@@ -1,5 +1,5 @@
-appId: com.spyder1211.tableplus
-# productName は package.json の "Table++" を使う（.app / .dmg 名に反映される）
+appId: com.spyder1211.reef
+# productName は package.json の "Reef" を使う（.app / .dmg 名に反映される）
 directories:
   output: dist
   buildResources: build

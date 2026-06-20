@@ -1,10 +1,11 @@
 {
-  "name": "tableplus",
-  "productName": "Table++",
+  "name": "reef",
+  "productName": "Reef",
   "version": "0.4.0",
-  "description": "タブ無制限の MySQL クライアント (Mac アプリ)",
+  "description": "A fast, tab-unlimited MySQL client for macOS",
   "main": "./out/main/index.js",
   "author": "spyder1211",
+  "license": "MIT",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
