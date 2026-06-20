@@ -91,7 +91,7 @@ const rowVirtualizer = useVirtualizer({
 ### 3.4 仮想化に伴う必須の波及修正
 
 1. **行ストライプ**: `:nth-child(even)` は窓化（可視行＋スペーサ）で破綻するため CSS ルールを撤去し、`vi.index % 2 === 1` で偶奇クラス（例 `styles.rowAlt`）を行に付与する方式へ変更。
-2. **矢印キースクロール**: `scrollIntoView(querySelector('tr[data-row-index]'))`（対象行が未マウントだと無効）を `rowVirtualizer.scrollToIndex(next.lead, { align: 'auto' })` に置換。これに伴い `data-row-index` 属性は唯一の消費者を失うため撤去可（デバッグ用に残すのも可）。
+2. **矢印キースクロール**: `scrollIntoView(querySelector('tr[data-row-index]'))`（対象行が未マウントだと無効）を、固定 `ROW_HEIGHT` とヘッダ高さからアクティブ行の content-offset を計算して `gridWrapRef.current.scrollTop` を直接補正する方式に置換。sticky `<thead>` が同一スクロールコンテナの上端を占有するため、ヘッダ高さ（`thead.offsetHeight`）分を引いて行がヘッダ下／表示下端に隠れないようにする（`virtualizer.scrollToIndex` 単体だとこのヘッダ共有分ズレるため・`scrollMargin` を入れて動作中のスペーサ計算を崩すより局所的）。描画する行は引き続き virtualizer が決める。これに伴い `data-row-index` 属性は唯一の消費者を失うため撤去。
 
 ### 3.5 既存挙動の維持で注意する点
 
