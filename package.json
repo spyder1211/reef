@@ -1,7 +1,7 @@
 {
   "name": "tableplus",
   "productName": "Table++",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "タブ無制限の MySQL クライアント (Mac アプリ)",
   "main": "./out/main/index.js",
   "author": "spyder1211",
