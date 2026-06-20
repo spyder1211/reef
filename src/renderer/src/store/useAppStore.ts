@@ -13,6 +13,7 @@ import type {
   PendingInsert,
   TableSchema
 } from '../../../shared/types'
+import type { Locale, LocalePreference } from '../../../shared/i18n/types'
 import { buildFilteredQuery, buildCountQuery } from './filterBuilder'
 import { toCsv } from '../lib/csv'
 import {
@@ -139,6 +140,9 @@ interface AppState {
   historyOpen: boolean // SQL タブのクエリ履歴パネル開閉
   formOpen: boolean
   editingId: string | null
+  locale: Locale
+  localePreference: LocalePreference
+  setLocalePreference: (pref: LocalePreference) => Promise<void>
 
   loadProfiles: () => Promise<void>
   setSearch: (s: string) => void
@@ -347,6 +351,12 @@ export const useAppStore = create<AppState>((set, get) => {
     historyOpen: false,
     formOpen: false,
     editingId: null,
+    locale: window.api.i18n.bootstrap.effective,
+    localePreference: window.api.i18n.bootstrap.preference,
+    async setLocalePreference(pref) {
+      const { effective } = await window.api.i18n.setLocale(pref)
+      set({ localePreference: pref, locale: effective })
+    },
 
     async loadProfiles() {
       const res = await window.api.connections.list()
