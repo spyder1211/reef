@@ -6,8 +6,8 @@ export default function AppRail(): JSX.Element {
   const openForm = useAppStore((s) => s.openForm)
   return (
     <div className={styles.rail}>
-      <img className={styles.logo} src={appIcon} alt="Table++" width={64} height={64} />
-      <div className={styles.name}>Table++</div>
+      <img className={styles.logo} src={appIcon} alt="Reef" width={64} height={64} />
+      <div className={styles.name}>Reef</div>
       <div className={styles.version}>Version {__APP_VERSION__}</div>
       <div className={styles.spacer} />
       <button className={styles.railBtn} onClick={() => openForm()}>

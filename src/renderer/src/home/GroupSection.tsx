@@ -5,8 +5,8 @@ import { computeReorder, type GroupView } from '../lib/grouping'
 import ConnectionRow from './ConnectionRow'
 import styles from './GroupSection.module.css'
 
-const CONN_MIME = 'application/x-tableplus-conn'
-const GROUP_MIME = 'application/x-tableplus-group'
+const CONN_MIME = 'application/x-reef-conn'
+const GROUP_MIME = 'application/x-reef-group'
 
 export default function GroupSection({
   view,

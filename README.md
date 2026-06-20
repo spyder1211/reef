@@ -1,128 +1,137 @@
-# Table++
+# Reef
 
-タブ無制限の MySQL クライアント（macOS デスクトップアプリ）。TablePlus ライクな操作感で、接続管理・テーブル閲覧・レコード編集・SQL 実行・ダンプの入出力までをまかなえる軽量クライアントです。
+[English](README.md) · [日本語](README.ja.md)
 
-Electron + React + TypeScript で構築されています。
+A fast, tab-unlimited MySQL client for macOS. Reef is a lightweight desktop app that covers connection management, table browsing, record editing, SQL execution, and dump import/export.
 
-## 主な機能
+Built with Electron + React + TypeScript.
 
-### 接続管理
-- 接続プロファイルの保存（パスワードは Electron `safeStorage` で暗号化し、`userData` に保持）
-- 2 階層のグループ化（ユーザー作成グループ × 環境タグ `production` / `staging` / `development` / `local` から自動導出されるサブグループ）
-- ドラッグ＆ドロップによるグループ移動・並び替え
-- 接続行の右クリックメニュー（複製 / 編集 / 削除）。複製は暗号化パスワード・タグ・グループ割り当てごとコピー
-- 接続時にウィンドウを最大化、ウィンドウを閉じると接続一覧へ戻る
+## Features
 
-### テーブル閲覧・編集
-- テーブル一覧と、名前による検索ジャンプ
-- テーブル一覧の右クリックメニューから `TRUNCATE` / `DROP`
-- レコードのページネーション・ソート・フィルタ（クイックフィルタ、`=` `<>` `<` `>` `contains` `in` `between` `is null` ほか）
-- レコードの左右分割ビュー
-- 行の詳細ペイン表示
-- セル編集（`UPDATE`）、行追加（`INSERT`）、行削除（`DELETE`）
-- 複数行選択 + 右クリックでバルク削除 / 複製 / コピー
+### Connection management
+- Saved connection profiles (passwords are encrypted with Electron `safeStorage` and stored in `userData`)
+- Two-level grouping (user-created groups × subgroups auto-derived from the environment tag `production` / `staging` / `development` / `local`)
+- Drag-and-drop to move and reorder groups
+- Right-click menu on a connection row (duplicate / edit / delete); duplicate copies the encrypted password, tags, and group assignment
+- Window maximizes on connect; closing the window returns to the connection list
 
-### SQL エディタ
-- CodeMirror ベースの SQL エディタ（SQL シンタックスハイライト）
-- `Cmd+Enter` で実行。複数文（セミコロン区切り）をまとめて順次実行
+### Table browsing & editing
+- Table list with name-based search jump
+- `TRUNCATE` / `DROP` from the table list's right-click menu
+- Record pagination, sorting, and filtering (quick filters: `=` `<>` `<` `>` `contains` `in` `between` `is null`, and more)
+- Side-by-side split view of records
+- Row detail pane
+- Cell editing (`UPDATE`), row insert (`INSERT`), row delete (`DELETE`)
+- Multi-row selection + right-click for bulk delete / duplicate / copy
 
-### 入出力
-- 結果の CSV エクスポート
-- SQL ダンプのエクスポート（ストリーミング + 進捗表示）
-- SQL ダンプの import / restore（`.sql` および gzip 圧縮の `.sql.gz` に対応、import 時は外部キー制約を無効化、進捗・結果サマリを表示）
-- これらの操作は File メニューから実行
+### SQL editor
+- CodeMirror-based SQL editor (SQL syntax highlighting)
+- Run with `Cmd+Enter`; multiple statements (semicolon-separated) run sequentially
+- Stop a long-running query (`KILL QUERY` via a dedicated connection)
+- Automatic `LIMIT` on bare `SELECT` queries plus a hard result-row cap, to keep large results from freezing the app
+- Virtualized result grid: only the visible window of rows is rendered, so large result sets stay smooth
 
-## 技術スタック
+### Import / export
+- Export results to CSV
+- Export SQL dumps (streaming, with progress)
+- Import / restore SQL dumps (`.sql` and gzip-compressed `.sql.gz`; foreign-key checks are disabled during import, with progress and a result summary)
+- These actions are available from the File menu
 
-| 領域 | 採用技術 |
+## Tech stack
+
+| Area | Technology |
 | --- | --- |
-| デスクトップ基盤 | Electron 31 |
-| ビルド | electron-vite / Vite 5 |
+| Desktop runtime | Electron 31 |
+| Build | electron-vite / Vite 5 |
 | UI | React 18 + TypeScript |
-| 状態管理 | zustand |
-| グリッド | @tanstack/react-table |
-| SQL エディタ | @uiw/react-codemirror + @codemirror/lang-sql |
-| DB ドライバ | mysql2 |
-| テスト | Vitest |
-| パッケージング | electron-builder（macOS dmg） |
+| State | zustand |
+| Grid | @tanstack/react-table + @tanstack/react-virtual |
+| SQL editor | @uiw/react-codemirror + @codemirror/lang-sql |
+| DB driver | mysql2 |
+| Tests | Vitest |
+| Packaging | electron-builder (macOS dmg) |
 
-## 動作要件
+## Requirements
 
-- Node.js 20 以上
-- 接続先の MySQL サーバー
-- 配布パッケージのビルド対象は macOS（Apple Silicon / arm64）
+- Node.js 20 or later
+- A MySQL server to connect to
+- Distribution packages target macOS (Apple Silicon / arm64)
 
-## セットアップ
+## Getting started
 
 ```bash
 npm install
 ```
 
-### 開発
+### Develop
 
 ```bash
-npm run dev          # electron-vite で開発起動（ホットリロード）
+npm run dev          # start in dev with electron-vite (hot reload)
 ```
 
-### 型チェック・テスト
+### Type-check & test
 
 ```bash
-npm run typecheck    # main / web 両方の tsconfig で tsc --noEmit
-npm run test         # Vitest を1回実行
-npm run test:watch   # Vitest をウォッチモードで実行
+npm run typecheck    # tsc --noEmit for both the main and web tsconfigs
+npm run test         # run Vitest once
+npm run test:watch   # run Vitest in watch mode
 ```
 
-統合テストには MySQL が必要です。`docker-compose.test.yml` でテスト用の MySQL を起動できます。
+Integration tests need MySQL. You can start a test MySQL with `docker-compose.test.yml`:
 
 ```bash
 docker compose -f docker-compose.test.yml up -d
 ```
 
-### ビルド
+### Build
 
 ```bash
-npm run build        # electron-vite build（out/ に成果物）
-npm run preview      # ビルド済みアプリのプレビュー
+npm run build        # electron-vite build (artifacts in out/)
+npm run preview      # preview the built app
 ```
 
-### macOS 向け配布パッケージ（dmg）
+### macOS distribution package (dmg)
 
 ```bash
 npm run dist:mac     # electron-vite build && electron-builder --mac --arm64
 ```
 
-成果物は `dist/` に出力されます。配布物は署名なし（ad-hoc 署名）のため、`build/afterPack.cjs` でパック後にバンドル全体を ad-hoc 署名し直し、未署名配布時の「壊れている / 開けない」エラーを緩和しています。
+Artifacts are written to `dist/`. Distribution builds are unsigned (ad-hoc signed): `build/afterPack.cjs` re-applies an ad-hoc signature to the whole bundle after packing, to reduce the "damaged / can't be opened" Gatekeeper error on unsigned distribution. On first launch, right-click the app and choose "Open".
 
-## プロジェクト構成
+## Project layout
 
 ```
 src/
-├── main/          # Electron メインプロセス
-│   ├── connection/  # ConnectionManager / ProfileStore / GroupStore など
-│   ├── dump/        # SQL ダンプ出力
-│   ├── import/      # SQL ダンプ取り込み（gzip / statement splitter 含む）
-│   ├── ipc/         # IPC ハンドラ登録
-│   ├── index.ts     # エントリポイント（BrowserWindow 生成）
-│   └── menu.ts      # アプリメニュー
-├── preload/       # コンテキストブリッジ（window.api を公開）
+├── main/          # Electron main process
+│   ├── connection/  # ConnectionManager / ProfileStore / GroupStore, etc.
+│   ├── dump/        # SQL dump export
+│   ├── import/      # SQL dump import (incl. gzip / statement splitter)
+│   ├── ipc/         # IPC handler registration
+│   ├── index.ts     # entry point (BrowserWindow creation)
+│   └── menu.ts      # app menu
+├── preload/       # context bridge (exposes window.api)
 ├── renderer/      # React UI
 │   └── src/
-│       ├── home/       # 接続一覧・接続フォーム
-│       ├── workspace/  # テーブル閲覧・SQL エディタ・結果グリッド
-│       ├── store/      # zustand ストア
-│       └── lib/        # CSV・フィルタ・検索などのユーティリティ
-└── shared/        # main / preload / renderer で共有する型（types.ts）
+│       ├── home/       # connection list / connection form
+│       ├── workspace/  # table browsing / SQL editor / result grid
+│       ├── store/      # zustand store
+│       └── lib/        # CSV / filter / search utilities
+└── shared/        # types shared across main / preload / renderer (types.ts)
 ```
 
-IPC の戻り値は例外を投げず、`ApiResult<T>`（`{ ok: true; data } | { ok: false; error }`）の判別共用体で返す設計です（`src/shared/types.ts`）。
+IPC return values never throw; they are returned as an `ApiResult<T>` discriminated union (`{ ok: true; data } | { ok: false; error }`) — see `src/shared/types.ts`.
 
-## 設計ドキュメント
+## Design documents
 
-機能ごとの設計（spec）と実装計画（plan）は `docs/superpowers/` 配下にあります。
+Per-feature design (spec) and implementation plans live under `docs/superpowers/`.
 
-- `docs/superpowers/specs/` — 各機能の設計ドキュメント
-- `docs/superpowers/plans/` — 各機能の実装計画
+- `docs/superpowers/specs/` — design documents per feature
+- `docs/superpowers/plans/` — implementation plans per feature
 
-## ライセンス
+## Release notes
 
-未設定。
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) ([日本語](RELEASE_NOTES.ja.md)).
+
+## License
+
+[MIT](LICENSE) © spyder1211
