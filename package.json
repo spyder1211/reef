@@ -6,6 +6,14 @@
   "main": "./out/main/index.js",
   "author": "spyder1211",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spyder1211/reef.git"
+  },
+  "homepage": "https://github.com/spyder1211/reef#readme",
+  "bugs": {
+    "url": "https://github.com/spyder1211/reef/issues"
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
