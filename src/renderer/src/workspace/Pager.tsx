@@ -1,10 +1,12 @@
 import { useAppStore } from '../store/useAppStore'
 import { totalPages, pageRange, canGoNext } from '../store/pager'
+import { useT } from '../i18n/useT'
 import styles from './Pager.module.css'
 
 const PAGE_SIZES = [50, 100, 500]
 
 export default function Pager(): JSX.Element | null {
+  const { t } = useT()
   const tab = useAppStore((s) => {
     const t = s.tabs.find((t) => t.id === s.activeTabId)
     return t && t.kind === 'table' ? t : null
@@ -23,7 +25,7 @@ export default function Pager(): JSX.Element | null {
   return (
     <div className={styles.pager}>
       <label className={styles.size}>
-        ページサイズ
+        {t('workspace.pageSizeLabel')}
         <select
           value={tab.pageSize}
           disabled={tab.running}
@@ -39,20 +41,22 @@ export default function Pager(): JSX.Element | null {
 
       <div className={styles.nav}>
         <button disabled={!prevOk} onClick={() => void setPage(tab.id, tab.page - 1)}>
-          ◀ 前へ
+          {t('workspace.pagePrev')}
         </button>
         <span className={styles.pageNo}>
-          ページ {tab.page + 1} / {pages ?? '?'}
+          {pages != null
+            ? t('workspace.pageIndicator', { page: String(tab.page + 1), total: String(pages) })
+            : t('workspace.pageIndicatorUnknown', { page: String(tab.page + 1) })}
         </span>
         <button disabled={!nextOk} onClick={() => void setPage(tab.id, tab.page + 1)}>
-          次へ ▶
+          {t('workspace.pageNext')}
         </button>
       </div>
 
       <div className={styles.range}>
         {tab.total !== null
-          ? `${start}–${end} / ${tab.total.toLocaleString()} 行`
-          : `${start}–${end} 行目`}
+          ? t('workspace.rowRange', { start: String(start), end: String(end), total: tab.total.toLocaleString() })
+          : t('workspace.rowRangeUnknown', { start: String(start), end: String(end) })}
       </div>
     </div>
   )

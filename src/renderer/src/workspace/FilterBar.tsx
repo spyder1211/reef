@@ -3,10 +3,12 @@ import type { FilterOperator } from '../../../shared/types'
 import { useAppStore } from '../store/useAppStore'
 import { buildFilteredQuery, sameFilterEffect, countUsableFilters } from '../store/filterBuilder'
 import { OPERATORS, OPERATOR_VALUE_KIND } from '../lib/filterOperators'
+import { useT } from '../i18n/useT'
 import ExportMenu from './ExportMenu'
 import styles from './FilterBar.module.css'
 
 export default function FilterBar(): JSX.Element | null {
+  const { t, tPlural } = useT()
   const tab = useAppStore((s) => {
     const t = s.tabs.find((t) => t.id === s.activeTabId)
     return t && t.kind === 'table' ? t : null
@@ -32,9 +34,9 @@ export default function FilterBar(): JSX.Element | null {
   const isDirty = !sameFilterEffect(tab.columns, tab.filters, tab.appliedFilters)
   const activeCount = countUsableFilters(tab.columns, tab.appliedFilters)
   const statusText = isDirty
-    ? '未適用の変更（Apply で反映）'
+    ? t('workspace.filterDirty')
     : activeCount > 0
-      ? `フィルタ ${activeCount} 件 適用中`
+      ? tPlural('workspace.filterActive', activeCount, { count: activeCount })
       : ''
   const applyOnEnter = (e: KeyboardEvent): void => {
     if (e.key === 'Enter' && !tab.running) void applyFilters(tab.id)
@@ -43,7 +45,7 @@ export default function FilterBar(): JSX.Element | null {
   return (
     <div className={styles.bar}>
       {tab.filters.length === 0 ? (
-        <div className={styles.empty}>フィルターなし（全件先頭100行）</div>
+        <div className={styles.empty}>{t('workspace.filterNone')}</div>
       ) : (
         tab.filters.map((f) => {
           const valueKind = OPERATOR_VALUE_KIND[f.operator]
@@ -85,7 +87,7 @@ export default function FilterBar(): JSX.Element | null {
                   <input
                     className={styles.val}
                     value={f.value}
-                    placeholder="下限"
+                    placeholder={t('workspace.filterRangeFrom')}
                     onChange={(e) => updateFilter(tab.id, f.id, { value: e.target.value })}
                     onKeyDown={applyOnEnter}
                   />
@@ -93,7 +95,7 @@ export default function FilterBar(): JSX.Element | null {
                   <input
                     className={styles.val}
                     value={f.value2}
-                    placeholder="上限"
+                    placeholder={t('workspace.filterRangeTo')}
                     onChange={(e) => updateFilter(tab.id, f.id, { value2: e.target.value })}
                     onKeyDown={applyOnEnter}
                   />
@@ -102,18 +104,18 @@ export default function FilterBar(): JSX.Element | null {
                 <input
                   className={styles.val}
                   value={f.value}
-                  placeholder={valueKind === 'list' ? 'カンマ区切り' : '値'}
+                  placeholder={valueKind === 'list' ? t('workspace.filterValueList') : t('workspace.filterValue')}
                   onChange={(e) => updateFilter(tab.id, f.id, { value: e.target.value })}
                   onKeyDown={applyOnEnter}
                 />
               )}
-              <button className={styles.iconBtn} onClick={() => removeFilter(tab.id, f.id)} title="削除">
+              <button className={styles.iconBtn} onClick={() => removeFilter(tab.id, f.id)} title={t('workspace.filterRemove')}>
                 −
               </button>
               <button
                 className={styles.iconBtn}
                 onClick={() => duplicateFilter(tab.id, f.id)}
-                title="複製"
+                title={t('workspace.filterDuplicate')}
               >
                 ⧉
               </button>
@@ -121,7 +123,7 @@ export default function FilterBar(): JSX.Element | null {
                 className={styles.iconBtn}
                 disabled={!columnsReady}
                 onClick={() => addFilter(tab.id)}
-                title="条件を追加"
+                title={t('workspace.filterAdd')}
               >
                 ＋
               </button>
@@ -131,7 +133,7 @@ export default function FilterBar(): JSX.Element | null {
       )}
       <div className={styles.footer}>
         <button className={styles.addBtn} disabled={!columnsReady} onClick={() => addFilter(tab.id)}>
-          ＋ 条件を追加
+          {t('workspace.filterAddBtn')}
         </button>
         {statusText && (
           <span className={isDirty ? `${styles.status} ${styles.statusDirty}` : styles.status}>
@@ -158,7 +160,7 @@ export default function FilterBar(): JSX.Element | null {
         </button>
       </div>
       <div className={styles.preview} title={preview}>
-        {(isDirty ? '未適用: ' : '適用中: ') + preview}
+        {(isDirty ? t('workspace.filterPreviewDirty') : t('workspace.filterPreviewApplied')) + preview}
       </div>
     </div>
   )

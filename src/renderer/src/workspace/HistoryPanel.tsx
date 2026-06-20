@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import type { QueryHistoryEntry } from '../../../shared/types'
+import { useT } from '../i18n/useT'
 import styles from './HistoryPanel.module.css'
 
 // SQL タブのクエリ履歴を表示する右サイドパネル。
 // マウント時（パネルを開くたび）に最新の履歴を取得する。エントリのクリックで
 // アクティブ SQL タブのエディタ内容を置き換える。
 export default function HistoryPanel(): JSX.Element {
+  const { t } = useT()
   const [entries, setEntries] = useState<QueryHistoryEntry[]>([])
   const [filter, setFilter] = useState('')
   const activeTabId = useAppStore((s) => s.activeTabId)
@@ -24,7 +26,7 @@ export default function HistoryPanel(): JSX.Element {
   }, [])
 
   async function handleClear(): Promise<void> {
-    if (!window.confirm('クエリ履歴をすべて削除しますか？')) return
+    if (!window.confirm(t('workspace.historyClear'))) return
     const res = await window.api.history.clear()
     if (res.ok) setEntries([])
   }
@@ -38,14 +40,14 @@ export default function HistoryPanel(): JSX.Element {
       <div className={styles.header}>
         <input
           className={styles.search}
-          placeholder="履歴を検索"
+          placeholder={t('workspace.historySearch')}
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
-        <button className={styles.iconBtn} onClick={handleClear} title="履歴を全削除" aria-label="履歴を全削除">
+        <button className={styles.iconBtn} onClick={handleClear} title={t('workspace.historyClear')} aria-label={t('workspace.historyClear')}>
           🗑
         </button>
-        <button className={styles.iconBtn} onClick={toggleHistory} title="閉じる" aria-label="閉じる">
+        <button className={styles.iconBtn} onClick={toggleHistory} title={t('common.close')} aria-label={t('common.close')}>
           ×
         </button>
       </div>
@@ -60,12 +62,12 @@ export default function HistoryPanel(): JSX.Element {
               <span className={styles.sql}>{e.sql}</span>
               <span className={styles.meta}>
                 {new Date(e.executedAt).toLocaleString()} ・ {e.durationMs}ms
-                {e.ok ? '' : ' ・ 失敗'}
+                {e.ok ? '' : t('workspace.historyFailed')}
               </span>
             </button>
           </li>
         ))}
-        {visible.length === 0 && <li className={styles.empty}>履歴はありません</li>}
+        {visible.length === 0 && <li className={styles.empty}>{t('workspace.historyEmpty')}</li>}
       </ul>
     </aside>
   )
