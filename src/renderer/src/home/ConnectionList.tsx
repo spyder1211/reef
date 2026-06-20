@@ -1,9 +1,11 @@
 import { useAppStore } from '../store/useAppStore'
+import { useT } from '../i18n/useT'
 import { buildGroupedView } from '../lib/grouping'
 import GroupSection from './GroupSection'
 import styles from './ConnectionList.module.css'
 
 export default function ConnectionList(): JSX.Element {
+  const { t } = useT()
   const profiles = useAppStore((s) => s.profiles)
   const groups = useAppStore((s) => s.groups)
   const search = useAppStore((s) => s.search)
@@ -12,10 +14,10 @@ export default function ConnectionList(): JSX.Element {
   const searching = search.trim().length > 0
 
   if (profiles.length === 0) {
-    return <div className={styles.empty}>＋ から最初の接続を作成してください</div>
+    return <div className={styles.empty}>{t('home.emptyHint')}</div>
   }
   if (views.length === 0) {
-    return <div className={styles.empty}>「{search}」に一致する接続はありません</div>
+    return <div className={styles.empty}>{t('home.noResults', { search })}</div>
   }
   return (
     <div className={styles.list}>

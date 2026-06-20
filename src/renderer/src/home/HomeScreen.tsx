@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { useT } from '../i18n/useT'
 import AppRail from './AppRail'
 import ConnectionList from './ConnectionList'
 import ConnectionFormModal from './ConnectionFormModal'
 import styles from './HomeScreen.module.css'
 
 export default function HomeScreen(): JSX.Element {
+  const { t } = useT()
   const search = useAppStore((s) => s.search)
   const setSearch = useAppStore((s) => s.setSearch)
   const openForm = useAppStore((s) => s.openForm)
@@ -25,12 +27,12 @@ export default function HomeScreen(): JSX.Element {
       <AppRail />
       <div className={styles.main}>
         <div className={styles.top}>
-          <button className={styles.plus} onClick={() => openForm()} title="新規接続">
+          <button className={styles.plus} onClick={() => openForm()} title={t('home.newConnection')}>
             ＋
           </button>
           <button
             className={styles.plus}
-            title="新規グループ"
+            title={t('home.newGroupTitle')}
             onClick={() => setGroupDraft('')}
           >
             🗂
@@ -38,7 +40,7 @@ export default function HomeScreen(): JSX.Element {
           {groupDraft !== null && (
             <input
               className={styles.groupInput}
-              placeholder="グループ名を入力…"
+              placeholder={t('home.groupNamePlaceholder')}
               value={groupDraft}
               autoFocus
               onChange={(e) => setGroupDraft(e.target.value)}
@@ -51,7 +53,7 @@ export default function HomeScreen(): JSX.Element {
           )}
           <input
             className={styles.search}
-            placeholder="接続を検索…"
+            placeholder={t('home.searchConnections')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -59,7 +61,7 @@ export default function HomeScreen(): JSX.Element {
         <ConnectionList />
         {connectError && (
           <div className={styles.connError}>
-            接続失敗 — <b>{connectError.code}</b>: {connectError.message}
+            {t('home.connectError', { code: connectError.code, message: connectError.message })}
           </div>
         )}
       </div>

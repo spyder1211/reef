@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import type { ConnectionProfile } from '../../../shared/types'
 import { useAppStore } from '../store/useAppStore'
+import { useT } from '../i18n/useT'
 import Avatar from '../components/Avatar'
 import Tag from '../components/Tag'
 import styles from './ConnectionRow.module.css'
 
 export default function ConnectionRow({ profile }: { profile: ConnectionProfile }): JSX.Element {
+  const { t } = useT()
   const connect = useAppStore((s) => s.connect)
   const openForm = useAppStore((s) => s.openForm)
   const deleteProfile = useAppStore((s) => s.deleteProfile)
@@ -43,7 +45,7 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
             openForm(profile.id)
           }}
         >
-          編集
+          {t('common.edit')}
         </button>
         <button
           className={styles.action}
@@ -52,7 +54,7 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
             void deleteProfile(profile.id)
           }}
         >
-          削除
+          {t('common.delete')}
         </button>
         <button
           className={styles.connect}
@@ -61,7 +63,7 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
             void connect(profile)
           }}
         >
-          接続
+          {t('common.connect')}
         </button>
       </div>
 
@@ -81,7 +83,7 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
                 void duplicateProfile(profile.id)
               }}
             >
-              複製
+              {t('common.duplicate')}
             </button>
             <button
               className={styles.menuItem}
@@ -90,7 +92,7 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
                 openForm(profile.id)
               }}
             >
-              編集
+              {t('common.edit')}
             </button>
             <div className={styles.menuSep} />
             <button
@@ -100,7 +102,7 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
                 void deleteProfile(profile.id)
               }}
             >
-              削除
+              {t('common.delete')}
             </button>
           </div>
         </>
