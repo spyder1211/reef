@@ -309,8 +309,22 @@ function Grid({
           const next = nextArrowSelection(rowCount, selectionAnchor, lead, dir, e.shiftKey)
           if (!next) return
           onSetSelection(next.indices, next.anchor)
-          // アクティブ行を可視領域へスクロール（仮想化のため未マウント行にも対応）
-          rowVirtualizer.scrollToIndex(next.lead, { align: 'auto' })
+          // アクティブ行を可視領域へスクロール。sticky thead が同一スクロールコンテナの
+          // 上端を覆うため、ヘッダ高さぶん補正して行がヘッダ下/下端に隠れないようにする
+          // （virtualizer に scrollMargin を入れて動作中のスペーサ計算を崩すより局所的）。
+          const scrollEl = gridWrapRef.current
+          if (scrollEl) {
+            const headerH = scrollEl.querySelector('thead')?.offsetHeight ?? 0
+            const rowTop = headerH + next.lead * ROW_HEIGHT // 行 top の content-offset（tbody は header の下から始まる）
+            const rowBottom = rowTop + ROW_HEIGHT
+            if (rowTop < scrollEl.scrollTop + headerH) {
+              // sticky header の下に隠れている → 行が header 直下に来るまで上スクロール
+              scrollEl.scrollTop = rowTop - headerH
+            } else if (rowBottom > scrollEl.scrollTop + scrollEl.clientHeight) {
+              // 下端の外 → 行 bottom が表示下端に揃うまで下スクロール
+              scrollEl.scrollTop = rowBottom - scrollEl.clientHeight
+            }
+          }
         }
       }}
     >
