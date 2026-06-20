@@ -80,7 +80,6 @@ export const ja: Record<TranslationKey, string> = {
   'workspace.dropTable': 'テーブルを削除（DROP）',
   'workspace.filterNone': 'フィルターなし（全件先頭100行）',
   'workspace.filterDirty': '未適用の変更（Apply で反映）',
-  'workspace.filterApplied': 'フィルタ {count} 件 適用中',
   'workspace.filterRangeFrom': '下限',
   'workspace.filterRangeTo': '上限',
   'workspace.filterValueList': 'カンマ区切り',
@@ -153,6 +152,7 @@ export const ja: Record<TranslationKey, string> = {
   'workspace.historyClear': '履歴を全削除',
   'workspace.historyEmpty': '履歴はありません',
   'workspace.historyFailed': ' ・ 失敗',
+  'workspace.historySep': ' ・ ',
   'workspace.exportBtn': 'エクスポート ▾',
   'workspace.exportPageFile': '現在のページを CSV 保存',
   'workspace.exportPageClip': '現在のページをコピー',
@@ -171,6 +171,7 @@ export const ja: Record<TranslationKey, string> = {
   'workspace.importProgressLabel': '進捗',
   'workspace.importExecutedLabel': '実行済み',
   'workspace.importStatements': '{count} 文',
+  'workspace.importByteProgress': '{pct}%（{read} / {total}）',
   'workspace.importDone': '完了：{count} 文を実行しました（{ms} ms）',
   'workspace.importFailed': '失敗：{index} 文目でエラー（ここまで {executed} 文を適用済み）',
   'workspace.splitDivider': 'ドラッグで幅を調整'

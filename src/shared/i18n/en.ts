@@ -78,7 +78,6 @@ export const en = {
   'workspace.dropTable': 'Drop table (DROP)',
   'workspace.filterNone': 'No filters (showing first 100 rows)',
   'workspace.filterDirty': 'Unsaved changes (click Apply)',
-  'workspace.filterApplied': '{count} filter applied',
   'workspace.filterRangeFrom': 'Min',
   'workspace.filterRangeTo': 'Max',
   'workspace.filterValueList': 'Comma-separated',
@@ -151,6 +150,7 @@ export const en = {
   'workspace.historyClear': 'Clear all history',
   'workspace.historyEmpty': 'No history',
   'workspace.historyFailed': ' · Failed',
+  'workspace.historySep': ' · ',
   'workspace.exportBtn': 'Export ▾',
   'workspace.exportPageFile': 'Save current page as CSV',
   'workspace.exportPageClip': 'Copy current page',
@@ -169,6 +169,7 @@ export const en = {
   'workspace.importProgressLabel': 'Progress',
   'workspace.importExecutedLabel': 'Executed',
   'workspace.importStatements': '{count} statements',
+  'workspace.importByteProgress': '{pct}% ({read} / {total})',
   'workspace.importDone': 'Done: executed {count} statements ({ms} ms)',
   'workspace.importFailed': 'Failed: error at statement {index} ({executed} applied so far)',
   'workspace.splitDivider': 'Drag to resize'

@@ -61,7 +61,7 @@ export default function HistoryPanel(): JSX.Element {
             >
               <span className={styles.sql}>{e.sql}</span>
               <span className={styles.meta}>
-                {new Date(e.executedAt).toLocaleString()} ・ {e.durationMs}ms
+                {new Date(e.executedAt).toLocaleString()}{t('workspace.historySep')}{e.durationMs}ms
                 {e.ok ? '' : t('workspace.historyFailed')}
               </span>
             </button>

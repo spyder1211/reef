@@ -100,7 +100,7 @@ export default function SqlImportModal(): JSX.Element | null {
             <div className={styles.row}>
               <span className={styles.k}>{t('workspace.importProgressLabel')}</span>
               <span>
-                {pct}%（{formatBytes(progress.bytesRead)} / {formatBytes(progress.totalBytes)}）
+                {t('workspace.importByteProgress', { pct, read: formatBytes(progress.bytesRead), total: formatBytes(progress.totalBytes) })}
               </span>
             </div>
             <div className={styles.row}>
