@@ -7,5 +7,15 @@ export const en = {
   'menu.file': 'File',
   'menu.exportSqlDump': 'Export SQL Dump…',
   'workspace.filterActive.one': '{count} filter applied',
-  'workspace.filterActive.other': '{count} filters applied'
+  'workspace.filterActive.other': '{count} filters applied',
+  'menu.importSqlDump': 'Import / Restore SQL Dump…',
+  'menu.reload': 'Reload',
+  'menu.view': 'View',
+  'dialog.notConnected.message': 'Not connected to a database',
+  'dialog.notConnected.exportDetail': 'Connect before running a SQL dump.',
+  'dialog.notConnected.importDetail': 'Connect before importing a SQL dump.',
+  'dialog.dumpSaved.message': 'SQL dump saved',
+  'dialog.dumpSaved.detail': '{path}\n{tables} tables / {rows} rows',
+  'dialog.dumpFailed.message': 'SQL dump failed',
+  'dialog.dumpFailed.detail': '{message}\nA partially written file may remain.'
 } as const

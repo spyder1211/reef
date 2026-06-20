@@ -7,14 +7,15 @@ import type { ConnectionManager } from './connection/ConnectionManager'
 import { dumpDatabase } from './dump/SqlDumper'
 import { setPendingImport } from './import/importState'
 import { guardProductionMenu } from './guard/productionGuard'
+import { t } from './i18n'
 
 // File →「SQLダンプをエクスポート…」の本体。接続確認 → 保存ダイアログ → ストリーム書き込み → 結果通知。
 async function exportSqlDump(manager: ConnectionManager): Promise<void> {
   if (!manager.isConnected()) {
     await dialog.showMessageBox({
       type: 'info',
-      message: 'DB に接続していません',
-      detail: '接続してから SQL ダンプを実行してください。'
+      message: t('dialog.notConnected.message'),
+      detail: t('dialog.notConnected.exportDetail')
     })
     return
   }
@@ -58,16 +59,20 @@ async function exportSqlDump(manager: ConnectionManager): Promise<void> {
     await once(stream, 'finish')
     await dialog.showMessageBox({
       type: 'info',
-      message: 'SQL ダンプを保存しました',
-      detail: `${result.filePath}\n${summary.tableCount} テーブル / ${summary.rowCount} 行`
+      message: t('dialog.dumpSaved.message'),
+      detail: t('dialog.dumpSaved.detail', {
+        path: result.filePath,
+        tables: summary.tableCount,
+        rows: summary.rowCount
+      })
     })
   } catch (err) {
     stream.destroy()
     const message = err instanceof Error ? err.message : String(err)
     await dialog.showMessageBox({
       type: 'error',
-      message: 'SQL ダンプに失敗しました',
-      detail: `${message}\n部分的に書き込まれたファイルが残っている可能性があります。`
+      message: t('dialog.dumpFailed.message'),
+      detail: t('dialog.dumpFailed.detail', { message })
     })
   }
 }
@@ -79,8 +84,8 @@ async function importSqlDump(manager: ConnectionManager): Promise<void> {
   if (!manager.isConnected()) {
     await dialog.showMessageBox({
       type: 'info',
-      message: 'DB に接続していません',
-      detail: '接続してから SQL ダンプを import してください。'
+      message: t('dialog.notConnected.message'),
+      detail: t('dialog.notConnected.importDetail')
     })
     return
   }
@@ -119,10 +124,10 @@ export function buildAppMenu(manager: ConnectionManager): Menu {
   const template: MenuItemConstructorOptions[] = [
     ...(isMac ? [{ role: 'appMenu' as const }] : []),
     {
-      label: 'File',
+      label: t('menu.file'),
       submenu: [
         {
-          label: 'SQLダンプをエクスポート…',
+          label: t('menu.exportSqlDump'),
           click: () => {
             // 捕捉漏れ（ダイアログ拒否など）でメインプロセスが落ちないよう最終防衛で握る。
             exportSqlDump(manager).catch((err) => {
@@ -131,7 +136,7 @@ export function buildAppMenu(manager: ConnectionManager): Menu {
           }
         },
         {
-          label: 'SQLダンプをインポート / リストア…',
+          label: t('menu.importSqlDump'),
           click: () => {
             importSqlDump(manager).catch((err) => {
               console.error('importSqlDump failed:', err)
@@ -144,14 +149,14 @@ export function buildAppMenu(manager: ConnectionManager): Menu {
     },
     { role: 'editMenu' },
     {
-      label: 'View',
+      label: t('menu.view'),
       submenu: [
         {
           // Cmd+R は Electron 標準のフルリロード（webContents.reload）ではなく、
           // 現在アクティブなタブのクエリ/テーブルを再実行する「再読み込み」に割り当てる。
           // フルリロードはレンダラの接続状態（zustand）を初期化してしまい、作業画面が
           // 接続一覧に戻る＝ウィンドウが閉じたように見える挙動になるため、外している。
-          label: '再読み込み',
+          label: t('menu.reload'),
           accelerator: 'CmdOrCtrl+R',
           click: (_item, win) => {
             if (win instanceof BrowserWindow) {
