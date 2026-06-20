@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { filterTables, matchRange } from '../lib/tableSearch'
+import { useT } from '../i18n/useT'
 import styles from './TableList.module.css'
 
 export default function TableList(): JSX.Element {
+  const { t } = useT()
   const tables = useAppStore((s) => s.tables)
   const selectTable = useAppStore((s) => s.selectTable)
   const truncateTable = useAppStore((s) => s.truncateTable)
@@ -81,7 +83,7 @@ export default function TableList(): JSX.Element {
           ref={inputRef}
           className={styles.search}
           value={query}
-          placeholder="テーブルを検索…（⌘P）"
+          placeholder={t('workspace.tableSearch')}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onInputKeyDown}
           spellCheck={false}
@@ -91,9 +93,9 @@ export default function TableList(): JSX.Element {
       )}
       <div className={styles.list} ref={listRef}>
         {tables.length === 0 ? (
-          <div className={styles.empty}>テーブルがありません</div>
+          <div className={styles.empty}>{t('workspace.tableEmpty')}</div>
         ) : filtered.length === 0 ? (
-          <div className={styles.empty}>該当なし</div>
+          <div className={styles.empty}>{t('workspace.tableNoResults')}</div>
         ) : (
           filtered.map((t, i) => (
             <button
@@ -126,7 +128,7 @@ export default function TableList(): JSX.Element {
               setCtxMenu(null)
             }}
           >
-            テーブル名をコピー
+            {t('workspace.copyTableName')}
           </div>
           <div className={styles.ctxSep} />
           <div
@@ -136,7 +138,7 @@ export default function TableList(): JSX.Element {
               setCtxMenu(null)
             }}
           >
-            テーブルを空にする（TRUNCATE）
+            {t('workspace.truncateTable')}
           </div>
           <div className={styles.ctxSep} />
           <div
@@ -146,7 +148,7 @@ export default function TableList(): JSX.Element {
               setCtxMenu(null)
             }}
           >
-            テーブルを削除（DROP）
+            {t('workspace.dropTable')}
           </div>
         </div>
       )}
