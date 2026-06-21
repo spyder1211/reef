@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { GroupStore } from './GroupStore'
 import { ProfileStore, type StoreDeps, type StoredDoc } from './ProfileStore'
 
@@ -49,7 +49,7 @@ describe('GroupStore', () => {
   })
 
   it('存在しない id の rename は no-op', () => {
-    const a = g.create('A')
+    const _a = g.create('A')
     expect(() => g.rename('nope', 'X')).not.toThrow()
     expect(g.list()[0].name).toBe('A')
   })
@@ -63,7 +63,7 @@ describe('GroupStore', () => {
   })
 
   it('reorder に含まれない既存グループは末尾に温存', () => {
-    const a = g.create('A')
+    const _a = g.create('A')
     const b = g.create('B')
     g.reorder([b.id]) // a を省略
     const names = g.list().map((x) => x.name)

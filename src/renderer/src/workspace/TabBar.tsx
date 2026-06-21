@@ -1,5 +1,5 @@
-import { useAppStore } from '../store/useAppStore'
 import { useT } from '../i18n/useT'
+import { useAppStore } from '../store/useAppStore'
 import styles from './TabBar.module.css'
 
 export default function TabBar(): JSX.Element {
@@ -15,12 +15,18 @@ export default function TabBar(): JSX.Element {
       {tabs.map((t) => (
         <div
           key={t.id}
+          role="tab"
+          tabIndex={0}
           className={t.id === activeTabId ? styles.tabActive : styles.tab}
           onClick={() => setActiveTab(t.id)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') setActiveTab(t.id)
+          }}
         >
           <span className={styles.icon}>{t.kind === 'table' ? '▦' : '⚡'}</span>
           <span className={styles.title}>{t.kind === 'table' ? t.tableName : t.title}</span>
           <button
+            type="button"
             className={styles.close}
             onClick={(e) => {
               e.stopPropagation()
@@ -31,7 +37,12 @@ export default function TabBar(): JSX.Element {
           </button>
         </div>
       ))}
-      <button className={styles.add} onClick={() => addTab()} title={t('workspace.newQueryTab')}>
+      <button
+        type="button"
+        className={styles.add}
+        onClick={() => addTab()}
+        title={t('workspace.newQueryTab')}
+      >
         ＋
       </button>
     </div>

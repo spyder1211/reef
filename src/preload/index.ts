@@ -1,20 +1,20 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
+import { contextBridge, type IpcRendererEvent, ipcRenderer } from 'electron'
+import type { Locale, LocalePreference } from '../shared/i18n/types'
 import type {
-  ConnectionConfig,
   ApiResult,
-  QueryResult,
+  ConnectionConfig,
+  ConnectionGroup,
   ConnectionProfile,
   ConnectionProfileInput,
-  ConnectionGroup,
-  SqlStatement,
-  SaveFileResult,
-  ImportSummary,
   ImportProgress,
+  ImportSummary,
+  QueryHistoryEntry,
+  QueryResult,
+  SaveFileResult,
   SqlImportRequest,
-  TableSchema,
-  QueryHistoryEntry
+  SqlStatement,
+  TableSchema
 } from '../shared/types'
-import type { Locale, LocalePreference } from '../shared/i18n/types'
 
 const api = {
   connect: (config: ConnectionConfig): Promise<ApiResult<null>> =>

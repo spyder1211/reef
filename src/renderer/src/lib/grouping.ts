@@ -1,6 +1,6 @@
 import type { ConnectionGroup, ConnectionProfile, ConnectionTag } from '../../../shared/types'
-import { TAG_ORDER } from './tags'
 import { filterProfiles } from '../store/helpers'
+import { TAG_ORDER } from './tags'
 
 export const UNGROUPED_ID = '__ungrouped__'
 // 未分類グループ（バケット）の内部 view.name。表示は GroupSection が isUngrouped を見て

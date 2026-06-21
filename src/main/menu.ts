@@ -1,13 +1,13 @@
-import { Menu, dialog, BrowserWindow, type MenuItemConstructorOptions } from 'electron'
-import { createWriteStream } from 'fs'
-import { stat } from 'fs/promises'
-import { basename } from 'path'
-import { once } from 'events'
+import { once } from 'node:events'
+import { createWriteStream } from 'node:fs'
+import { stat } from 'node:fs/promises'
+import { basename } from 'node:path'
+import { BrowserWindow, dialog, Menu, type MenuItemConstructorOptions } from 'electron'
 import type { ConnectionManager } from './connection/ConnectionManager'
 import { dumpDatabase } from './dump/SqlDumper'
-import { setPendingImport } from './import/importState'
 import { guardProductionMenu } from './guard/productionGuard'
 import { t } from './i18n'
+import { setPendingImport } from './import/importState'
 
 // File →「SQLダンプをエクスポート…」の本体。接続確認 → 保存ダイアログ → ストリーム書き込み → 結果通知。
 async function exportSqlDump(manager: ConnectionManager): Promise<void> {

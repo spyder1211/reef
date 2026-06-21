@@ -1,5 +1,5 @@
 import type { ConnectionTag } from '../../../shared/types'
-import { TAG_COLORS, initials } from '../lib/tags'
+import { initials, TAG_COLORS } from '../lib/tags'
 import styles from './Avatar.module.css'
 
 export default function Avatar({

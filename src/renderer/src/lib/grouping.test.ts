@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { buildGroupedView, computeReorder, UNGROUPED_ID } from './grouping'
+import { describe, expect, it } from 'vitest'
 import type { ConnectionGroup, ConnectionProfile } from '../../../shared/types'
+import { buildGroupedView, computeReorder, UNGROUPED_ID } from './grouping'
 
 function prof(p: Partial<ConnectionProfile> & { id: string }): ConnectionProfile {
   return { name: p.id, tag: 'local', host: 'h', port: 3306, user: 'u', ...p }
@@ -35,6 +35,7 @@ describe('buildGroupedView', () => {
       prof({ id: 'b', groupId: 'g1', tag: 'production' })
     ]
     const views = buildGroupedView(profiles, groups, '')
+    // biome-ignore lint/style/noNonNullAssertion: find result is known to exist given test setup
     const g1 = views.find((v) => v.id === 'g1')!
     expect(g1.subgroups.map((s) => s.tag)).toEqual(['production', 'local'])
     expect(g1.count).toBe(2)
@@ -43,6 +44,7 @@ describe('buildGroupedView', () => {
   it('未知の groupId を指す接続は未分類へ', () => {
     const profiles = [prof({ id: 'a', groupId: 'ghost' })]
     const views = buildGroupedView(profiles, groups, '')
+    // biome-ignore lint/style/noNonNullAssertion: find result is known to exist given test setup
     const ung = views.find((v) => v.id === UNGROUPED_ID)!
     expect(ung.count).toBe(1)
   })

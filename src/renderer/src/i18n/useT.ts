@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { useAppStore } from '../store/useAppStore'
 import { createTranslator } from '../../../shared/i18n'
+import { useAppStore } from '../store/useAppStore'
 
 export function useT(): ReturnType<typeof createTranslator> {
   const locale = useAppStore((s) => s.locale)

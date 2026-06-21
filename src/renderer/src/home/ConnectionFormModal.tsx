@@ -1,13 +1,13 @@
-import { useState, useEffect, type ReactNode } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import type {
   AppError,
   ConnectionProfileInput,
   ConnectionTag,
   SshSettings
 } from '../../../shared/types'
-import { useAppStore } from '../store/useAppStore'
 import { useT } from '../i18n/useT'
-import { TAG_ORDER, TAG_COLORS, TAG_LABELS } from '../lib/tags'
+import { TAG_COLORS, TAG_LABELS, TAG_ORDER } from '../lib/tags'
+import { useAppStore } from '../store/useAppStore'
 import styles from './ConnectionFormModal.module.css'
 
 function initialForm(): ConnectionProfileInput {
@@ -128,8 +128,20 @@ export default function ConnectionFormModal(): JSX.Element {
         : t('connectionForm.testIdle')
 
   return (
-    <div className={styles.backdrop} onClick={closeForm}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    // biome-ignore lint/a11y/noStaticElementInteractions: modal backdrop closes on click/Escape
+    <div
+      className={styles.backdrop}
+      onClick={closeForm}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') closeForm()
+      }}
+    >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: modal panel stops event propagation */}
+      <div
+        className={styles.modal}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <div className={styles.title}>{t('connectionForm.title')}</div>
 
         <Field label={t('connectionForm.name')}>
@@ -137,6 +149,7 @@ export default function ConnectionFormModal(): JSX.Element {
             className={styles.input}
             value={form.name}
             onChange={(e) => update('name', e.target.value)}
+            // biome-ignore lint/a11y/noAutofocus: intentional focus management
             autoFocus
           />
         </Field>
@@ -314,13 +327,13 @@ export default function ConnectionFormModal(): JSX.Element {
         )}
 
         <div className={styles.actions}>
-          <button className={styles.btn} onClick={() => void handleSave()}>
+          <button type="button" className={styles.btn} onClick={() => void handleSave()}>
             {t('common.save')}
           </button>
-          <button className={styles.btn} onClick={() => void handleTest()}>
+          <button type="button" className={styles.btn} onClick={() => void handleTest()}>
             {testLabel}
           </button>
-          <button className={styles.btnPrimary} onClick={() => void handleConnect()}>
+          <button type="button" className={styles.btnPrimary} onClick={() => void handleConnect()}>
             {t('common.connect')}
           </button>
         </div>

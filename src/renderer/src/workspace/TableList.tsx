@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { useAppStore } from '../store/useAppStore'
-import { filterTables, matchRange } from '../lib/tableSearch'
+import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useT } from '../i18n/useT'
+import { filterTables, matchRange } from '../lib/tableSearch'
+import { useAppStore } from '../store/useAppStore'
 import styles from './TableList.module.css'
 
 export default function TableList(): JSX.Element {
@@ -21,6 +21,7 @@ export default function TableList(): JSX.Element {
   const filtered = useMemo(() => filterTables(tables, query), [tables, query])
 
   // クエリ／テーブル一覧が変わったらアクティブ行を先頭へ戻す（範囲外 index を防ぐ）。
+  // biome-ignore lint/correctness/useExhaustiveDependencies: query and tables are intentionally kept to reset index on change
   useEffect(() => {
     setActiveIndex(0)
   }, [query, tables])
@@ -99,6 +100,7 @@ export default function TableList(): JSX.Element {
         ) : (
           filtered.map((t, i) => (
             <button
+              type="button"
               key={t}
               data-index={i}
               className={i === activeIndex ? `${styles.row} ${styles.active}` : styles.row}
@@ -117,11 +119,13 @@ export default function TableList(): JSX.Element {
       </div>
       {ctxMenu && (
         <div
+          role="menu"
           className={styles.ctxMenu}
           style={{ top: ctxMenu.y, left: ctxMenu.x }}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <div
+          <button
+            type="button"
             className={styles.ctxItem}
             onClick={() => {
               void navigator.clipboard.writeText(ctxMenu.table)
@@ -129,9 +133,10 @@ export default function TableList(): JSX.Element {
             }}
           >
             {t('workspace.copyTableName')}
-          </div>
+          </button>
           <div className={styles.ctxSep} />
-          <div
+          <button
+            type="button"
             className={styles.ctxItem}
             onClick={() => {
               void truncateTable(ctxMenu.table)
@@ -139,9 +144,10 @@ export default function TableList(): JSX.Element {
             }}
           >
             {t('workspace.truncateTable')}
-          </div>
+          </button>
           <div className={styles.ctxSep} />
-          <div
+          <button
+            type="button"
             className={`${styles.ctxItem} ${styles.ctxDanger}`}
             onClick={() => {
               void dropTable(ctxMenu.table)
@@ -149,7 +155,7 @@ export default function TableList(): JSX.Element {
             }}
           >
             {t('workspace.dropTable')}
-          </div>
+          </button>
         </div>
       )}
     </div>

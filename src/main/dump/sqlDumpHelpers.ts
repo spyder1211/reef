@@ -3,11 +3,12 @@
 
 // 識別子をバッククォートで囲み、内部のバッククォートを2重化する。
 export function quoteIdent(name: string): string {
-  return '`' + name.replace(/`/g, '``') + '`'
+  return `\`${name.replace(/`/g, '``')}\``
 }
 
 // MySQL 文字列リテラルのエスケープ（シングルクォート囲み）。各マッチを独立に置換するため2重化は起きない。
 function escapeString(s: string): string {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional SQL escape character matching
   const escaped = s.replace(/[\0\b\t\n\r\x1a\\']/g, (ch) => {
     switch (ch) {
       case '\0':
@@ -30,7 +31,7 @@ function escapeString(s: string): string {
         return ch
     }
   })
-  return "'" + escaped + "'"
+  return `'${escaped}'`
 }
 
 // 1 つの値を SQL リテラルに変換する。
@@ -39,7 +40,7 @@ export function escapeSqlValue(value: unknown): string {
   if (typeof value === 'number') return Number.isFinite(value) ? String(value) : 'NULL'
   if (typeof value === 'bigint') return String(value)
   if (typeof value === 'boolean') return value ? '1' : '0'
-  if (Buffer.isBuffer(value)) return value.length === 0 ? "''" : '0x' + value.toString('hex')
+  if (Buffer.isBuffer(value)) return value.length === 0 ? "''" : `0x${value.toString('hex')}`
   return escapeString(String(value))
 }
 
@@ -52,7 +53,7 @@ export function buildInsert(
   if (rows.length === 0) return ''
   const cols = columns.map(quoteIdent).join(', ')
   const tuples = rows
-    .map((row) => '(' + columns.map((c) => escapeSqlValue(row[c])).join(', ') + ')')
+    .map((row) => `(${columns.map((c) => escapeSqlValue(row[c])).join(', ')})`)
     .join(',')
   return `INSERT INTO ${quoteIdent(table)} (${cols}) VALUES ${tuples};\n`
 }

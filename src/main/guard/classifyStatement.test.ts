@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { classifyStatement, classifyScript } from './classifyStatement'
+import { describe, expect, it } from 'vitest'
+import { classifyScript, classifyStatement } from './classifyStatement'
 
 describe('classifyStatement', () => {
   it('SELECT/SHOW/EXPLAIN/DESCRIBE/USE/SET は readonly', () => {

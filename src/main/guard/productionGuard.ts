@@ -1,8 +1,8 @@
 import { BrowserWindow, type IpcMainInvokeEvent } from 'electron'
 import { getProductionContext, isProductionConnection } from '../connection/productionContext'
-import { classifyScript } from './classifyStatement'
-import { confirmProductionAction, type ConfirmTier } from './confirmProductionAction'
 import { t } from '../i18n'
+import { classifyScript } from './classifyStatement'
+import { type ConfirmTier, confirmProductionAction } from './confirmProductionAction'
 
 // 共通: production なら確認、非 production なら即 true（素通り）。
 async function guard(

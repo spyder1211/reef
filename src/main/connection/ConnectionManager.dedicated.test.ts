@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ConnectionManager } from './ConnectionManager'
 
 // private な pool にフェイクを差し込んで withDedicatedConnection を検証する。

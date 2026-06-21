@@ -1,7 +1,7 @@
-import type { RowEdit, PendingInsert, SqlStatement } from '../../../shared/types'
+import type { PendingInsert, RowEdit, SqlStatement } from '../../../shared/types'
 
 export function quoteIdent(name: string): string {
-  return '`' + name.replace(/`/g, '``') + '`'
+  return `\`${name.replace(/`/g, '``')}\``
 }
 
 /**

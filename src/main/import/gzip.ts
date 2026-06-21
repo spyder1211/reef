@@ -1,4 +1,4 @@
-import { open } from 'fs/promises'
+import { open } from 'node:fs/promises'
 
 /** Buffer 先頭が gzip マジックバイト（0x1f 0x8b）か。2バイト未満は false。 */
 export function isGzipMagic(buf: Buffer): boolean {

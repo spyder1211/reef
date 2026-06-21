@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useAppStore } from '../store/useAppStore'
-import { rowKeyOf } from '../store/rowKey'
-import { tryFormatJson } from '../lib/formatJson'
 import { useT } from '../i18n/useT'
+import { tryFormatJson } from '../lib/formatJson'
+import { rowKeyOf } from '../store/rowKey'
+import { useAppStore } from '../store/useAppStore'
 import styles from './DetailPane.module.css'
 
 type Row = Record<string, unknown>
@@ -36,7 +36,12 @@ export default function DetailPane(): JSX.Element | null {
     <div className={styles.pane}>
       <div className={styles.head}>
         <span>{t('workspace.detailTitle')}</span>
-        <button className={styles.close} onClick={() => toggleDetail()} title={t('common.close')}>
+        <button
+          type="button"
+          className={styles.close}
+          onClick={() => toggleDetail()}
+          title={t('common.close')}
+        >
           ✕
         </button>
       </div>
@@ -50,7 +55,7 @@ export default function DetailPane(): JSX.Element | null {
         <div className={styles.body}>
           {result.columns.map((col) => {
             const isDirty = rowEdit ? col.name in rowEdit.values : false
-            const value = isDirty ? rowEdit!.values[col.name] : (row[col.name] as unknown)
+            const value = isDirty ? rowEdit?.values[col.name] : (row[col.name] as unknown)
             const isNull = value === null || value === undefined
             const text = isNull ? '' : String(value)
             const long = text.length > 40
@@ -65,6 +70,7 @@ export default function DetailPane(): JSX.Element | null {
                   {col.type && <span className={styles.ftype}>{col.type}</span>}
                   {formatted !== null && (
                     <button
+                      type="button"
                       className={styles.jsonToggle}
                       onClick={() => setExpanded((m) => ({ ...m, [col.name]: !m[col.name] }))}
                       title={
@@ -102,6 +108,7 @@ export default function DetailPane(): JSX.Element | null {
                       <span className={styles.nullTag}>NULL</span>
                     ) : (
                       <button
+                        type="button"
                         className={styles.nullBtn}
                         onClick={() => setCellNull(tab.id, row, col.name)}
                       >

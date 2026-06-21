@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useAppStore } from '../store/useAppStore'
 import type { QueryHistoryEntry } from '../../../shared/types'
 import { useT } from '../i18n/useT'
+import { useAppStore } from '../store/useAppStore'
 import styles from './HistoryPanel.module.css'
 
 // SQL タブのクエリ履歴を表示する右サイドパネル。
@@ -21,6 +21,7 @@ export default function HistoryPanel(): JSX.Element {
     })
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reload is intentionally excluded – it is stable-enough for initial load
   useEffect(() => {
     reload()
   }, [])
@@ -45,6 +46,7 @@ export default function HistoryPanel(): JSX.Element {
           onChange={(e) => setFilter(e.target.value)}
         />
         <button
+          type="button"
           className={styles.iconBtn}
           onClick={handleClear}
           title={t('workspace.historyClear')}
@@ -53,6 +55,7 @@ export default function HistoryPanel(): JSX.Element {
           🗑
         </button>
         <button
+          type="button"
           className={styles.iconBtn}
           onClick={toggleHistory}
           title={t('common.close')}
@@ -65,6 +68,7 @@ export default function HistoryPanel(): JSX.Element {
         {visible.map((e) => (
           <li key={e.id}>
             <button
+              type="button"
               className={e.ok ? styles.item : styles.itemError}
               title={e.sql}
               onClick={() => activeTabId && setTabSql(activeTabId, e.sql)}

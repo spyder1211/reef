@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { ImportProgress, ImportSummary, SqlImportRequest } from '../../../shared/types'
 import { useT } from '../i18n/useT'
-import styles from './SqlImportModal.module.css'
 import { isCancelled } from '../store/helpers'
+import styles from './SqlImportModal.module.css'
 
 type Phase = 'closed' | 'confirm' | 'running' | 'result'
 
@@ -41,7 +41,7 @@ export default function SqlImportModal(): JSX.Element | null {
 
   async function handleRun(): Promise<void> {
     setPhase('running')
-    setProgress({ executedCount: 0, bytesRead: 0, totalBytes: req!.totalBytes })
+    setProgress({ executedCount: 0, bytesRead: 0, totalBytes: req?.totalBytes ?? 0 })
     const res = await window.api.sqlImport.start()
     if (isCancelled(res)) {
       // 本番ガードでキャンセル: エラー表示せず確認画面へ戻す。
@@ -60,8 +60,20 @@ export default function SqlImportModal(): JSX.Element | null {
       : 0
 
   return (
-    <div className={styles.backdrop} onClick={phase === 'running' ? undefined : close}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    // biome-ignore lint/a11y/noStaticElementInteractions: modal backdrop closes on click/Escape when not running
+    <div
+      className={styles.backdrop}
+      onClick={phase === 'running' ? undefined : close}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && phase !== 'running') close()
+      }}
+    >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: modal panel stops event propagation */}
+      <div
+        className={styles.modal}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <div className={styles.title}>{t('workspace.importTitle')}</div>
 
         {phase === 'confirm' && (
@@ -80,10 +92,10 @@ export default function SqlImportModal(): JSX.Element | null {
             </div>
             <div className={styles.warn}>{t('workspace.importWarn')}</div>
             <div className={styles.actions}>
-              <button className={styles.btn} onClick={close}>
+              <button type="button" className={styles.btn} onClick={close}>
                 {t('common.cancel')}
               </button>
-              <button className={styles.btnDanger} onClick={() => void handleRun()}>
+              <button type="button" className={styles.btnDanger} onClick={() => void handleRun()}>
                 {t('workspace.importRun')}
               </button>
             </div>
@@ -141,7 +153,7 @@ export default function SqlImportModal(): JSX.Element | null {
               </div>
             )}
             <div className={styles.actions}>
-              <button className={styles.btnPrimary} onClick={close}>
+              <button type="button" className={styles.btnPrimary} onClick={close}>
                 {t('common.close')}
               </button>
             </div>

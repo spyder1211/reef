@@ -1,6 +1,6 @@
-import { useAppStore } from '../store/useAppStore'
-import { TAG_COLORS } from '../lib/tags'
 import { useT } from '../i18n/useT'
+import { TAG_COLORS } from '../lib/tags'
+import { useAppStore } from '../store/useAppStore'
 import styles from './StatusBar.module.css'
 
 export default function StatusBar(): JSX.Element {

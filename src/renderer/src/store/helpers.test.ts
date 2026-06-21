@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import { initials } from '../lib/tags'
 import {
   filterProfiles,
-  pickNextActiveTabId,
   hasUncommittedChanges,
+  isCancelled,
   isProductionProfile,
-  isCancelled
+  pickNextActiveTabId
 } from './helpers'
-import { initials } from '../lib/tags'
 
 describe('filterProfiles', () => {
   const profiles = [

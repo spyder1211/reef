@@ -1,8 +1,8 @@
-import { useState, useRef, type DragEvent } from 'react'
-import { useAppStore } from '../store/useAppStore'
+import { type DragEvent, useRef, useState } from 'react'
 import { useT } from '../i18n/useT'
-import { TAG_COLORS, TAG_LABELS } from '../lib/tags'
 import { computeReorder, type GroupView } from '../lib/grouping'
+import { TAG_COLORS, TAG_LABELS } from '../lib/tags'
+import { useAppStore } from '../store/useAppStore'
 import ConnectionRow from './ConnectionRow'
 import styles from './GroupSection.module.css'
 
@@ -85,6 +85,7 @@ export default function GroupSection({
   }
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop drop zone for connection groups
     <div
       className={`${styles.group} ${dropActive ? styles.dropActive : ''}`}
       onDragOver={onDragOver}
@@ -93,6 +94,7 @@ export default function GroupSection({
       }}
       onDrop={onDrop}
     >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: draggable group header with context menu */}
       <div
         className={styles.header}
         draggable={!view.isUngrouped && !renaming}
@@ -107,6 +109,7 @@ export default function GroupSection({
         }}
       >
         <button
+          type="button"
           className={styles.caret}
           onClick={() => toggleCollapse(view.id)}
           disabled={searching}
@@ -118,6 +121,7 @@ export default function GroupSection({
           <input
             className={styles.renameInput}
             value={draft}
+            // biome-ignore lint/a11y/noAutofocus: intentional focus management
             autoFocus
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commitRename}
@@ -127,7 +131,14 @@ export default function GroupSection({
             }}
           />
         ) : (
-          <span className={styles.name} onDoubleClick={startRename}>
+          // biome-ignore lint/a11y/noStaticElementInteractions: double-click-to-rename span with keyboard support
+          <span
+            className={styles.name}
+            onDoubleClick={startRename}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') startRename()
+            }}
+          >
             {view.isUngrouped ? t('connectionGroup.ungrouped') : view.name}
           </span>
         )}
@@ -149,13 +160,16 @@ export default function GroupSection({
 
       {menu && (
         <>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop closes menu on mousedown */}
           <div className={styles.menuBackdrop} onMouseDown={() => setMenu(null)} />
           <div
+            role="menu"
             className={styles.menu}
             style={{ left: menu.x, top: menu.y }}
             onMouseDown={(e) => e.stopPropagation()}
           >
             <button
+              type="button"
               className={styles.menuItem}
               onClick={() => {
                 setMenu(null)
@@ -166,6 +180,7 @@ export default function GroupSection({
             </button>
             <div className={styles.menuSep} />
             <button
+              type="button"
               className={`${styles.menuItem} ${styles.danger}`}
               onClick={() => {
                 setMenu(null)

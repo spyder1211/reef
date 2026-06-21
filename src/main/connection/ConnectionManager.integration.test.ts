@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { ConnectionManager } from './ConnectionManager'
 
 const hasDb = !!process.env.TEST_MYSQL_HOST

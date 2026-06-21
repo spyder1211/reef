@@ -1,6 +1,6 @@
-import type { TableTab } from '../store/useAppStore'
-import { useT } from '../i18n/useT'
 import type { TranslationKey } from '../../../shared/i18n'
+import { useT } from '../i18n/useT'
+import type { TableTab } from '../store/useAppStore'
 import styles from './SchemaView.module.css'
 
 // テーブルの構造（カラム・インデックス・DDL）を表示する読み取り専用ビュー。

@@ -1,21 +1,21 @@
 import { ipcMain } from 'electron'
-import { ConnectionManager } from '../connection/ConnectionManager'
-import { QueryHistoryStore } from '../history/QueryHistoryStore'
-import { validateConnectionConfig } from '../connection/validateConnectionConfig'
-import { normalizeDbError } from '../connection/normalizeDbError'
-import { QueryCancelledError } from '../connection/queryCancellation'
-import { connectWithTunnel, closeTunnel, type TunnelHolder } from '../connection/connectWithTunnel'
-import { clearProductionContext } from '../connection/productionContext'
-import { guardProductionSql, guardProductionTier } from '../guard/productionGuard'
-import { t } from '../i18n'
 import type {
-  ConnectionConfig,
   ApiResult,
+  ConnectionConfig,
+  QueryHistoryEntry,
   QueryResult,
   SqlStatement,
-  TableSchema,
-  QueryHistoryEntry
+  TableSchema
 } from '../../shared/types'
+import type { ConnectionManager } from '../connection/ConnectionManager'
+import { closeTunnel, connectWithTunnel, type TunnelHolder } from '../connection/connectWithTunnel'
+import { normalizeDbError } from '../connection/normalizeDbError'
+import { clearProductionContext } from '../connection/productionContext'
+import { QueryCancelledError } from '../connection/queryCancellation'
+import { validateConnectionConfig } from '../connection/validateConnectionConfig'
+import { guardProductionSql, guardProductionTier } from '../guard/productionGuard'
+import type { QueryHistoryStore } from '../history/QueryHistoryStore'
+import { t } from '../i18n'
 
 export function registerDbHandlers(
   manager: ConnectionManager,

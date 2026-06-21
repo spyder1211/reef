@@ -90,7 +90,7 @@ export function maybeApplyAutoLimit(
     const mainVerb = words.find((w) => STATEMENT_VERBS.has(w)) // WITH/RECURSIVE/CTE名/AS は跨ぐ
     if (mainVerb !== 'SELECT') return { sql, applied: false }
     if (words.includes('LIMIT')) return { sql, applied: false } // トップレベルLIMITあり
-    return { sql: sql.replace(/\s+$/, '') + ` LIMIT ${DEFAULT_SQL_LIMIT}`, applied: true }
+    return { sql: `${sql.replace(/\s+$/, '')} LIMIT ${DEFAULT_SQL_LIMIT}`, applied: true }
   } catch {
     return { sql, applied: false }
   }

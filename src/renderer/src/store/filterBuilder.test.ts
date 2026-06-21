@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest'
-import {
-  buildFilteredQuery,
-  buildCountQuery,
-  sameFilterEffect,
-  countUsableFilters
-} from './filterBuilder'
+import { describe, expect, it } from 'vitest'
 import type { FilterCondition } from '../../../shared/types'
+import {
+  buildCountQuery,
+  buildFilteredQuery,
+  countUsableFilters,
+  sameFilterEffect
+} from './filterBuilder'
 
 const cols = ['id', 'name', 'date']
 const base: Omit<FilterCondition, 'column' | 'operator'> = {

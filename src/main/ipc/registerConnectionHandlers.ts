@@ -1,18 +1,18 @@
-import { ipcMain, BrowserWindow, safeStorage } from 'electron'
-import { ConnectionManager } from '../connection/ConnectionManager'
-import { ProfileStore } from '../connection/ProfileStore'
-import { GroupStore } from '../connection/GroupStore'
-import { validateConnectionConfig } from '../connection/validateConnectionConfig'
-import { normalizeDbError } from '../connection/normalizeDbError'
-import { connectWithTunnel, type TunnelHolder } from '../connection/connectWithTunnel'
-import { setProductionContext, clearProductionContext } from '../connection/productionContext'
-import { t } from '../i18n'
+import { BrowserWindow, ipcMain, safeStorage } from 'electron'
 import type {
   ApiResult,
   ConnectionGroup,
   ConnectionProfile,
   ConnectionProfileInput
 } from '../../shared/types'
+import type { ConnectionManager } from '../connection/ConnectionManager'
+import { connectWithTunnel, type TunnelHolder } from '../connection/connectWithTunnel'
+import type { GroupStore } from '../connection/GroupStore'
+import { normalizeDbError } from '../connection/normalizeDbError'
+import type { ProfileStore } from '../connection/ProfileStore'
+import { clearProductionContext, setProductionContext } from '../connection/productionContext'
+import { validateConnectionConfig } from '../connection/validateConnectionConfig'
+import { t } from '../i18n'
 
 export function registerConnectionHandlers(
   manager: ConnectionManager,
@@ -108,7 +108,7 @@ export function registerConnectionHandlers(
   })
 
   ipcMain.handle('groups:create', async (_e, name: string): Promise<ApiResult<ConnectionGroup>> => {
-    if (!name || !name.trim()) {
+    if (!name?.trim()) {
       return { ok: false, error: { code: 'INVALID_CONFIG', message: t('error.groupNameRequired') } }
     }
     try {
@@ -121,7 +121,7 @@ export function registerConnectionHandlers(
   ipcMain.handle(
     'groups:rename',
     async (_e, id: string, name: string): Promise<ApiResult<null>> => {
-      if (!name || !name.trim()) {
+      if (!name?.trim()) {
         return {
           ok: false,
           error: { code: 'INVALID_CONFIG', message: t('error.groupNameRequired') }

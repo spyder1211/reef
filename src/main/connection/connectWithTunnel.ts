@@ -1,7 +1,7 @@
-import { ConnectionManager } from './ConnectionManager'
-import { SshTunnel } from './SshTunnel'
 import type { ConnectionConfig } from '../../shared/types'
 import { t } from '../i18n'
+import type { ConnectionManager } from './ConnectionManager'
+import { SshTunnel } from './SshTunnel'
 
 // 現在アクティブな SSH トンネルを保持する共有ホルダ。
 // connect / disconnect ハンドラ間で同一インスタンスを共有する。

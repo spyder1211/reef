@@ -1,38 +1,38 @@
 import { create } from 'zustand'
+import { createTranslator } from '../../../shared/i18n'
+import type { Locale, LocalePreference } from '../../../shared/i18n/types'
 import type {
+  ApiResult,
+  AppError,
+  ConnectionGroup,
   ConnectionProfile,
   ConnectionProfileInput,
-  ConnectionGroup,
-  QueryResult,
-  AppError,
-  ApiResult,
   FilterCondition,
   FilterOperator,
-  TableSort,
-  RowEdit,
   PendingInsert,
-  TableSchema
+  QueryResult,
+  RowEdit,
+  TableSchema,
+  TableSort
 } from '../../../shared/types'
-import type { Locale, LocalePreference } from '../../../shared/i18n/types'
-import { createTranslator } from '../../../shared/i18n'
-import { buildFilteredQuery, buildCountQuery } from './filterBuilder'
 import { toCsv } from '../lib/csv'
 import {
-  buildUpdateStatements,
-  buildInsertStatements,
   buildDeleteStatements,
+  buildDropStatement,
+  buildInsertStatements,
   buildTruncateStatement,
-  buildDropStatement
+  buildUpdateStatements
 } from './editBuilder'
-import { rowKeyOf, pkValuesOf } from './rowKey'
+import { singleStatementOf } from './explain'
+import { buildCountQuery, buildFilteredQuery } from './filterBuilder'
 import {
-  pickNextActiveTabId,
   hasUncommittedChanges,
+  isCancelled,
   isProductionProfile,
-  isCancelled
+  pickNextActiveTabId
 } from './helpers'
 import { cycleSort } from './pager'
-import { singleStatementOf } from './explain'
+import { pkValuesOf, rowKeyOf } from './rowKey'
 
 interface BaseTab {
   id: string
@@ -358,7 +358,7 @@ export const useAppStore = create<AppState>((set, get) => {
   // CANCELLED で解決した時に runSql/runTable 側で行われる（ここでは canceling だけ立てる）。
   async function cancelTab(tabId: string): Promise<void> {
     const tab = get().tabs.find((t) => t.id === tabId)
-    if (!tab || !tab.running || tab.canceling) return
+    if (!tab?.running || tab.canceling) return
     set({ tabs: get().tabs.map((t) => (t.id === tabId ? { ...t, canceling: true } : t)) })
     await window.api.cancelQuery(tabId)
   }
@@ -557,7 +557,7 @@ export const useAppStore = create<AppState>((set, get) => {
     // 履歴を汚さないよう queryScript ではなく query を直接使う。
     async explainActiveTab() {
       const tab = get().tabs.find((t) => t.id === get().activeTabId)
-      if (!tab || tab.kind !== 'sql') return
+      if (tab?.kind !== 'sql') return
       const stmt = singleStatementOf(tab.sql)
       if (!stmt) {
         const { t } = createTranslator(get().locale)
@@ -619,7 +619,7 @@ export const useAppStore = create<AppState>((set, get) => {
     // 注記の「自動LIMITを外して再実行」ボタン用。同じ SQL を skipAutoLimit=true で再実行する。
     async rerunWithoutAutoLimit(tabId: string) {
       const tab = get().tabs.find((t) => t.id === tabId)
-      if (!tab || tab.kind !== 'sql') return
+      if (tab?.kind !== 'sql') return
       await runSql(tabId, tab.sql, { skipAutoLimit: true })
     },
 
@@ -1038,7 +1038,7 @@ export const useAppStore = create<AppState>((set, get) => {
     async exportCsv(tabId, opts) {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
       const { t } = createTranslator(get().locale)
-      if (!tab || !tab.result) {
+      if (!tab?.result) {
         return { ok: false, message: t('store.exportNoResult') }
       }
 
@@ -1109,7 +1109,7 @@ export const useAppStore = create<AppState>((set, get) => {
     async exportSqlResultCsv(tabId) {
       const { t } = createTranslator(get().locale)
       const tab = get().tabs.find((tt) => tt.id === tabId)
-      if (!tab || tab.kind !== 'sql' || !tab.result || tab.result.rows.length === 0) {
+      if (tab?.kind !== 'sql' || !tab.result || tab.result.rows.length === 0) {
         return { ok: false, message: t('store.exportSqlNoResult') }
       }
       const columns = tab.result.columns.map((c) => c.name)

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { totalPages, pageRange, canGoNext, cycleSort } from './pager'
+import { describe, expect, it } from 'vitest'
+import { canGoNext, cycleSort, pageRange, totalPages } from './pager'
 
 describe('totalPages', () => {
   it('total が null なら null', () => {

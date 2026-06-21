@@ -1,8 +1,8 @@
-import { useAppStore } from '../store/useAppStore'
 import Avatar from '../components/Avatar'
-import TableList from './TableList'
 import { useT } from '../i18n/useT'
+import { useAppStore } from '../store/useAppStore'
 import styles from './Sidebar.module.css'
+import TableList from './TableList'
 
 export default function Sidebar(): JSX.Element {
   const { t } = useT()
@@ -21,7 +21,7 @@ export default function Sidebar(): JSX.Element {
         </div>
       </div>
       <TableList />
-      <button className={styles.back} onClick={() => void disconnect()}>
+      <button type="button" className={styles.back} onClick={() => void disconnect()}>
         {t('workspace.backToList')}
       </button>
     </div>

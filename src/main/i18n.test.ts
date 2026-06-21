@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { setLocale, getLocale, t } from './i18n'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { getLocale, setLocale, t } from './i18n'
 
 describe('mainI18n', () => {
   beforeEach(() => setLocale('en'))

@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
-import { useAppStore } from './store/useAppStore'
 import HomeScreen from './home/HomeScreen'
-import WorkspaceShell from './workspace/WorkspaceShell'
+import { useAppStore } from './store/useAppStore'
 import SqlImportModal from './workspace/SqlImportModal'
+import WorkspaceShell from './workspace/WorkspaceShell'
 
 export default function App(): JSX.Element {
   const status = useAppStore((s) => s.status)

@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
-  setProductionContext,
   clearProductionContext,
   getProductionContext,
-  isProductionConnection
+  isProductionConnection,
+  setProductionContext
 } from './productionContext'
 
 describe('productionContext', () => {

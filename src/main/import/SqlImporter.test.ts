@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
-import { writeFileSync, rmSync, statSync } from 'fs'
-import { gzipSync } from 'zlib'
-import { join } from 'path'
-import { tmpdir } from 'os'
-import { importSqlDump, type ImportExecutor } from './SqlImporter'
+import { rmSync, statSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { gzipSync } from 'node:zlib'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { type ImportExecutor, importSqlDump } from './SqlImporter'
 
 const tmpFiles: string[] = []
 function writeTmp(name: string, content: string): string {
@@ -97,7 +97,7 @@ describe('importSqlDump', () => {
     const onProgress = vi.fn()
     const summary = await importSqlDump(manager, file, onProgress)
     expect(summary.executedCount).toBe(2)
-    const last = onProgress.mock.calls.at(-1)![0]
+    const last = onProgress.mock.calls.at(-1)?.[0]
     expect(last.executedCount).toBe(2)
     expect(last.totalBytes).toBeGreaterThan(0)
     expect(last.bytesRead).toBeGreaterThan(0)
@@ -120,7 +120,7 @@ describe('importSqlDump', () => {
     const { manager } = fakeExecutor()
     const onProgress = vi.fn()
     await importSqlDump(manager, file, onProgress)
-    const last = onProgress.mock.calls.at(-1)![0]
+    const last = onProgress.mock.calls.at(-1)?.[0]
     expect(last.totalBytes).toBe(compressedSize)
   })
 

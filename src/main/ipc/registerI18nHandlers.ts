@@ -1,8 +1,8 @@
 import { app, ipcMain } from 'electron'
-import type { SettingsStore } from '../settings/SettingsStore'
+import { resolveLocale, systemLocaleFromElectron } from '../../shared/i18n/resolveLocale'
 import type { LocalePreference } from '../../shared/i18n/types'
-import { systemLocaleFromElectron, resolveLocale } from '../../shared/i18n/resolveLocale'
 import { setLocale } from '../i18n'
+import type { SettingsStore } from '../settings/SettingsStore'
 
 export function registerI18nHandlers(settings: SettingsStore, rebuildMenu: () => void): void {
   // 同期 bootstrap：renderer の初回レンダー前に確定させる（言語チラつき防止）。

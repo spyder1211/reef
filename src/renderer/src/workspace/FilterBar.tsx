@@ -1,9 +1,9 @@
-import { useMemo, type KeyboardEvent } from 'react'
+import { type KeyboardEvent, useMemo } from 'react'
 import type { FilterOperator } from '../../../shared/types'
-import { useAppStore } from '../store/useAppStore'
-import { buildFilteredQuery, sameFilterEffect, countUsableFilters } from '../store/filterBuilder'
-import { OPERATORS, OPERATOR_VALUE_KIND } from '../lib/filterOperators'
 import { useT } from '../i18n/useT'
+import { OPERATOR_VALUE_KIND, OPERATORS } from '../lib/filterOperators'
+import { buildFilteredQuery, countUsableFilters, sameFilterEffect } from '../store/filterBuilder'
+import { useAppStore } from '../store/useAppStore'
 import ExportMenu from './ExportMenu'
 import styles from './FilterBar.module.css'
 
@@ -114,6 +114,7 @@ export default function FilterBar(): JSX.Element | null {
                 />
               )}
               <button
+                type="button"
                 className={styles.iconBtn}
                 onClick={() => removeFilter(tab.id, f.id)}
                 title={t('workspace.filterRemove')}
@@ -121,6 +122,7 @@ export default function FilterBar(): JSX.Element | null {
                 −
               </button>
               <button
+                type="button"
                 className={styles.iconBtn}
                 onClick={() => duplicateFilter(tab.id, f.id)}
                 title={t('workspace.filterDuplicate')}
@@ -128,6 +130,7 @@ export default function FilterBar(): JSX.Element | null {
                 ⧉
               </button>
               <button
+                type="button"
                 className={styles.iconBtn}
                 disabled={!columnsReady}
                 onClick={() => addFilter(tab.id)}
@@ -141,6 +144,7 @@ export default function FilterBar(): JSX.Element | null {
       )}
       <div className={styles.footer}>
         <button
+          type="button"
           className={styles.addBtn}
           disabled={!columnsReady}
           onClick={() => addFilter(tab.id)}
@@ -155,6 +159,7 @@ export default function FilterBar(): JSX.Element | null {
         <div className={styles.spacer} />
         <ExportMenu disabled={!tab.result || tab.running} />
         <button
+          type="button"
           className={styles.clear}
           onClick={() => {
             clearFilters(tab.id)
@@ -164,6 +169,7 @@ export default function FilterBar(): JSX.Element | null {
           Clear
         </button>
         <button
+          type="button"
           className={isDirty ? `${styles.apply} ${styles.applyDirty}` : styles.apply}
           disabled={tab.running}
           onClick={() => void applyFilters(tab.id)}

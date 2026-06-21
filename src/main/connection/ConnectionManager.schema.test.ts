@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { ConnectionManager } from './ConnectionManager'
 
 // 既存の ConnectionManager.integration.test.ts と同じ env ベースの接続設定 + skipIf を使う。

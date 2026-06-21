@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import type { PendingInsert, RowEdit } from '../../../shared/types'
 import {
-  buildUpdateStatements,
-  buildInsertStatements,
   buildDeleteStatements,
+  buildDropStatement,
+  buildInsertStatements,
   buildTruncateStatement,
-  buildDropStatement
+  buildUpdateStatements
 } from './editBuilder'
-import type { RowEdit, PendingInsert } from '../../../shared/types'
 
 describe('buildUpdateStatements', () => {
   it('単一列 UPDATE', () => {

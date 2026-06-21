@@ -1,8 +1,8 @@
-import { readFileSync, existsSync, mkdirSync } from 'node:fs'
-import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import { writeFileSecure } from '../util/writeFileSecure'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { QueryHistoryEntry } from '../../shared/types'
+import { writeFileSecure } from '../util/writeFileSecure'
 
 const MAX_ENTRIES = 500
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // bootstrap は store 読み込み時に評価されるため、先に window.api をモックする。
 const setLocaleMock = vi.fn(async (_p: string) => ({ effective: 'ja' as const }))

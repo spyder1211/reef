@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { ProfileStore, type StoreDeps, type StoredDoc } from './ProfileStore'
 
 function freshDeps(): StoreDeps {
@@ -35,11 +35,11 @@ describe('ProfileStore', () => {
       database: 'app'
     })
     expect(saved.id).toBe('id-1')
-    expect((saved as any).password).toBeUndefined()
+    expect((saved as unknown as Record<string, unknown>).password).toBeUndefined()
     const list = s.list()
     expect(list).toHaveLength(1)
     expect(list[0]).toMatchObject({ name: 'local-db', tag: 'local', host: '127.0.0.1' })
-    expect((list[0] as any).encryptedPassword).toBeUndefined()
+    expect((list[0] as unknown as Record<string, unknown>).encryptedPassword).toBeUndefined()
   })
 
   it('同じ id で保存すると更新（増えない）', () => {

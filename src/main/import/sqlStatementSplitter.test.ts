@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { SqlStatementSplitter } from './sqlStatementSplitter'
 
 // 1 回 push して end() した結果をまとめて取得するヘルパー

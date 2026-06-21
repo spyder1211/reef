@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { en } from './en'
-import { ja } from './ja'
 import { createTranslator } from './index'
+import { ja } from './ja'
 
 describe('カタログ整合性', () => {
   it('en と ja のキー集合が一致する', () => {

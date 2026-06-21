@@ -1,12 +1,12 @@
 import type { ConnectionManager } from '../connection/ConnectionManager'
+import { t } from '../i18n'
 import {
-  quoteIdent,
   buildDropAndCreate,
   buildInsert,
+  dumpFooter,
   dumpHeader,
-  dumpFooter
+  quoteIdent
 } from './sqlDumpHelpers'
-import { t } from '../i18n'
 
 export interface DumpResult {
   tableCount: number
@@ -37,7 +37,7 @@ export async function dumpDatabase(
 
   let rowCount = 0
   for (const table of tables) {
-    const createRes = await manager.query('SHOW CREATE TABLE ' + quoteIdent(table))
+    const createRes = await manager.query(`SHOW CREATE TABLE ${quoteIdent(table)}`)
     const createSql = String(createRes.rows[0]?.['Create Table'] ?? '')
     if (!createSql) {
       throw new Error(t('error.showCreateTableEmpty', { table: quoteIdent(table) }))
@@ -53,7 +53,7 @@ export async function dumpDatabase(
         batch = []
       }
     }
-    await manager.streamRows('SELECT * FROM ' + quoteIdent(table), async (row) => {
+    await manager.streamRows(`SELECT * FROM ${quoteIdent(table)}`, async (row) => {
       if (!columns) columns = Object.keys(row)
       batch.push(row)
       rowCount++

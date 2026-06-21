@@ -1,12 +1,12 @@
-import { createReadStream } from 'fs'
-import { stat } from 'fs/promises'
-import { createGunzip } from 'zlib'
-import { Transform } from 'stream'
-import { StringDecoder } from 'string_decoder'
-import type { ImportSummary, ImportProgress } from '../../shared/types'
-import { SqlStatementSplitter } from './sqlStatementSplitter'
-import { isGzipFile } from './gzip'
+import { createReadStream } from 'node:fs'
+import { stat } from 'node:fs/promises'
+import { Transform } from 'node:stream'
+import { StringDecoder } from 'node:string_decoder'
+import { createGunzip } from 'node:zlib'
+import type { ImportProgress, ImportSummary } from '../../shared/types'
 import { t } from '../i18n'
+import { isGzipFile } from './gzip'
+import { SqlStatementSplitter } from './sqlStatementSplitter'
 
 // statement プレビューの最大文字数
 const PREVIEW_LEN = 200

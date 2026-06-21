@@ -1,8 +1,8 @@
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { app } from 'electron'
-import { existsSync, mkdirSync, readFileSync } from 'fs'
-import { join, dirname } from 'path'
 import { writeFileSecure } from '../util/writeFileSecure'
-import { SettingsStore, type AppSettings, type SettingsDeps } from './SettingsStore'
+import { type AppSettings, type SettingsDeps, SettingsStore } from './SettingsStore'
 
 const DEFAULT: AppSettings = { localePreference: 'auto' }
 

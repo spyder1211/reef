@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { useAppStore } from './useAppStore'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { pkValuesOf, rowKeyOf } from './rowKey'
 import type { TableTab } from './useAppStore'
-import { rowKeyOf, pkValuesOf } from './rowKey'
+import { useAppStore } from './useAppStore'
 
 function seedTableTab(partial: Partial<TableTab> = {}): string {
   const id = 'tab-test'
@@ -65,6 +65,7 @@ describe('setSelectedRows', () => {
 describe('stageDeleteMany', () => {
   beforeEach(() => seedTableTab())
   function entriesFor(indices: number[]) {
+    // biome-ignore lint/style/noNonNullAssertion: tab result is known to be set from seedTableTab
     const rows = tab('tab-test').result!.rows
     return indices.map((i) => ({
       rowKey: rowKeyOf(['id'], rows[i]),
@@ -103,7 +104,8 @@ describe('duplicateRows', () => {
     useAppStore.setState((s) => ({
       tabs: s.tabs.map((t) =>
         t.id === 'tab-test' && t.kind === 'table'
-          ? { ...t, result: { ...t.result!, rows: [{ id: 9, name: null }] } }
+          ? // biome-ignore lint/style/noNonNullAssertion: t.result is known to be set from seedTableTab
+            { ...t, result: { ...t.result!, rows: [{ id: 9, name: null }] } }
           : t
       )
     }))

@@ -1,8 +1,8 @@
-import { useAppStore } from '../store/useAppStore'
 import { useT } from '../i18n/useT'
 import { buildGroupedView } from '../lib/grouping'
-import GroupSection from './GroupSection'
+import { useAppStore } from '../store/useAppStore'
 import styles from './ConnectionList.module.css'
+import GroupSection from './GroupSection'
 
 export default function ConnectionList(): JSX.Element {
   const { t } = useT()
