@@ -1,6 +1,7 @@
 import { ConnectionManager } from './ConnectionManager'
 import { SshTunnel } from './SshTunnel'
 import type { ConnectionConfig } from '../../shared/types'
+import { t } from '../i18n'
 
 // 現在アクティブな SSH トンネルを保持する共有ホルダ。
 // connect / disconnect ハンドラ間で同一インスタンスを共有する。
@@ -33,7 +34,7 @@ export async function connectWithTunnel(
     await tunnel.close() // 接続失敗時にトンネルを残さない
     // SSH 段階の失敗は DB エラーと区別できるよう明示メッセージに変換する。
     const message = err instanceof Error ? err.message : String(err)
-    throw { code: 'SSH_TUNNEL_FAILED', message: `SSH トンネル接続に失敗しました: ${message}` }
+    throw { code: 'SSH_TUNNEL_FAILED', message: t('error.sshTunnelFailed', { message }) }
   }
 }
 

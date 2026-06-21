@@ -6,6 +6,7 @@ import { validateConnectionConfig } from '../connection/validateConnectionConfig
 import { normalizeDbError } from '../connection/normalizeDbError'
 import { connectWithTunnel, type TunnelHolder } from '../connection/connectWithTunnel'
 import { setProductionContext, clearProductionContext } from '../connection/productionContext'
+import { t } from '../i18n'
 import type { ApiResult, ConnectionGroup, ConnectionProfile, ConnectionProfileInput } from '../../shared/types'
 
 export function registerConnectionHandlers(
@@ -26,7 +27,7 @@ export function registerConnectionHandlers(
     'connections:save',
     async (_e, input: ConnectionProfileInput): Promise<ApiResult<ConnectionProfile>> => {
       if (!input.name) {
-        return { ok: false, error: { code: 'INVALID_CONFIG', message: 'name は必須です' } }
+        return { ok: false, error: { code: 'INVALID_CONFIG', message: t('error.nameRequired') } }
       }
       const errors = validateConnectionConfig(input)
       if (errors.length > 0) {
@@ -103,7 +104,7 @@ export function registerConnectionHandlers(
 
   ipcMain.handle('groups:create', async (_e, name: string): Promise<ApiResult<ConnectionGroup>> => {
     if (!name || !name.trim()) {
-      return { ok: false, error: { code: 'INVALID_CONFIG', message: 'グループ名は必須です' } }
+      return { ok: false, error: { code: 'INVALID_CONFIG', message: t('error.groupNameRequired') } }
     }
     try {
       return { ok: true, data: groups.create(name) }
@@ -114,7 +115,7 @@ export function registerConnectionHandlers(
 
   ipcMain.handle('groups:rename', async (_e, id: string, name: string): Promise<ApiResult<null>> => {
     if (!name || !name.trim()) {
-      return { ok: false, error: { code: 'INVALID_CONFIG', message: 'グループ名は必須です' } }
+      return { ok: false, error: { code: 'INVALID_CONFIG', message: t('error.groupNameRequired') } }
     }
     try {
       groups.rename(id, name)

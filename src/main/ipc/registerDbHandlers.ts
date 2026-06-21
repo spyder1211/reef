@@ -7,6 +7,7 @@ import { QueryCancelledError } from '../connection/queryCancellation'
 import { connectWithTunnel, closeTunnel, type TunnelHolder } from '../connection/connectWithTunnel'
 import { clearProductionContext } from '../connection/productionContext'
 import { guardProductionSql, guardProductionTier } from '../guard/productionGuard'
+import { t } from '../i18n'
 import type {
   ConnectionConfig,
   ApiResult,
@@ -44,7 +45,7 @@ export function registerDbHandlers(
   ipcMain.handle(
     'db:query',
     async (e, tabId: string, sql: string, params?: unknown[]): Promise<ApiResult<QueryResult>> => {
-      if (!(await guardProductionSql(e, sql, 'SQL の実行'))) return CANCELLED
+      if (!(await guardProductionSql(e, sql, t('dialog.opSqlQuery')))) return CANCELLED
       try {
         return { ok: true, data: await manager.query(sql, params, tabId) }
       } catch (err) {
@@ -57,7 +58,7 @@ export function registerDbHandlers(
   ipcMain.handle(
     'db:queryScript',
     async (e, tabId: string, sql: string, skipAutoLimit?: boolean): Promise<ApiResult<QueryResult>> => {
-      if (!(await guardProductionSql(e, sql, 'SQL の実行'))) return CANCELLED
+      if (!(await guardProductionSql(e, sql, t('dialog.opSqlQuery')))) return CANCELLED
       // キャンセル（実行前ガード／実行中 KILL）は履歴に残さない。成功/失敗時のみ history.add。
       // 履歴にはユーザー原文 sql を残す（自動付与した LIMIT 入りではない）。
       try {
@@ -146,7 +147,7 @@ export function registerDbHandlers(
   ipcMain.handle(
     'db:applyChanges',
     async (e, statements: SqlStatement[]): Promise<ApiResult<{ affectedRows: number }>> => {
-      if (!(await guardProductionTier(e, 'write', '変更の適用（コミット）'))) return CANCELLED
+      if (!(await guardProductionTier(e, 'write', t('dialog.opApplyChanges')))) return CANCELLED
       try {
         return { ok: true, data: await manager.applyChanges(statements) }
       } catch (err) {

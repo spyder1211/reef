@@ -20,7 +20,7 @@ async function exportSqlDump(manager: ConnectionManager): Promise<void> {
     return
   }
   // 本番ではエクスポート（全行のファイル化）前に強い確認。
-  if (!(await guardProductionMenu('catastrophic', 'SQL ダンプのエクスポート'))) return
+  if (!(await guardProductionMenu('catastrophic', t('dialog.opSqlExportDump')))) return
 
   // 既定ファイル名のため DB 名を取得（失敗時は dump で続行）。
   let dbName = 'dump'

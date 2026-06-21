@@ -2,6 +2,7 @@ import { BrowserWindow, type IpcMainInvokeEvent } from 'electron'
 import { getProductionContext, isProductionConnection } from '../connection/productionContext'
 import { classifyScript } from './classifyStatement'
 import { confirmProductionAction, type ConfirmTier } from './confirmProductionAction'
+import { t } from '../i18n'
 
 // 共通: production なら確認、非 production なら即 true（素通り）。
 async function guard(
@@ -10,7 +11,7 @@ async function guard(
   opLabel: string
 ): Promise<boolean> {
   if (!isProductionConnection()) return true
-  const name = getProductionContext()?.name ?? '本番環境'
+  const name = getProductionContext()?.name ?? t('dialog.production.unknownConn')
   return confirmProductionAction(win, tier, opLabel, name)
 }
 

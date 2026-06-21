@@ -1,4 +1,5 @@
 import { dialog, type BrowserWindow, type MessageBoxOptions } from 'electron'
+import { t } from '../i18n'
 
 export type ConfirmTier = 'write' | 'catastrophic'
 
@@ -10,18 +11,18 @@ export function buildConfirmOptions(
 ): MessageBoxOptions {
   const base: MessageBoxOptions = {
     type: 'warning',
-    buttons: ['キャンセル', '実行する'],
+    buttons: [t('common.cancel'), t('dialog.production.confirm')],
     defaultId: 0,
     cancelId: 0,
-    title: '本番環境での操作',
-    message: `本番環境（${connName}）で「${opLabel}」を実行しようとしています。`,
-    detail: '本番データに直接影響します。よろしいですか？'
+    title: t('dialog.production.title'),
+    message: t('dialog.production.message', { conn: connName, op: opLabel }),
+    detail: t('dialog.production.detail')
   }
   if (tier === 'catastrophic') {
     return {
       ...base,
-      detail: '本番データを破壊・置換する可能性があります。十分に確認してください。',
-      checkboxLabel: '本番だと理解した上で実行する',
+      detail: t('dialog.production.detailCatastrophic'),
+      checkboxLabel: t('dialog.production.checkboxLabel'),
       checkboxChecked: false
     }
   }

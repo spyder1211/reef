@@ -9,16 +9,16 @@ describe('validateConnectionConfig', () => {
   })
 
   it('host 欠落を検出', () => {
-    expect(validateConnectionConfig({ port: 3306, user: 'root' })).toContain('host は必須です')
+    expect(validateConnectionConfig({ port: 3306, user: 'root' })).toContain('host is required')
   })
 
   it('port が範囲外なら検出', () => {
     expect(validateConnectionConfig({ host: 'h', port: 0, user: 'u' })).toContain(
-      'port は 1〜65535 の範囲で指定してください'
+      'port must be between 1 and 65535'
     )
   })
 
   it('user 欠落を検出', () => {
-    expect(validateConnectionConfig({ host: 'h', port: 3306 })).toContain('user は必須です')
+    expect(validateConnectionConfig({ host: 'h', port: 3306 })).toContain('user is required')
   })
 })

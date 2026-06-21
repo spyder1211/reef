@@ -3,17 +3,17 @@ import { buildConfirmOptions, confirmProductionAction } from './confirmProductio
 
 describe('buildConfirmOptions', () => {
   it('write は OK/キャンセルでチェックボックスなし', () => {
-    const o = buildConfirmOptions('write', '変更の適用', '本番DB')
-    expect(o.buttons).toEqual(['キャンセル', '実行する'])
+    const o = buildConfirmOptions('write', 'Apply changes', 'prod-db')
+    expect(o.buttons).toEqual(['Cancel', 'Run'])
     expect(o.defaultId).toBe(0)
     expect(o.cancelId).toBe(0)
     expect(o.checkboxLabel).toBeUndefined()
-    expect(o.message).toContain('本番DB')
-    expect(o.message).toContain('変更の適用')
+    expect(o.message).toContain('prod-db')
+    expect(o.message).toContain('Apply changes')
   })
   it('catastrophic はチェックボックス付き（既定 OFF）', () => {
-    const o = buildConfirmOptions('catastrophic', 'DROP', '本番DB')
-    expect(o.checkboxLabel).toBe('本番だと理解した上で実行する')
+    const o = buildConfirmOptions('catastrophic', 'DROP', 'prod-db')
+    expect(o.checkboxLabel).toBe('I understand this is production and want to proceed')
     expect(o.checkboxChecked).toBe(false)
     expect(o.cancelId).toBe(0)
   })
