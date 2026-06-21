@@ -1,5 +1,6 @@
 import type { ConnectionManager } from '../connection/ConnectionManager'
 import { quoteIdent, buildDropAndCreate, buildInsert, dumpHeader, dumpFooter } from './sqlDumpHelpers'
+import { t } from '../i18n'
 
 export interface DumpResult {
   tableCount: number
@@ -18,7 +19,7 @@ export async function dumpDatabase(
   const dbRes = await manager.query('SELECT DATABASE() AS db')
   const dbName = dbRes.rows[0]?.db
   if (dbName === null || dbName === undefined) {
-    throw new Error('データベースが選択されていません')
+    throw new Error(t('error.noDatabaseSelected'))
   }
   write(dumpHeader(String(dbName), generatedAt))
 
@@ -33,7 +34,7 @@ export async function dumpDatabase(
     const createRes = await manager.query('SHOW CREATE TABLE ' + quoteIdent(table))
     const createSql = String(createRes.rows[0]?.['Create Table'] ?? '')
     if (!createSql) {
-      throw new Error(`SHOW CREATE TABLE ${quoteIdent(table)} の結果が空です`)
+      throw new Error(t('error.showCreateTableEmpty', { table: quoteIdent(table) }))
     }
     write(buildDropAndCreate(table, createSql))
     write('\n')

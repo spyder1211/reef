@@ -56,7 +56,7 @@ describe('ProfileStore', () => {
     s.move(a.id, 'g1')
     const copy = s.duplicate(a.id)
     expect(copy.id).not.toBe(a.id)
-    expect(copy.name).toBe('orig のコピー')
+    expect(copy.name).toBe('orig copy')
     expect(copy.tag).toBe('staging')
     expect(copy.groupId).toBe('g1')
     // 暗号化パスワードも引き継ぐ（renderer から再入力不要）
@@ -67,7 +67,7 @@ describe('ProfileStore', () => {
     const a = s.save({ name: 'a', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'p' })
     s.save({ name: 'b', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'p' })
     s.duplicate(a.id)
-    expect(s.list().map((p) => p.name)).toEqual(['a', 'a のコピー', 'b'])
+    expect(s.list().map((p) => p.name)).toEqual(['a', 'a copy', 'b'])
   })
 
   it('存在しない id の duplicate は例外', () => {

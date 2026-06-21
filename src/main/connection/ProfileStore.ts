@@ -6,6 +6,7 @@ import type {
   SshSettings,
   SshSettingsPublic
 } from '../../shared/types'
+import { t } from '../i18n'
 
 export interface SecretBox {
   isAvailable(): boolean
@@ -97,7 +98,7 @@ export class ProfileStore {
     const copy: StoredProfile = {
       ...src,
       id: this.deps.genId(),
-      name: `${src.name} のコピー`
+      name: t('connection.duplicateSuffix', { name: src.name })
     }
     doc.profiles.splice(idx + 1, 0, copy)
     this.deps.persist(doc)
