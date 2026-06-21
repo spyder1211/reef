@@ -1,19 +1,19 @@
-import { useAppStore } from '../store/useAppStore'
-import { isProductionProfile } from '../store/helpers'
 import { useT } from '../i18n/useT'
-import Sidebar from './Sidebar'
-import TabBar from './TabBar'
-import QueryEditor from './QueryEditor'
-import FilterBar from './FilterBar'
-import ResultsGrid from './ResultsGrid'
-import SplitGrids from './SplitGrids'
-import SchemaView from './SchemaView'
-import HistoryPanel from './HistoryPanel'
-import SqlExportButton from './SqlExportButton'
-import EditBar from './EditBar'
-import Pager from './Pager'
-import StatusBar from './StatusBar'
+import { isProductionProfile } from '../store/helpers'
+import { useAppStore } from '../store/useAppStore'
 import DetailPane from './DetailPane'
+import EditBar from './EditBar'
+import FilterBar from './FilterBar'
+import HistoryPanel from './HistoryPanel'
+import Pager from './Pager'
+import QueryEditor from './QueryEditor'
+import ResultsGrid from './ResultsGrid'
+import SchemaView from './SchemaView'
+import Sidebar from './Sidebar'
+import SplitGrids from './SplitGrids'
+import SqlExportButton from './SqlExportButton'
+import StatusBar from './StatusBar'
+import TabBar from './TabBar'
 import styles from './WorkspaceShell.module.css'
 
 export default function WorkspaceShell(): JSX.Element {
@@ -51,9 +51,7 @@ export default function WorkspaceShell(): JSX.Element {
             ⚠
           </span>
           <span className={styles.prodLabel}>PRODUCTION</span>
-          <span className={styles.prodText}>
-            {t('workspace.prodBanner')}
-          </span>
+          <span className={styles.prodText}>{t('workspace.prodBanner')}</span>
         </div>
       )}
       <div className={styles.shell}>
@@ -61,9 +59,7 @@ export default function WorkspaceShell(): JSX.Element {
         <div className={styles.mainCol}>
           <TabBar />
           {activeKind === null ? (
-            <div className={styles.empty}>
-              {t('workspace.empty')}
-            </div>
+            <div className={styles.empty}>{t('workspace.empty')}</div>
           ) : (
             <>
               {activeKind === 'table' ? showData && <FilterBar /> : <QueryEditor />}
@@ -71,6 +67,7 @@ export default function WorkspaceShell(): JSX.Element {
                 <div className={styles.gridToolbar}>
                   <div className={styles.viewToggle}>
                     <button
+                      type="button"
                       className={
                         view === 'data'
                           ? `${styles.viewToggleBtn} ${styles.viewToggleBtnOn}`
@@ -81,6 +78,7 @@ export default function WorkspaceShell(): JSX.Element {
                       {t('workspace.viewData')}
                     </button>
                     <button
+                      type="button"
                       className={
                         view === 'structure'
                           ? `${styles.viewToggleBtn} ${styles.viewToggleBtnOn}`
@@ -95,6 +93,7 @@ export default function WorkspaceShell(): JSX.Element {
                     <div className={styles.toolGroup}>
                       {tableTab && tableTab.primaryKey.length > 0 && (
                         <button
+                          type="button"
                           className={styles.toolBtn}
                           disabled={tableTab.running}
                           onClick={() => addInsertRow(tableTab.id)}
@@ -102,31 +101,87 @@ export default function WorkspaceShell(): JSX.Element {
                           aria-label={t('workspace.addRow')}
                         >
                           <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-                            <line x1="8" y1="3.5" x2="8" y2="12.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                            <line x1="3.5" y1="8" x2="12.5" y2="8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                            <line
+                              x1="8"
+                              y1="3.5"
+                              x2="8"
+                              y2="12.5"
+                              stroke="currentColor"
+                              strokeWidth="1.6"
+                              strokeLinecap="round"
+                            />
+                            <line
+                              x1="3.5"
+                              y1="8"
+                              x2="12.5"
+                              y2="8"
+                              stroke="currentColor"
+                              strokeWidth="1.6"
+                              strokeLinecap="round"
+                            />
                           </svg>
                         </button>
                       )}
                       <button
-                        className={splitView ? `${styles.toolBtn} ${styles.toolBtnOn}` : styles.toolBtn}
+                        type="button"
+                        className={
+                          splitView ? `${styles.toolBtn} ${styles.toolBtnOn}` : styles.toolBtn
+                        }
                         onClick={() => toggleSplitView()}
                         title={splitView ? t('workspace.splitOn') : t('workspace.splitOff')}
-                        aria-label={splitView ? t('workspace.splitAriaOn') : t('workspace.splitAriaOff')}
+                        aria-label={
+                          splitView ? t('workspace.splitAriaOn') : t('workspace.splitAriaOff')
+                        }
                       >
                         <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-                          <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
-                          <line x1="8" y1="2.5" x2="8" y2="13.5" stroke="currentColor" strokeWidth="1.3" />
+                          <rect
+                            x="1.5"
+                            y="2.5"
+                            width="13"
+                            height="11"
+                            rx="1.5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.3"
+                          />
+                          <line
+                            x1="8"
+                            y1="2.5"
+                            x2="8"
+                            y2="13.5"
+                            stroke="currentColor"
+                            strokeWidth="1.3"
+                          />
                         </svg>
                       </button>
                       <button
-                        className={detailOpen ? `${styles.toolBtn} ${styles.toolBtnOn}` : styles.toolBtn}
+                        type="button"
+                        className={
+                          detailOpen ? `${styles.toolBtn} ${styles.toolBtnOn}` : styles.toolBtn
+                        }
                         onClick={() => toggleDetail()}
                         title={t('workspace.detailToggle')}
                         aria-label={t('workspace.detailToggle')}
                       >
                         <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-                          <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
-                          <line x1="10" y1="2.5" x2="10" y2="13.5" stroke="currentColor" strokeWidth="1.3" />
+                          <rect
+                            x="1.5"
+                            y="2.5"
+                            width="13"
+                            height="11"
+                            rx="1.5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.3"
+                          />
+                          <line
+                            x1="10"
+                            y1="2.5"
+                            x2="10"
+                            y2="13.5"
+                            stroke="currentColor"
+                            strokeWidth="1.3"
+                          />
                         </svg>
                       </button>
                     </div>
@@ -137,15 +192,41 @@ export default function WorkspaceShell(): JSX.Element {
                 <div className={styles.sqlToolbar}>
                   <SqlExportButton />
                   <button
-                    className={historyOpen ? `${styles.toolBtn} ${styles.toolBtnOn}` : styles.toolBtn}
+                    type="button"
+                    className={
+                      historyOpen ? `${styles.toolBtn} ${styles.toolBtnOn}` : styles.toolBtn
+                    }
                     onClick={() => toggleHistory()}
                     title={t('workspace.queryHistory')}
                     aria-label={t('workspace.queryHistory')}
                   >
                     <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-                      <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.3" />
-                      <line x1="8" y1="8" x2="8" y2="4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                      <line x1="8" y1="8" x2="10.5" y2="9.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                      <circle
+                        cx="8"
+                        cy="8"
+                        r="6"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.3"
+                      />
+                      <line
+                        x1="8"
+                        y1="8"
+                        x2="8"
+                        y2="4.5"
+                        stroke="currentColor"
+                        strokeWidth="1.3"
+                        strokeLinecap="round"
+                      />
+                      <line
+                        x1="8"
+                        y1="8"
+                        x2="10.5"
+                        y2="9.5"
+                        stroke="currentColor"
+                        strokeWidth="1.3"
+                        strokeLinecap="round"
+                      />
                     </svg>
                   </button>
                 </div>

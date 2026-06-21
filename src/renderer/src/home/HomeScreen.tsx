@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useAppStore } from '../store/useAppStore'
 import { useT } from '../i18n/useT'
+import { useAppStore } from '../store/useAppStore'
 import AppRail from './AppRail'
-import ConnectionList from './ConnectionList'
 import ConnectionFormModal from './ConnectionFormModal'
+import ConnectionList from './ConnectionList'
 import styles from './HomeScreen.module.css'
 
 export default function HomeScreen(): JSX.Element {
@@ -27,10 +27,16 @@ export default function HomeScreen(): JSX.Element {
       <AppRail />
       <div className={styles.main}>
         <div className={styles.top}>
-          <button className={styles.plus} onClick={() => openForm()} title={t('home.newConnection')}>
+          <button
+            type="button"
+            className={styles.plus}
+            onClick={() => openForm()}
+            title={t('home.newConnection')}
+          >
             ＋
           </button>
           <button
+            type="button"
             className={styles.plus}
             title={t('home.newGroupTitle')}
             onClick={() => setGroupDraft('')}
@@ -42,6 +48,7 @@ export default function HomeScreen(): JSX.Element {
               className={styles.groupInput}
               placeholder={t('home.groupNamePlaceholder')}
               value={groupDraft}
+              // biome-ignore lint/a11y/noAutofocus: intentional focus management
               autoFocus
               onChange={(e) => setGroupDraft(e.target.value)}
               onBlur={() => setGroupDraft(null)}

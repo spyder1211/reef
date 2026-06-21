@@ -48,7 +48,10 @@ export class ProfileStore {
     const prev = idx >= 0 ? profiles[idx] : undefined
 
     // 暗号化できない時は平文を書かず既存値を保持する（既存暗号文の上書き消失・平文化を防ぐ）。
-    const encOrKeep = (plain: string | undefined, existing: string | undefined): string | undefined => {
+    const encOrKeep = (
+      plain: string | undefined,
+      existing: string | undefined
+    ): string | undefined => {
       if (!plain) return existing
       if (!this.deps.secret.isAvailable()) return existing
       return this.deps.secret.encrypt(plain)

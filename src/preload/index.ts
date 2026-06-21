@@ -1,20 +1,20 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
+import { contextBridge, type IpcRendererEvent, ipcRenderer } from 'electron'
+import type { Locale, LocalePreference } from '../shared/i18n/types'
 import type {
-  ConnectionConfig,
   ApiResult,
-  QueryResult,
+  ConnectionConfig,
+  ConnectionGroup,
   ConnectionProfile,
   ConnectionProfileInput,
-  ConnectionGroup,
-  SqlStatement,
-  SaveFileResult,
-  ImportSummary,
   ImportProgress,
+  ImportSummary,
+  QueryHistoryEntry,
+  QueryResult,
+  SaveFileResult,
   SqlImportRequest,
-  TableSchema,
-  QueryHistoryEntry
+  SqlStatement,
+  TableSchema
 } from '../shared/types'
-import type { Locale, LocalePreference } from '../shared/i18n/types'
 
 const api = {
   connect: (config: ConnectionConfig): Promise<ApiResult<null>> =>
@@ -22,11 +22,14 @@ const api = {
   query: (tabId: string, sql: string, params?: unknown[]): Promise<ApiResult<QueryResult>> =>
     ipcRenderer.invoke('db:query', tabId, sql, params),
   // SQL エディタ用：複数文を ; で分割して順に実行（main 側）。skipAutoLimit で自動LIMITを外す。
-  queryScript: (tabId: string, sql: string, skipAutoLimit?: boolean): Promise<ApiResult<QueryResult>> =>
+  queryScript: (
+    tabId: string,
+    sql: string,
+    skipAutoLimit?: boolean
+  ): Promise<ApiResult<QueryResult>> =>
     ipcRenderer.invoke('db:queryScript', tabId, sql, skipAutoLimit),
   // 実行中クエリを停止（KILL QUERY）。
-  cancelQuery: (tabId: string): Promise<ApiResult<null>> =>
-    ipcRenderer.invoke('db:cancel', tabId),
+  cancelQuery: (tabId: string): Promise<ApiResult<null>> => ipcRenderer.invoke('db:cancel', tabId),
   disconnect: (): Promise<ApiResult<null>> => ipcRenderer.invoke('db:disconnect'),
   listTables: (): Promise<ApiResult<string[]>> => ipcRenderer.invoke('db:listTables'),
   primaryKey: (table: string): Promise<ApiResult<string[]>> =>
@@ -35,8 +38,7 @@ const api = {
     ipcRenderer.invoke('db:autoIncrementColumns', table),
   tableSchema: (table: string): Promise<ApiResult<TableSchema>> =>
     ipcRenderer.invoke('db:tableSchema', table),
-  schemaMap: (): Promise<ApiResult<Record<string, string[]>>> =>
-    ipcRenderer.invoke('db:schemaMap'),
+  schemaMap: (): Promise<ApiResult<Record<string, string[]>>> => ipcRenderer.invoke('db:schemaMap'),
   applyChanges: (statements: SqlStatement[]): Promise<ApiResult<{ affectedRows: number }>> =>
     ipcRenderer.invoke('db:applyChanges', statements),
   saveCsv: (defaultFileName: string, content: string): Promise<ApiResult<SaveFileResult>> =>
@@ -79,7 +81,8 @@ const api = {
     duplicate: (id: string): Promise<ApiResult<ConnectionProfile>> =>
       ipcRenderer.invoke('connections:duplicate', id),
     delete: (id: string): Promise<ApiResult<null>> => ipcRenderer.invoke('connections:delete', id),
-    connect: (id: string): Promise<ApiResult<null>> => ipcRenderer.invoke('connections:connect', id),
+    connect: (id: string): Promise<ApiResult<null>> =>
+      ipcRenderer.invoke('connections:connect', id),
     move: (profileId: string, groupId: string | null): Promise<ApiResult<null>> =>
       ipcRenderer.invoke('connections:move', profileId, groupId),
     isEncryptionAvailable: (): Promise<ApiResult<boolean>> =>

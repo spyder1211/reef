@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { ConnectionManager } from './ConnectionManager'
 
 const hasDb = !!process.env.TEST_MYSQL_HOST
@@ -12,8 +12,12 @@ const cfg = {
 
 describe.skipIf(!hasDb)('ConnectionManager (integration)', () => {
   const mgr = new ConnectionManager()
-  beforeAll(async () => { await mgr.connect(cfg) })
-  afterAll(async () => { await mgr.disconnect() })
+  beforeAll(async () => {
+    await mgr.connect(cfg)
+  })
+  afterAll(async () => {
+    await mgr.disconnect()
+  })
 
   it('SELECT 1 が実行でき、行と列が返る', async () => {
     const res = await mgr.query('SELECT 1 AS one')
@@ -52,7 +56,9 @@ describe.skipIf(!hasDb)('ConnectionManager (integration)', () => {
   it('dateStrings: DATETIME/DATE を保存文字列のまま返す（Date オブジェクトにしない）', async () => {
     await mgr.query('CREATE TABLE IF NOT EXISTS ts_demo (id INT, created_at DATETIME, d DATE)')
     await mgr.query('DELETE FROM ts_demo')
-    await mgr.query("INSERT INTO ts_demo (id, created_at, d) VALUES (1, '2025-09-26 16:17:05', '2025-09-26')")
+    await mgr.query(
+      "INSERT INTO ts_demo (id, created_at, d) VALUES (1, '2025-09-26 16:17:05', '2025-09-26')"
+    )
     const res = await mgr.query('SELECT created_at, d FROM ts_demo WHERE id = 1')
     expect(res.rows[0].created_at).toBe('2025-09-26 16:17:05')
     expect(res.rows[0].d).toBe('2025-09-26')

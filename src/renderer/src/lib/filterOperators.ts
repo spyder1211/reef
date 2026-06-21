@@ -1,5 +1,5 @@
-import type { FilterOperator } from '../../../shared/types'
 import type { TranslationKey } from '../../../shared/i18n'
+import type { FilterOperator } from '../../../shared/types'
 
 export type OperatorValueKind = 'none' | 'single' | 'two' | 'list'
 

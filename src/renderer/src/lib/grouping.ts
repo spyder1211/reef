@@ -1,6 +1,6 @@
 import type { ConnectionGroup, ConnectionProfile, ConnectionTag } from '../../../shared/types'
-import { TAG_ORDER } from './tags'
 import { filterProfiles } from '../store/helpers'
+import { TAG_ORDER } from './tags'
 
 export const UNGROUPED_ID = '__ungrouped__'
 // 未分類グループ（バケット）の内部 view.name。表示は GroupSection が isUngrouped を見て
@@ -66,7 +66,11 @@ function toView(
 }
 
 // ドラッグした要素をターゲットの直前へ挿入した新しい id 配列を返す（純関数）
-export function computeReorder(orderedIds: string[], draggedId: string, targetId: string): string[] {
+export function computeReorder(
+  orderedIds: string[],
+  draggedId: string,
+  targetId: string
+): string[] {
   if (draggedId === targetId) return orderedIds
   const without = orderedIds.filter((id) => id !== draggedId)
   const targetIdx = without.indexOf(targetId)

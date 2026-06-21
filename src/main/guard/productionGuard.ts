@@ -1,8 +1,8 @@
 import { BrowserWindow, type IpcMainInvokeEvent } from 'electron'
 import { getProductionContext, isProductionConnection } from '../connection/productionContext'
-import { classifyScript } from './classifyStatement'
-import { confirmProductionAction, type ConfirmTier } from './confirmProductionAction'
 import { t } from '../i18n'
+import { classifyScript } from './classifyStatement'
+import { type ConfirmTier, confirmProductionAction } from './confirmProductionAction'
 
 // 共通: production なら確認、非 production なら即 true（素通り）。
 async function guard(
@@ -38,9 +38,6 @@ export async function guardProductionSql(
 }
 
 // メニュー用: フォーカス中ウィンドウを親に確認。
-export async function guardProductionMenu(
-  tier: ConfirmTier,
-  opLabel: string
-): Promise<boolean> {
+export async function guardProductionMenu(tier: ConfirmTier, opLabel: string): Promise<boolean> {
   return guard(BrowserWindow.getFocusedWindow(), tier, opLabel)
 }

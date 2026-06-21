@@ -1,11 +1,11 @@
-import CodeMirror from '@uiw/react-codemirror'
-import { sql, MySQL } from '@codemirror/lang-sql'
-import { keymap } from '@codemirror/view'
+import { MySQL, sql } from '@codemirror/lang-sql'
 import { Prec } from '@codemirror/state'
+import { keymap } from '@codemirror/view'
+import CodeMirror from '@uiw/react-codemirror'
 import { useMemo } from 'react'
-import { useAppStore } from '../store/useAppStore'
-import { useColorScheme } from '../lib/useColorScheme'
 import { useT } from '../i18n/useT'
+import { useColorScheme } from '../lib/useColorScheme'
+import { useAppStore } from '../store/useAppStore'
 import styles from './QueryEditor.module.css'
 
 export default function QueryEditor(): JSX.Element | null {

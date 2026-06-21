@@ -1,6 +1,12 @@
-import { describe, it, expect } from 'vitest'
-import { filterProfiles, pickNextActiveTabId, hasUncommittedChanges, isProductionProfile, isCancelled } from './helpers'
+import { describe, expect, it } from 'vitest'
 import { initials } from '../lib/tags'
+import {
+  filterProfiles,
+  hasUncommittedChanges,
+  isCancelled,
+  isProductionProfile,
+  pickNextActiveTabId
+} from './helpers'
 
 describe('filterProfiles', () => {
   const profiles = [
@@ -58,14 +64,14 @@ describe('isProductionProfile', () => {
 describe('hasUncommittedChanges', () => {
   const emptyTable = { kind: 'table', edits: {}, inserts: [], deletes: {} }
   it('edits が非空なら true', () => {
-    expect(
-      hasUncommittedChanges({ ...emptyTable, edits: { k: { pk: {}, values: {} } } })
-    ).toBe(true)
+    expect(hasUncommittedChanges({ ...emptyTable, edits: { k: { pk: {}, values: {} } } })).toBe(
+      true
+    )
   })
   it('inserts が非空なら true', () => {
-    expect(
-      hasUncommittedChanges({ ...emptyTable, inserts: [{ localId: 'x', values: {} }] })
-    ).toBe(true)
+    expect(hasUncommittedChanges({ ...emptyTable, inserts: [{ localId: 'x', values: {} }] })).toBe(
+      true
+    )
   })
   it('deletes が非空なら true', () => {
     expect(hasUncommittedChanges({ ...emptyTable, deletes: { k: {} } })).toBe(true)

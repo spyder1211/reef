@@ -1,7 +1,7 @@
 import type { FilterCondition, TableSort } from '../../../shared/types'
 
 function quoteIdent(name: string): string {
-  return '`' + name.replace(/`/g, '``') + '`'
+  return `\`${name.replace(/`/g, '``')}\``
 }
 
 function inItems(value: string): string[] {
@@ -129,8 +129,7 @@ export function buildCountQuery(
   conditions: FilterCondition[]
 ): { sql: string; params: unknown[] } {
   const { where, params } = buildWhere(columns, conditions)
-  const sql =
-    `SELECT COUNT(*) AS total FROM ${quoteIdent(table)}` + (where ? ` WHERE ${where}` : '')
+  const sql = `SELECT COUNT(*) AS total FROM ${quoteIdent(table)}${where ? ` WHERE ${where}` : ''}`
   return { sql, params }
 }
 

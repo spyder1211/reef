@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { QueryCancelledError, isQueryInterrupted } from './queryCancellation'
+import { describe, expect, it } from 'vitest'
+import { isQueryInterrupted, QueryCancelledError } from './queryCancellation'
 
 describe('queryCancellation', () => {
   it('code が ER_QUERY_INTERRUPTED なら中断とみなす', () => {

@@ -1,10 +1,14 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ConnectionManager } from './ConnectionManager'
 
 // private な pool にフェイクを差し込んで withDedicatedConnection を検証する。
 function withFakePool(): {
   mgr: ConnectionManager
-  conn: { query: ReturnType<typeof vi.fn>; release: ReturnType<typeof vi.fn>; destroy: ReturnType<typeof vi.fn> }
+  conn: {
+    query: ReturnType<typeof vi.fn>
+    release: ReturnType<typeof vi.fn>
+    destroy: ReturnType<typeof vi.fn>
+  }
 } {
   const conn = {
     query: vi.fn().mockResolvedValue([{}, []]),

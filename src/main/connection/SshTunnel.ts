@@ -1,6 +1,6 @@
-import { Client, type ConnectConfig } from 'ssh2'
-import { createServer, type Server, type Socket } from 'node:net'
 import { readFileSync } from 'node:fs'
+import { createServer, type Server, type Socket } from 'node:net'
+import { Client, type ConnectConfig } from 'ssh2'
 import type { SshSettings } from '../../shared/types'
 
 // SSH トンネル: 127.0.0.1 の空きポートで listen し、着信ソケットを
@@ -63,7 +63,7 @@ export class SshTunnel {
 
   async close(): Promise<void> {
     if (this.server) {
-      await new Promise<void>((resolve) => this.server!.close(() => resolve()))
+      await new Promise<void>((resolve) => this.server?.close(() => resolve()))
       this.server = null
     }
     if (this.client) {

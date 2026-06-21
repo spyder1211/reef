@@ -1,20 +1,21 @@
 /// <reference types="vite/client" />
+
+import type { Locale, LocalePreference } from '../../shared/i18n/types'
 import type {
-  ConnectionConfig,
   ApiResult,
-  QueryResult,
+  ConnectionConfig,
+  ConnectionGroup,
   ConnectionProfile,
   ConnectionProfileInput,
-  ConnectionGroup,
-  SqlStatement,
-  SaveFileResult,
-  ImportSummary,
   ImportProgress,
+  ImportSummary,
+  QueryHistoryEntry,
+  QueryResult,
+  SaveFileResult,
   SqlImportRequest,
-  TableSchema,
-  QueryHistoryEntry
+  SqlStatement,
+  TableSchema
 } from '../../shared/types'
-import type { Locale, LocalePreference } from '../../shared/i18n/types'
 
 declare global {
   // electron.vite.config.ts の define で package.json の version を埋め込む。
@@ -24,7 +25,11 @@ declare global {
     api: {
       connect: (config: ConnectionConfig) => Promise<ApiResult<null>>
       query: (tabId: string, sql: string, params?: unknown[]) => Promise<ApiResult<QueryResult>>
-      queryScript: (tabId: string, sql: string, skipAutoLimit?: boolean) => Promise<ApiResult<QueryResult>>
+      queryScript: (
+        tabId: string,
+        sql: string,
+        skipAutoLimit?: boolean
+      ) => Promise<ApiResult<QueryResult>>
       cancelQuery: (tabId: string) => Promise<ApiResult<null>>
       disconnect: () => Promise<ApiResult<null>>
       listTables: () => Promise<ApiResult<string[]>>

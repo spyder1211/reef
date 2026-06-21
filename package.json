@@ -21,13 +21,17 @@
     "dist:mac": "electron-vite build && electron-builder --mac --arm64",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "format": "biome format --write .",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
   },
   "dependencies": {
     "mysql2": "^3.11.0",
     "ssh2": "^1.17.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.0",
     "@codemirror/lang-sql": "^6.10.0",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.14.3",

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ConnectionManager } from './ConnectionManager'
 
 // private な pool に query だけ持つフェイクを差し込んで queryScript を検証する。

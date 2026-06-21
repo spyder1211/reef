@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { rowKeyOf, pkValuesOf } from './rowKey'
+import { describe, expect, it } from 'vitest'
+import { pkValuesOf, rowKeyOf } from './rowKey'
 
 describe('rowKeyOf', () => {
   it('主キー値が同じなら他列が違っても同じキー', () => {

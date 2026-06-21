@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { SettingsStore, type AppSettings, type SettingsDeps } from './SettingsStore'
+import { describe, expect, it } from 'vitest'
+import { type AppSettings, type SettingsDeps, SettingsStore } from './SettingsStore'
 
 function fakeDeps(initial: AppSettings): { deps: SettingsDeps; saved: AppSettings[] } {
   let current = initial

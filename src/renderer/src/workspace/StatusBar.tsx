@@ -1,6 +1,6 @@
-import { useAppStore } from '../store/useAppStore'
-import { TAG_COLORS } from '../lib/tags'
 import { useT } from '../i18n/useT'
+import { TAG_COLORS } from '../lib/tags'
+import { useAppStore } from '../store/useAppStore'
 import styles from './StatusBar.module.css'
 
 export default function StatusBar(): JSX.Element {
@@ -11,7 +11,11 @@ export default function StatusBar(): JSX.Element {
 
   return (
     <div className={styles.status}>
-      <span>{r ? t('workspace.statusRow', { count: String(r.rowCount), ms: String(r.durationMs) }) : '—'}</span>
+      <span>
+        {r
+          ? t('workspace.statusRow', { count: String(r.rowCount), ms: String(r.durationMs) })
+          : '—'}
+      </span>
       <span className={styles.right}>
         <span className={styles.dot} style={{ background: TAG_COLORS[profile?.tag ?? 'none'] }} />
         {profile?.name}

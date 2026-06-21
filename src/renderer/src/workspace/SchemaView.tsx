@@ -1,13 +1,20 @@
-import type { TableTab } from '../store/useAppStore'
-import { useT } from '../i18n/useT'
 import type { TranslationKey } from '../../../shared/i18n'
+import { useT } from '../i18n/useT'
+import type { TableTab } from '../store/useAppStore'
 import styles from './SchemaView.module.css'
 
 // テーブルの構造（カラム・インデックス・DDL）を表示する読み取り専用ビュー。
 // スキーマの取得は store の setTableView が lazy load する（ここでは tab.schema を描画するだけ）。
 export default function SchemaView({ tab }: { tab: TableTab }): JSX.Element {
   const { t } = useT()
-  if (tab.schemaError) return <div className={styles.message}>{tab.schemaError.messageKey ? t(tab.schemaError.messageKey as TranslationKey) : tab.schemaError.message}</div>
+  if (tab.schemaError)
+    return (
+      <div className={styles.message}>
+        {tab.schemaError.messageKey
+          ? t(tab.schemaError.messageKey as TranslationKey)
+          : tab.schemaError.message}
+      </div>
+    )
   if (!tab.schema) return <div className={styles.message}>{t('workspace.schemaLoading')}</div>
   const { columns, indexes, ddl } = tab.schema
 

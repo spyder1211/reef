@@ -1,12 +1,18 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAppStore } from './useAppStore'
 
 function seedSqlTab(): void {
   useAppStore.setState({
     tabs: [
       {
-        kind: 'sql', id: 'tab-1', title: 'Q', sql: 'SELECT * FROM users',
-        result: null, error: null, running: false, canceling: false
+        kind: 'sql',
+        id: 'tab-1',
+        title: 'Q',
+        sql: 'SELECT * FROM users',
+        result: null,
+        error: null,
+        running: false,
+        canceling: false
       }
     ] as never,
     activeTabId: 'tab-1'

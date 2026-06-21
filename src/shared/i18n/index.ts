@@ -1,7 +1,7 @@
-import type { Locale, TranslateParams } from './types'
-import { translate, selectPlural } from './translate'
 import { en } from './en'
 import { ja } from './ja'
+import { selectPlural, translate } from './translate'
+import type { Locale, TranslateParams } from './types'
 
 export type TranslationKey = keyof typeof en
 

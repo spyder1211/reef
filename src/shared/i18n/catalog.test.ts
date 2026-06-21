@@ -1,15 +1,14 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { en } from './en'
-import { ja } from './ja'
 import { createTranslator } from './index'
+import { ja } from './ja'
 
 describe('カタログ整合性', () => {
   it('en と ja のキー集合が一致する', () => {
     expect(Object.keys(ja).sort()).toEqual(Object.keys(en).sort())
   })
   it('各キーの {token} 集合が en/ja で一致する', () => {
-    const tokens = (s: string): string[] =>
-      [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort()
+    const tokens = (s: string): string[] => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort()
     for (const key of Object.keys(en) as (keyof typeof en)[]) {
       expect(tokens(ja[key])).toEqual(tokens(en[key]))
     }

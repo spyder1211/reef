@@ -1,6 +1,6 @@
-import { useAppStore } from '../store/useAppStore'
-import { useT } from '../i18n/useT'
 import type { LocalePreference } from '../../../shared/i18n/types'
+import { useT } from '../i18n/useT'
+import { useAppStore } from '../store/useAppStore'
 import styles from './SettingsModal.module.css'
 
 export default function SettingsModal({ onClose }: { onClose: () => void }): JSX.Element {
@@ -15,8 +15,20 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): JSX
   ]
 
   return (
-    <div className={styles.backdrop} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    // biome-ignore lint/a11y/noStaticElementInteractions: modal backdrop closes on click/Escape
+    <div
+      className={styles.backdrop}
+      onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onClose()
+      }}
+    >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: modal panel stops event propagation */}
+      <div
+        className={styles.modal}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <h2 className={styles.title}>{t('settings.title')}</h2>
         <label className={styles.row}>
           <span>{t('settings.language')}</span>
@@ -31,7 +43,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): JSX
             ))}
           </select>
         </label>
-        <button className={styles.close} onClick={onClose}>
+        <button type="button" className={styles.close} onClick={onClose}>
           {t('common.close')}
         </button>
       </div>

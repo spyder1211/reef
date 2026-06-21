@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { systemLocaleFromElectron, resolveLocale } from './resolveLocale'
+import { describe, expect, it } from 'vitest'
+import { resolveLocale, systemLocaleFromElectron } from './resolveLocale'
 
 describe('systemLocaleFromElectron', () => {
   it('ja で始まれば ja', () => {

@@ -1,4 +1,4 @@
-import { writeFileSync, chmodSync, renameSync } from 'node:fs'
+import { chmodSync, renameSync, writeFileSync } from 'node:fs'
 
 // 所有者のみ読み書き可（0o600）で、かつアトミックにファイルを書き込む。
 // - 一時ファイルへ 0o600 で書いてから renameSync で置換する。これにより

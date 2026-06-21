@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { useAppStore } from '../store/useAppStore'
 import { useT } from '../i18n/useT'
+import { useAppStore } from '../store/useAppStore'
 import styles from './ExportMenu.module.css'
 
 type Scope = 'page' | 'all'
@@ -56,26 +56,40 @@ export default function ExportMenu({ disabled }: { disabled: boolean }): JSX.Ele
 
   // wrap 内の mousedown を止め、ボタン/項目クリックで即座に閉じないようにする。
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: wrapper div prevents mousedown bubbling to close parent
     <div className={styles.wrap} onMouseDown={(e) => e.stopPropagation()}>
       {msg && <span className={styles.msg}>{msg}</span>}
-      <button className={styles.btn} disabled={disabled || busy} onClick={() => setOpen((v) => !v)}>
+      <button
+        type="button"
+        className={styles.btn}
+        disabled={disabled || busy}
+        onClick={() => setOpen((v) => !v)}
+      >
         {t('workspace.exportBtn')}
       </button>
       {open && (
         <div className={styles.menu}>
-          <div className={styles.item} onClick={() => void run('page', 'file')}>
+          <button type="button" className={styles.item} onClick={() => void run('page', 'file')}>
             {t('workspace.exportPageFile')}
-          </div>
-          <div className={styles.item} onClick={() => void run('page', 'clipboard')}>
+          </button>
+          <button
+            type="button"
+            className={styles.item}
+            onClick={() => void run('page', 'clipboard')}
+          >
             {t('workspace.exportPageClip')}
-          </div>
+          </button>
           <div className={styles.sep} />
-          <div className={styles.item} onClick={() => void run('all', 'file')}>
+          <button type="button" className={styles.item} onClick={() => void run('all', 'file')}>
             {t('workspace.exportAllFile')}
-          </div>
-          <div className={styles.item} onClick={() => void run('all', 'clipboard')}>
+          </button>
+          <button
+            type="button"
+            className={styles.item}
+            onClick={() => void run('all', 'clipboard')}
+          >
             {t('workspace.exportAllClip')}
-          </div>
+          </button>
         </div>
       )}
     </div>

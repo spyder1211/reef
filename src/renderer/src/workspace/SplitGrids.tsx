@@ -1,6 +1,6 @@
-import { useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
-import ResultsGrid from './ResultsGrid'
+import { type MouseEvent as ReactMouseEvent, useRef, useState } from 'react'
 import { useT } from '../i18n/useT'
+import ResultsGrid from './ResultsGrid'
 import styles from './SplitGrids.module.css'
 
 // 同じアクティブタブを左右2枚の ResultsGrid で表示する。両者とも store の activeTab を読むため
@@ -38,6 +38,7 @@ export default function SplitGrids(): JSX.Element {
       <div className={styles.pane} style={{ flex: `0 0 ${leftPct}%` }}>
         <ResultsGrid />
       </div>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: resize divider handles only pointer events */}
       <div className={styles.divider} onMouseDown={startDrag} title={t('workspace.splitDivider')} />
       <div className={styles.pane} style={{ flex: 1 }}>
         <ResultsGrid />

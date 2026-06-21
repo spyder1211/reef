@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useAppStore } from '../store/useAppStore'
-import { useT } from '../i18n/useT'
-import SettingsModal from './SettingsModal'
 import appIcon from '../assets/app-icon.png'
+import { useT } from '../i18n/useT'
+import { useAppStore } from '../store/useAppStore'
 import styles from './AppRail.module.css'
+import SettingsModal from './SettingsModal'
 
 export default function AppRail(): JSX.Element {
   const { t } = useT()
@@ -15,10 +15,10 @@ export default function AppRail(): JSX.Element {
       <div className={styles.name}>Reef</div>
       <div className={styles.version}>Version {__APP_VERSION__}</div>
       <div className={styles.spacer} />
-      <button className={styles.railBtn} onClick={() => openForm()}>
+      <button type="button" className={styles.railBtn} onClick={() => openForm()}>
         ＋ {t('home.newConnection')}
       </button>
-      <button className={styles.railBtn} onClick={() => setSettingsOpen(true)}>
+      <button type="button" className={styles.railBtn} onClick={() => setSettingsOpen(true)}>
         ⚙ {t('home.settings')}
       </button>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}

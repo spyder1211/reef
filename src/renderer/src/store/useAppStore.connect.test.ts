@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { useAppStore } from './useAppStore'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ConnectionProfile, ConnectionTag } from '../../../shared/types'
+import { useAppStore } from './useAppStore'
 
 function profile(tag: ConnectionTag): ConnectionProfile {
   return { id: 'p1', name: 'prod-db', tag, host: 'db', port: 3306, user: 'root' }

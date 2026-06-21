@@ -1,11 +1,11 @@
+import { randomUUID } from 'node:crypto'
+import { chmodSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { app, safeStorage } from 'electron'
-import { randomUUID } from 'crypto'
-import { readFileSync, existsSync, mkdirSync, chmodSync } from 'fs'
-import { writeFileSecure } from '../util/writeFileSecure'
-import { join, dirname } from 'path'
-import { ProfileStore, type StoreDeps, type StoredDoc, type StoredProfile } from './ProfileStore'
-import { GroupStore } from './GroupStore'
 import type { ConnectionGroup } from '../../shared/types'
+import { writeFileSecure } from '../util/writeFileSecure'
+import { GroupStore } from './GroupStore'
+import { ProfileStore, type StoreDeps, type StoredDoc, type StoredProfile } from './ProfileStore'
 
 export function createConnectionStores(): { profileStore: ProfileStore; groupStore: GroupStore } {
   const filePath = join(app.getPath('userData'), 'connections.json')

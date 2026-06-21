@@ -11,10 +11,7 @@ export function filterTables(tables: string[], query: string): string[] {
 // 最初の一致範囲 [start, end) を返す（ハイライト描画用）。
 // query が空／空白のみ、または一致しない場合は null。
 // indexOf ベースのため正規表現エスケープ不要（特殊文字も literal 扱い）。
-export function matchRange(
-  name: string,
-  query: string
-): { start: number; end: number } | null {
+export function matchRange(name: string, query: string): { start: number; end: number } | null {
   const q = query.trim().toLowerCase()
   if (q === '') return null
   const start = name.toLowerCase().indexOf(q)

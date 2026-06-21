@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { GroupStore } from './GroupStore'
 import { ProfileStore, type StoreDeps, type StoredDoc } from './ProfileStore'
 
@@ -10,7 +10,11 @@ function freshDeps(): StoreDeps {
     persist: (d) => {
       doc = d
     },
-    secret: { isAvailable: () => true, encrypt: (s) => `enc:${s}`, decrypt: (s) => s.replace(/^enc:/, '') },
+    secret: {
+      isAvailable: () => true,
+      encrypt: (s) => `enc:${s}`,
+      decrypt: (s) => s.replace(/^enc:/, '')
+    },
     genId: () => `id-${++counter}`
   }
 }
@@ -45,7 +49,7 @@ describe('GroupStore', () => {
   })
 
   it('存在しない id の rename は no-op', () => {
-    const a = g.create('A')
+    const _a = g.create('A')
     expect(() => g.rename('nope', 'X')).not.toThrow()
     expect(g.list()[0].name).toBe('A')
   })
@@ -59,7 +63,7 @@ describe('GroupStore', () => {
   })
 
   it('reorder に含まれない既存グループは末尾に温存', () => {
-    const a = g.create('A')
+    const _a = g.create('A')
     const b = g.create('B')
     g.reorder([b.id]) // a を省略
     const names = g.list().map((x) => x.name)
@@ -69,7 +73,14 @@ describe('GroupStore', () => {
   it('delete でグループが消え、所属接続の groupId が外れる（未分類化）', () => {
     const profiles = new ProfileStore(deps)
     const group = g.create('A')
-    const p = profiles.save({ name: 'p', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'pw' })
+    const p = profiles.save({
+      name: 'p',
+      tag: 'local',
+      host: 'h',
+      port: 3306,
+      user: 'u',
+      password: 'pw'
+    })
     profiles.move(p.id, group.id)
     expect(profiles.list()[0].groupId).toBe(group.id)
 

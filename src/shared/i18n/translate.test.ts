@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { translate, selectPlural } from './translate'
+import { describe, expect, it } from 'vitest'
+import { selectPlural, translate } from './translate'
 
 const cat = {
   'home.newConnection': 'New Connection',

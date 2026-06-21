@@ -32,14 +32,16 @@ export const ja: Record<TranslationKey, string> = {
   'dialog.dumpSaved.message': 'SQL ダンプを保存しました',
   'dialog.dumpSaved.detail': '{path}\n{tables} テーブル / {rows} 行',
   'dialog.dumpFailed.message': 'SQL ダンプに失敗しました',
-  'dialog.dumpFailed.detail': '{message}\n部分的に書き込まれたファイルが残っている可能性があります。',
+  'dialog.dumpFailed.detail':
+    '{message}\n部分的に書き込まれたファイルが残っている可能性があります。',
   'connectionGroup.collapseTitle': '折り畳む',
   'connectionGroup.expandTitle': '展開する',
   'connectionGroup.other': 'その他',
   'connectionGroup.ungrouped': '未分類',
   'connectionGroup.renameGroup': 'グループ名を変更',
   'connectionGroup.deleteGroup': 'グループを削除',
-  'connectionGroup.deleteConfirm': 'グループ「{name}」を削除します。中の接続は未分類へ移動します。よろしいですか？',
+  'connectionGroup.deleteConfirm':
+    'グループ「{name}」を削除します。中の接続は未分類へ移動します。よろしいですか？',
   'connectionForm.title': 'MySQL 接続',
   'connectionForm.name': '名前',
   'connectionForm.tag': 'タグ',
@@ -54,7 +56,8 @@ export const ja: Record<TranslationKey, string> = {
   'connectionForm.passphrase': 'パスフレーズ',
   'connectionForm.leaveBlankToKeep': '（変更しない場合は空欄）',
   'connectionForm.passphraseOptional': '（任意）',
-  'connectionForm.encWarn': 'この環境では認証情報（パスワード・SSH 秘匿値）を暗号化保存できないため、保存されません。',
+  'connectionForm.encWarn':
+    'この環境では認証情報（パスワード・SSH 秘匿値）を暗号化保存できないため、保存されません。',
   'connectionForm.sslNote': 'SSL は今後対応',
   'connectionForm.testIdle': 'テスト',
   'connectionForm.testTesting': 'テスト中…',
@@ -98,7 +101,8 @@ export const ja: Record<TranslationKey, string> = {
   'workspace.resultEmpty': '結果なし（{count} 行）',
   'workspace.autoLimitBanner': '先頭 {limit} 件を表示中（自動LIMIT・全件ではありません）',
   'workspace.autoLimitRerun': '自動LIMITを外して再実行',
-  'workspace.truncatedBanner': '結果が大きいため先頭 {limit} 件で打ち切りました。全件はCSVエクスポートを使用してください。',
+  'workspace.truncatedBanner':
+    '結果が大きいため先頭 {limit} 件で打ち切りました。全件はCSVエクスポートを使用してください。',
   'workspace.quickFilterEq': '= この値で絞り込む',
   'workspace.quickFilterNeq': '≠ この値',
   'workspace.quickFilterContains': '含む',
@@ -128,7 +132,8 @@ export const ja: Record<TranslationKey, string> = {
   'workspace.detailTitle': 'レコード詳細',
   'workspace.detailInsertHint': '新規行はグリッドで編集してください',
   'workspace.detailSelectHint': '行を選択してください',
-  'workspace.detailDeletedHint': '削除予定の行です。取り消しはグリッドの右クリックメニューから行えます。',
+  'workspace.detailDeletedHint':
+    '削除予定の行です。取り消しはグリッドの右クリックメニューから行えます。',
   'workspace.detailSetNull': 'NULL に設定',
   'workspace.detailJsonExpand': 'JSON を整形表示',
   'workspace.detailJsonCollapse': 'JSON 整形を閉じる',
@@ -165,7 +170,8 @@ export const ja: Record<TranslationKey, string> = {
   'workspace.importFileLabel': 'ファイル',
   'workspace.importSizeLabel': 'サイズ',
   'workspace.importNoDb': '(未選択)',
-  'workspace.importWarn': 'この dump は DROP / CREATE / INSERT を含む可能性があり、対象 DB の既存データを上書きします。MySQL の DDL は暗黙コミットされるため、途中で失敗してもそこまでの変更はロールバックされません。',
+  'workspace.importWarn':
+    'この dump は DROP / CREATE / INSERT を含む可能性があり、対象 DB の既存データを上書きします。MySQL の DDL は暗黙コミットされるため、途中で失敗してもそこまでの変更はロールバックされません。',
   'workspace.importRun': '実行する',
   'workspace.importProgressLabel': '進捗',
   'workspace.importExecutedLabel': '実行済み',
@@ -179,8 +185,10 @@ export const ja: Record<TranslationKey, string> = {
   'store.confirmDiscard': '未コミットの変更があります。破棄して移動しますか？',
   'store.confirmDiscardReturn': '未コミットの変更があります。破棄して接続一覧に戻りますか？',
   'store.confirmDiscardClose': '未コミットの変更があります。破棄してタブを閉じますか？',
-  'store.confirmProdConnect': '「{name}」は本番環境（production）です。\n\n操作ミスは本番データに直接影響します。十分に注意してください。\n\n接続しますか？',
-  'store.confirmTruncate': 'テーブル「{name}」を空にします。全データが削除され、取り消せません。よろしいですか？',
+  'store.confirmProdConnect':
+    '「{name}」は本番環境（production）です。\n\n操作ミスは本番データに直接影響します。十分に注意してください。\n\n接続しますか？',
+  'store.confirmTruncate':
+    'テーブル「{name}」を空にします。全データが削除され、取り消せません。よろしいですか？',
   'store.confirmDrop': 'テーブル「{name}」を削除します。この操作は取り消せません。よろしいですか？',
   'store.confirmExportLarge': '{count} 件をエクスポートします。よろしいですか？',
   'store.exportNoResult': 'エクスポートできる結果がありません。',
@@ -193,7 +201,8 @@ export const ja: Record<TranslationKey, string> = {
   'dialog.production.confirm': '実行する',
   'dialog.production.message': '本番環境（{conn}）で「{op}」を実行しようとしています。',
   'dialog.production.detail': '本番データに直接影響します。よろしいですか？',
-  'dialog.production.detailCatastrophic': '本番データを破壊・置換する可能性があります。十分に確認してください。',
+  'dialog.production.detailCatastrophic':
+    '本番データを破壊・置換する可能性があります。十分に確認してください。',
   'dialog.production.checkboxLabel': '本番だと理解した上で実行する',
   'error.hostRequired': 'host は必須です',
   'error.portRange': 'port は 1〜65535 の範囲で指定してください',

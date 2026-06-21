@@ -1,11 +1,11 @@
 import { ipcMain } from 'electron'
+import type { ApiResult, ImportSummary } from '../../shared/types'
 import type { ConnectionManager } from '../connection/ConnectionManager'
 import { normalizeDbError } from '../connection/normalizeDbError'
-import type { ApiResult, ImportSummary } from '../../shared/types'
-import { importSqlDump } from './SqlImporter'
-import { consumePendingImport, isImporting, setImporting } from './importState'
 import { guardProductionTier } from '../guard/productionGuard'
 import { t } from '../i18n'
+import { consumePendingImport, isImporting, setImporting } from './importState'
+import { importSqlDump } from './SqlImporter'
 
 // 進捗 push の throttle 間隔（ミリ秒）。大きな dump で IPC を溢れさせない。
 const PROGRESS_THROTTLE_MS = 100

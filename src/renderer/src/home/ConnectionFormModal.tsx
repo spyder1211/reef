@@ -1,17 +1,25 @@
-import { useState, useEffect, type ReactNode } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import type {
   AppError,
   ConnectionProfileInput,
   ConnectionTag,
   SshSettings
 } from '../../../shared/types'
-import { useAppStore } from '../store/useAppStore'
 import { useT } from '../i18n/useT'
-import { TAG_ORDER, TAG_COLORS, TAG_LABELS } from '../lib/tags'
+import { TAG_COLORS, TAG_LABELS, TAG_ORDER } from '../lib/tags'
+import { useAppStore } from '../store/useAppStore'
 import styles from './ConnectionFormModal.module.css'
 
 function initialForm(): ConnectionProfileInput {
-  return { name: '', tag: 'local', host: '127.0.0.1', port: 3306, user: 'root', password: '', database: '' }
+  return {
+    name: '',
+    tag: 'local',
+    host: '127.0.0.1',
+    port: 3306,
+    user: 'root',
+    password: '',
+    database: ''
+  }
 }
 
 // SSH 設定の既定値（チェックボックス ON 時の初期状態）。
@@ -51,7 +59,10 @@ export default function ConnectionFormModal(): JSX.Element {
     })
   }, [])
 
-  function update<K extends keyof ConnectionProfileInput>(key: K, value: ConnectionProfileInput[K]): void {
+  function update<K extends keyof ConnectionProfileInput>(
+    key: K,
+    value: ConnectionProfileInput[K]
+  ): void {
     setForm((f) => ({ ...f, [key]: value }))
     setTestState('idle')
   }
@@ -117,12 +128,30 @@ export default function ConnectionFormModal(): JSX.Element {
         : t('connectionForm.testIdle')
 
   return (
-    <div className={styles.backdrop} onClick={closeForm}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    // biome-ignore lint/a11y/noStaticElementInteractions: modal backdrop closes on click/Escape
+    <div
+      className={styles.backdrop}
+      onClick={closeForm}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') closeForm()
+      }}
+    >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: modal panel stops event propagation */}
+      <div
+        className={styles.modal}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <div className={styles.title}>{t('connectionForm.title')}</div>
 
         <Field label={t('connectionForm.name')}>
-          <input className={styles.input} value={form.name} onChange={(e) => update('name', e.target.value)} autoFocus />
+          <input
+            className={styles.input}
+            value={form.name}
+            onChange={(e) => update('name', e.target.value)}
+            // biome-ignore lint/a11y/noAutofocus: intentional focus management
+            autoFocus
+          />
         </Field>
 
         <Field label={t('connectionForm.tag')}>
@@ -134,7 +163,9 @@ export default function ConnectionFormModal(): JSX.Element {
                   key={tag}
                   type="button"
                   className={`${styles.tagOption} ${selected ? styles.tagSelected : ''}`}
-                  style={selected ? { borderColor: TAG_COLORS[tag], color: TAG_COLORS[tag] } : undefined}
+                  style={
+                    selected ? { borderColor: TAG_COLORS[tag], color: TAG_COLORS[tag] } : undefined
+                  }
                   onClick={() => update('tag', tag as ConnectionTag)}
                 >
                   <span className={styles.tagDot} style={{ background: TAG_COLORS[tag] }} />
@@ -146,7 +177,11 @@ export default function ConnectionFormModal(): JSX.Element {
         </Field>
 
         <Field label="Host">
-          <input className={styles.input} value={form.host} onChange={(e) => update('host', e.target.value)} />
+          <input
+            className={styles.input}
+            value={form.host}
+            onChange={(e) => update('host', e.target.value)}
+          />
           <input
             className={styles.port}
             type="number"
@@ -156,7 +191,11 @@ export default function ConnectionFormModal(): JSX.Element {
         </Field>
 
         <Field label="User">
-          <input className={styles.input} value={form.user} onChange={(e) => update('user', e.target.value)} />
+          <input
+            className={styles.input}
+            value={form.user}
+            onChange={(e) => update('user', e.target.value)}
+          />
         </Field>
 
         <Field label="Password">
@@ -168,11 +207,7 @@ export default function ConnectionFormModal(): JSX.Element {
           />
         </Field>
 
-        {!encAvailable && (
-          <div className={styles.encWarn}>
-            {t('connectionForm.encWarn')}
-          </div>
-        )}
+        {!encAvailable && <div className={styles.encWarn}>{t('connectionForm.encWarn')}</div>}
 
         <Field label="Database">
           <input
@@ -270,7 +305,11 @@ export default function ConnectionFormModal(): JSX.Element {
                     className={styles.input}
                     type="password"
                     value={ssh.passphrase ?? ''}
-                    placeholder={editing ? t('connectionForm.leaveBlankToKeep') : t('connectionForm.passphraseOptional')}
+                    placeholder={
+                      editing
+                        ? t('connectionForm.leaveBlankToKeep')
+                        : t('connectionForm.passphraseOptional')
+                    }
                     onChange={(e) => updateSsh('passphrase', e.target.value)}
                   />
                 </Field>
@@ -288,13 +327,13 @@ export default function ConnectionFormModal(): JSX.Element {
         )}
 
         <div className={styles.actions}>
-          <button className={styles.btn} onClick={() => void handleSave()}>
+          <button type="button" className={styles.btn} onClick={() => void handleSave()}>
             {t('common.save')}
           </button>
-          <button className={styles.btn} onClick={() => void handleTest()}>
+          <button type="button" className={styles.btn} onClick={() => void handleTest()}>
             {testLabel}
           </button>
-          <button className={styles.btnPrimary} onClick={() => void handleConnect()}>
+          <button type="button" className={styles.btnPrimary} onClick={() => void handleConnect()}>
             {t('common.connect')}
           </button>
         </div>

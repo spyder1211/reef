@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { useAppStore } from '../store/useAppStore'
 import { useT } from '../i18n/useT'
+import { useAppStore } from '../store/useAppStore'
 import styles from './ExportMenu.module.css'
 
 // SQL タブの実行結果を CSV 保存するボタン。ExportMenu と同じ一時メッセージ表示を使う。
@@ -46,7 +46,12 @@ export default function SqlExportButton(): JSX.Element {
   return (
     <div className={styles.wrap}>
       {msg && <span className={styles.msg}>{msg}</span>}
-      <button className={styles.btn} disabled={disabled || busy} onClick={() => void run()}>
+      <button
+        type="button"
+        className={styles.btn}
+        disabled={disabled || busy}
+        onClick={() => void run()}
+      >
         {t('workspace.csvSaveBtn')}
       </button>
     </div>

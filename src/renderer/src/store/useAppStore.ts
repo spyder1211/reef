@@ -1,33 +1,38 @@
 import { create } from 'zustand'
+import { createTranslator } from '../../../shared/i18n'
+import type { Locale, LocalePreference } from '../../../shared/i18n/types'
 import type {
+  ApiResult,
+  AppError,
+  ConnectionGroup,
   ConnectionProfile,
   ConnectionProfileInput,
-  ConnectionGroup,
-  QueryResult,
-  AppError,
-  ApiResult,
   FilterCondition,
   FilterOperator,
-  TableSort,
-  RowEdit,
   PendingInsert,
-  TableSchema
+  QueryResult,
+  RowEdit,
+  TableSchema,
+  TableSort
 } from '../../../shared/types'
-import type { Locale, LocalePreference } from '../../../shared/i18n/types'
-import { createTranslator } from '../../../shared/i18n'
-import { buildFilteredQuery, buildCountQuery } from './filterBuilder'
 import { toCsv } from '../lib/csv'
 import {
-  buildUpdateStatements,
-  buildInsertStatements,
   buildDeleteStatements,
+  buildDropStatement,
+  buildInsertStatements,
   buildTruncateStatement,
-  buildDropStatement
+  buildUpdateStatements
 } from './editBuilder'
-import { rowKeyOf, pkValuesOf } from './rowKey'
-import { pickNextActiveTabId, hasUncommittedChanges, isProductionProfile, isCancelled } from './helpers'
-import { cycleSort } from './pager'
 import { singleStatementOf } from './explain'
+import { buildCountQuery, buildFilteredQuery } from './filterBuilder'
+import {
+  hasUncommittedChanges,
+  isCancelled,
+  isProductionProfile,
+  pickNextActiveTabId
+} from './helpers'
+import { cycleSort } from './pager'
+import { pkValuesOf, rowKeyOf } from './rowKey'
 
 interface BaseTab {
   id: string
@@ -53,8 +58,8 @@ export interface TableTab extends BaseTab {
   total: number | null // COUNT(*) 由来。未取得は null
   primaryKey: string[] // 主キー列（空 = 読み取り専用）
   edits: Record<string, RowEdit> // 行キー → ステージング中の変更。空 = 変更なし
-  inserts: PendingInsert[]                          // INSERT ステージング中の行リスト
-  deletes: Record<string, Record<string, unknown>>  // 行キー → pk値（DELETE ステージング）
+  inserts: PendingInsert[] // INSERT ステージング中の行リスト
+  deletes: Record<string, Record<string, unknown>> // 行キー → pk値（DELETE ステージング）
   editError: AppError | null // コミット失敗のエラー（EditBar に表示）
   selectedRowIndices: number[] // 選択中の行インデックス（統一インデックス空間: 結果行→INSERT行）
   selectionAnchor: number | null // Shift 範囲選択の起点。null = 未設定
@@ -180,7 +185,12 @@ interface AppState {
   clearFilters: (tabId: string) => void
   applyFilters: (tabId: string) => Promise<void>
   duplicateFilter: (tabId: string, filterId: string) => void
-  quickFilter: (tabId: string, column: string, operator: FilterOperator, value: unknown) => Promise<void>
+  quickFilter: (
+    tabId: string,
+    column: string,
+    operator: FilterOperator,
+    value: unknown
+  ) => Promise<void>
   setSort: (tabId: string, column: string) => Promise<void>
   setPage: (tabId: string, page: number) => Promise<void>
   setPageSize: (tabId: string, size: number) => Promise<void>
@@ -236,7 +246,13 @@ export const useAppStore = create<AppState>((set, get) => {
     set({
       tabs: get().tabs.map((t) =>
         t.id === tabId
-          ? { ...t, running: false, canceling: false, result: null, error: { code: 'CLIENT_ERROR', message } }
+          ? {
+              ...t,
+              running: false,
+              canceling: false,
+              result: null,
+              error: { code: 'CLIENT_ERROR', message }
+            }
           : t
       )
     })
@@ -264,7 +280,9 @@ export const useAppStore = create<AppState>((set, get) => {
         // 本番ガードでキャンセル: 実行前なので結果は変えず running だけ戻す。
         // SqlTab は patchTableTab（table 専用）が使えないため直接 set で running だけ戻す。
         set({
-          tabs: get().tabs.map((t) => (t.id === tabId ? { ...t, running: false, canceling: false } : t))
+          tabs: get().tabs.map((t) =>
+            t.id === tabId ? { ...t, running: false, canceling: false } : t
+          )
         })
         return
       }
@@ -317,9 +335,18 @@ export const useAppStore = create<AppState>((set, get) => {
       set({
         tabs: get().tabs.map((t) => {
           if (t.id !== tabId || t.kind !== 'table') return t
-          if (!res.ok) return { ...t, running: false, canceling: false, result: null, error: res.error }
+          if (!res.ok)
+            return { ...t, running: false, canceling: false, result: null, error: res.error }
           const columns = t.columns.length > 0 ? t.columns : res.data.columns.map((col) => col.name)
-          return { ...t, running: false, canceling: false, result: res.data, error: null, columns, total }
+          return {
+            ...t,
+            running: false,
+            canceling: false,
+            result: res.data,
+            error: null,
+            columns,
+            total
+          }
         })
       })
     } catch (err) {
@@ -331,7 +358,7 @@ export const useAppStore = create<AppState>((set, get) => {
   // CANCELLED で解決した時に runSql/runTable 側で行われる（ここでは canceling だけ立てる）。
   async function cancelTab(tabId: string): Promise<void> {
     const tab = get().tabs.find((t) => t.id === tabId)
-    if (!tab || !tab.running || tab.canceling) return
+    if (!tab?.running || tab.canceling) return
     set({ tabs: get().tabs.map((t) => (t.id === tabId ? { ...t, canceling: true } : t)) })
     await window.api.cancelQuery(tabId)
   }
@@ -530,7 +557,7 @@ export const useAppStore = create<AppState>((set, get) => {
     // 履歴を汚さないよう queryScript ではなく query を直接使う。
     async explainActiveTab() {
       const tab = get().tabs.find((t) => t.id === get().activeTabId)
-      if (!tab || tab.kind !== 'sql') return
+      if (tab?.kind !== 'sql') return
       const stmt = singleStatementOf(tab.sql)
       if (!stmt) {
         const { t } = createTranslator(get().locale)
@@ -540,7 +567,11 @@ export const useAppStore = create<AppState>((set, get) => {
               ? {
                   ...tt,
                   result: null,
-                  error: { code: 'EXPLAIN_MULTI', message: t('store.explainMultiError'), messageKey: 'store.explainMultiError' }
+                  error: {
+                    code: 'EXPLAIN_MULTI',
+                    message: t('store.explainMultiError'),
+                    messageKey: 'store.explainMultiError'
+                  }
                 }
               : tt
           )
@@ -588,7 +619,7 @@ export const useAppStore = create<AppState>((set, get) => {
     // 注記の「自動LIMITを外して再実行」ボタン用。同じ SQL を skipAutoLimit=true で再実行する。
     async rerunWithoutAutoLimit(tabId: string) {
       const tab = get().tabs.find((t) => t.id === tabId)
-      if (!tab || tab.kind !== 'sql') return
+      if (tab?.kind !== 'sql') return
       await runSql(tabId, tab.sql, { skipAutoLimit: true })
     },
 
@@ -624,9 +655,7 @@ export const useAppStore = create<AppState>((set, get) => {
       if (view === 'structure' && !tab.schema) {
         const res = await window.api.tableSchema(tab.tableName)
         patchTableTab(tabId, (t) =>
-          res.ok
-            ? { ...t, schema: res.data, schemaError: null }
-            : { ...t, schemaError: res.error }
+          res.ok ? { ...t, schema: res.data, schemaError: null } : { ...t, schemaError: res.error }
         )
       }
     },
@@ -656,7 +685,8 @@ export const useAppStore = create<AppState>((set, get) => {
             inserts: [],
             deletes: {},
             editError: null,
-            selectedRowIndices: [], selectionAnchor: null,
+            selectedRowIndices: [],
+            selectionAnchor: null,
             page: 0
           }))
           await runTable(tab.id, { recount: true })
@@ -721,7 +751,17 @@ export const useAppStore = create<AppState>((set, get) => {
     async applyFilters(tabId) {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
       if (!tab || !confirmDiscard(tab)) return
-      patchTableTab(tabId, (t) => ({ ...t, appliedFilters: t.filters, page: 0, edits: {}, inserts: [], deletes: {}, editError: null, selectedRowIndices: [], selectionAnchor: null }))
+      patchTableTab(tabId, (t) => ({
+        ...t,
+        appliedFilters: t.filters,
+        page: 0,
+        edits: {},
+        inserts: [],
+        deletes: {},
+        editError: null,
+        selectedRowIndices: [],
+        selectionAnchor: null
+      }))
       await runTable(tabId, { recount: true })
     },
 
@@ -760,7 +800,8 @@ export const useAppStore = create<AppState>((set, get) => {
           inserts: [],
           deletes: {},
           editError: null,
-          selectedRowIndices: [], selectionAnchor: null
+          selectedRowIndices: [],
+          selectionAnchor: null
         }
       })
       await runTable(tabId, { recount: true })
@@ -777,7 +818,8 @@ export const useAppStore = create<AppState>((set, get) => {
         inserts: [],
         deletes: {},
         editError: null,
-        selectedRowIndices: [], selectionAnchor: null
+        selectedRowIndices: [],
+        selectionAnchor: null
       }))
       await runTable(tabId, { recount: false })
     },
@@ -785,7 +827,16 @@ export const useAppStore = create<AppState>((set, get) => {
     async setPage(tabId, page) {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
       if (!tab || !confirmDiscard(tab)) return
-      patchTableTab(tabId, (t) => ({ ...t, page: Math.max(0, page), edits: {}, inserts: [], deletes: {}, editError: null, selectedRowIndices: [], selectionAnchor: null }))
+      patchTableTab(tabId, (t) => ({
+        ...t,
+        page: Math.max(0, page),
+        edits: {},
+        inserts: [],
+        deletes: {},
+        editError: null,
+        selectedRowIndices: [],
+        selectionAnchor: null
+      }))
       await runTable(tabId, { recount: false })
     },
 
@@ -793,7 +844,17 @@ export const useAppStore = create<AppState>((set, get) => {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
       if (!tab || !confirmDiscard(tab)) return
       const safe = [50, 100, 500].includes(size) ? size : 100
-      patchTableTab(tabId, (t) => ({ ...t, pageSize: safe, page: 0, edits: {}, inserts: [], deletes: {}, editError: null, selectedRowIndices: [], selectionAnchor: null }))
+      patchTableTab(tabId, (t) => ({
+        ...t,
+        pageSize: safe,
+        page: 0,
+        edits: {},
+        inserts: [],
+        deletes: {},
+        editError: null,
+        selectedRowIndices: [],
+        selectionAnchor: null
+      }))
       await runTable(tabId, { recount: false })
     },
 
@@ -842,7 +903,7 @@ export const useAppStore = create<AppState>((set, get) => {
       patchTableTab(tabId, (t) => ({
         ...t,
         inserts: [...t.inserts, { localId, values: {} }],
-        editError: null,
+        editError: null
       }))
     },
 
@@ -850,11 +911,9 @@ export const useAppStore = create<AppState>((set, get) => {
       patchTableTab(tabId, (t) => ({
         ...t,
         inserts: t.inserts.map((ins) =>
-          ins.localId === localId
-            ? { ...ins, values: { ...ins.values, [column]: value } }
-            : ins
+          ins.localId === localId ? { ...ins, values: { ...ins.values, [column]: value } } : ins
         ),
-        editError: null,
+        editError: null
       }))
     },
 
@@ -863,8 +922,9 @@ export const useAppStore = create<AppState>((set, get) => {
         ...t,
         inserts: t.inserts.filter((ins) => ins.localId !== localId),
         // 破棄で INSERT 行の数が変わると selectedRowIndices が無効な位置を指すため選択を解除する。
-        selectedRowIndices: [], selectionAnchor: null,
-        editError: null,
+        selectedRowIndices: [],
+        selectionAnchor: null,
+        editError: null
       }))
     },
 
@@ -881,7 +941,7 @@ export const useAppStore = create<AppState>((set, get) => {
       const statements = [
         ...buildDeleteStatements(tab.tableName, tab.primaryKey, tab.deletes),
         ...buildUpdateStatements(tab.tableName, tab.primaryKey, Object.values(tab.edits)),
-        ...buildInsertStatements(tab.tableName, tab.inserts),
+        ...buildInsertStatements(tab.tableName, tab.inserts)
       ]
       if (statements.length === 0) {
         // ステージはあるが実行すべき文が無い（例: 空欄だけの INSERT 行）。
@@ -889,7 +949,11 @@ export const useAppStore = create<AppState>((set, get) => {
         const { t } = createTranslator(get().locale)
         patchTableTab(tabId, (tt) => ({
           ...tt,
-          editError: { code: 'CLIENT_ERROR', message: t('store.noInputToCommit'), messageKey: 'store.noInputToCommit' }
+          editError: {
+            code: 'CLIENT_ERROR',
+            message: t('store.noInputToCommit'),
+            messageKey: 'store.noInputToCommit'
+          }
         }))
         return
       }
@@ -913,7 +977,13 @@ export const useAppStore = create<AppState>((set, get) => {
           return
         }
         patchTableTab(tabId, (t) => ({
-          ...t, edits: {}, inserts: [], deletes: {}, editError: null, selectedRowIndices: [], selectionAnchor: null
+          ...t,
+          edits: {},
+          inserts: [],
+          deletes: {},
+          editError: null,
+          selectedRowIndices: [],
+          selectionAnchor: null
         }))
         await runTable(tabId, { recount: true }) // INSERT/DELETE は行数が変わる
       } catch (err) {
@@ -968,7 +1038,7 @@ export const useAppStore = create<AppState>((set, get) => {
     async exportCsv(tabId, opts) {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
       const { t } = createTranslator(get().locale)
-      if (!tab || !tab.result) {
+      if (!tab?.result) {
         return { ok: false, message: t('store.exportNoResult') }
       }
 
@@ -1039,7 +1109,7 @@ export const useAppStore = create<AppState>((set, get) => {
     async exportSqlResultCsv(tabId) {
       const { t } = createTranslator(get().locale)
       const tab = get().tabs.find((tt) => tt.id === tabId)
-      if (!tab || tab.kind !== 'sql' || !tab.result || tab.result.rows.length === 0) {
+      if (tab?.kind !== 'sql' || !tab.result || tab.result.rows.length === 0) {
         return { ok: false, message: t('store.exportSqlNoResult') }
       }
       const columns = tab.result.columns.map((c) => c.name)

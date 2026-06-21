@@ -1,20 +1,20 @@
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { app, BrowserWindow, Menu, session, shell } from 'electron'
-import { join } from 'path'
-import { existsSync } from 'fs'
-import { ConnectionManager } from './connection/ConnectionManager'
-import { QueryHistoryStore } from './history/QueryHistoryStore'
-import type { TunnelHolder } from './connection/connectWithTunnel'
-import { registerDbHandlers } from './ipc/registerDbHandlers'
-import { registerConnectionHandlers } from './ipc/registerConnectionHandlers'
-import { registerFileHandlers } from './ipc/registerFileHandlers'
-import { registerImportHandlers } from './import/registerImportHandlers'
-import { createConnectionStores } from './connection/createProfileStore'
-import { buildAppMenu } from './menu'
 import { CSP } from '../shared/csp'
-import { createSettingsStore } from './settings/createSettingsStore'
-import { registerI18nHandlers } from './ipc/registerI18nHandlers'
+import { resolveLocale, systemLocaleFromElectron } from '../shared/i18n/resolveLocale'
+import { ConnectionManager } from './connection/ConnectionManager'
+import type { TunnelHolder } from './connection/connectWithTunnel'
+import { createConnectionStores } from './connection/createProfileStore'
+import { QueryHistoryStore } from './history/QueryHistoryStore'
 import { setLocale } from './i18n'
-import { systemLocaleFromElectron, resolveLocale } from '../shared/i18n/resolveLocale'
+import { registerImportHandlers } from './import/registerImportHandlers'
+import { registerConnectionHandlers } from './ipc/registerConnectionHandlers'
+import { registerDbHandlers } from './ipc/registerDbHandlers'
+import { registerFileHandlers } from './ipc/registerFileHandlers'
+import { registerI18nHandlers } from './ipc/registerI18nHandlers'
+import { buildAppMenu } from './menu'
+import { createSettingsStore } from './settings/createSettingsStore'
 
 // アプリの表示名。macOS のアプリメニューやダイアログのタイトルに使われる。
 // dev/prod を問わず確実に反映させるため明示設定する（package.json の
@@ -23,7 +23,7 @@ app.setName('Reef')
 
 // dev モードの Dock アイコン。パッケージ版は .icns がバンドルに焼き込まれるため不要だが、
 // electron-vite dev では Electron 既定アイコンになるので、リポジトリの build/icon.png を使う。
-if (process.env['ELECTRON_RENDERER_URL'] && process.platform === 'darwin') {
+if (process.env.ELECTRON_RENDERER_URL && process.platform === 'darwin') {
   const devIcon = join(__dirname, '../../build/icon.png')
   if (existsSync(devIcon)) app.dock?.setIcon(devIcon)
 }
@@ -38,7 +38,7 @@ app.on('before-quit', () => {
 // レンダラからのアプリ外遷移・新規ウィンドウ生成を禁止する（防御的。現状アプリは遷移も window.open もしない）。
 app.on('web-contents-created', (_e, contents) => {
   contents.on('will-navigate', (event, url) => {
-    const devUrl = process.env['ELECTRON_RENDERER_URL']
+    const devUrl = process.env.ELECTRON_RENDERER_URL
     const sameApp = (devUrl && url.startsWith(devUrl)) || url.startsWith('file://')
     if (!sameApp) event.preventDefault() // アプリ外への遷移を禁止
   })
@@ -73,8 +73,8 @@ function createWindow(manager: ConnectionManager): void {
     }
   })
 
-  if (process.env['ELECTRON_RENDERER_URL']) {
-    win.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  if (process.env.ELECTRON_RENDERER_URL) {
+    win.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {
     win.loadFile(join(__dirname, '../renderer/index.html'))
   }
@@ -82,7 +82,7 @@ function createWindow(manager: ConnectionManager): void {
 
 app.whenReady().then(() => {
   // dev（Vite HMR）では CSP を付けない。本番ビルド（loadFile）でのみ strict CSP を付与する。
-  const isDev = !!process.env['ELECTRON_RENDERER_URL']
+  const isDev = !!process.env.ELECTRON_RENDERER_URL
   if (!isDev) {
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       callback({

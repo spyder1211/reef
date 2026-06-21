@@ -1,5 +1,5 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron'
-import { writeFile } from 'fs/promises'
+import { writeFile } from 'node:fs/promises'
+import { BrowserWindow, dialog, ipcMain } from 'electron'
 import type { ApiResult, SaveFileResult } from '../../shared/types'
 
 export function registerFileHandlers(): void {
@@ -19,7 +19,7 @@ export function registerFileHandlers(): void {
           return { ok: true, data: { canceled: true } }
         }
         // BOM を付与して UTF-8 で書き込む（Excel で日本語が文字化けしないように）
-        await writeFile(result.filePath, '\uFEFF' + content, 'utf-8')
+        await writeFile(result.filePath, `\uFEFF${content}`, 'utf-8')
         return { ok: true, data: { canceled: false, filePath: result.filePath } }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
@@ -33,8 +33,14 @@ export function registerFileHandlers(): void {
     try {
       const win = BrowserWindow.fromWebContents(e.sender) ?? BrowserWindow.getFocusedWindow()
       const result = win
-        ? await dialog.showOpenDialog(win, { properties: ['openFile'], title: 'SSH \u79D8\u5BC6\u9375\u3092\u9078\u629E' })
-        : await dialog.showOpenDialog({ properties: ['openFile'], title: 'SSH \u79D8\u5BC6\u9375\u3092\u9078\u629E' })
+        ? await dialog.showOpenDialog(win, {
+            properties: ['openFile'],
+            title: 'SSH \u79D8\u5BC6\u9375\u3092\u9078\u629E'
+          })
+        : await dialog.showOpenDialog({
+            properties: ['openFile'],
+            title: 'SSH \u79D8\u5BC6\u9375\u3092\u9078\u629E'
+          })
       if (result.canceled || result.filePaths.length === 0) {
         return { ok: true, data: { canceled: true } }
       }

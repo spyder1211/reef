@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { ConnectionProfile } from '../../../shared/types'
-import { useAppStore } from '../store/useAppStore'
-import { useT } from '../i18n/useT'
 import Avatar from '../components/Avatar'
 import Tag from '../components/Tag'
+import { useT } from '../i18n/useT'
+import { useAppStore } from '../store/useAppStore'
 import styles from './ConnectionRow.module.css'
 
 export default function ConnectionRow({ profile }: { profile: ConnectionProfile }): JSX.Element {
@@ -16,6 +16,7 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
   const sub = `${profile.host} : ${profile.database ?? profile.user}`
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: draggable connection row with double-click and context menu
     <div
       className={styles.row}
       draggable
@@ -37,8 +38,10 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
         </div>
         <div className={styles.sub}>{sub}</div>
       </div>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: actions container stops double-click propagation to parent row */}
       <div className={styles.actions} onDoubleClick={(e) => e.stopPropagation()}>
         <button
+          type="button"
           className={styles.action}
           onClick={(e) => {
             e.stopPropagation()
@@ -48,6 +51,7 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
           {t('common.edit')}
         </button>
         <button
+          type="button"
           className={styles.action}
           onClick={(e) => {
             e.stopPropagation()
@@ -57,6 +61,7 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
           {t('common.delete')}
         </button>
         <button
+          type="button"
           className={styles.connect}
           onClick={(e) => {
             e.stopPropagation()
@@ -69,14 +74,17 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
 
       {menu && (
         <>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop closes menu on mousedown */}
           <div className={styles.menuBackdrop} onMouseDown={() => setMenu(null)} />
           <div
+            role="menu"
             className={styles.menu}
             style={{ left: menu.x, top: menu.y }}
             onMouseDown={(e) => e.stopPropagation()}
             onDoubleClick={(e) => e.stopPropagation()}
           >
             <button
+              type="button"
               className={styles.menuItem}
               onClick={() => {
                 setMenu(null)
@@ -86,6 +94,7 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
               {t('common.duplicate')}
             </button>
             <button
+              type="button"
               className={styles.menuItem}
               onClick={() => {
                 setMenu(null)
@@ -96,6 +105,7 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
             </button>
             <div className={styles.menuSep} />
             <button
+              type="button"
               className={`${styles.menuItem} ${styles.danger}`}
               onClick={() => {
                 setMenu(null)

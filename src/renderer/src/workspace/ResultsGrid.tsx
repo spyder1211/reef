@@ -1,26 +1,21 @@
-import { useMemo, useRef, useState, useEffect } from 'react'
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  type ColumnDef
-} from '@tanstack/react-table'
-import type {
-  QueryResult,
-  TableSort,
-  RowEdit,
-  PendingInsert,
-  FilterOperator
-} from '../../../shared/types'
-import { DEFAULT_SQL_LIMIT, MAX_RESULT_ROWS } from '../../../shared/queryLimits'
+import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { estimateColumnWidths, ROW_HEIGHT } from './columnWidths'
-import { useAppStore } from '../store/useAppStore'
-import { rowKeyOf, pkValuesOf } from '../store/rowKey'
-import { toTsv } from '../lib/csv'
-import { deriveLead, nextArrowSelection } from './gridSelection'
-import { useT } from '../i18n/useT'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { TranslationKey } from '../../../shared/i18n'
+import { DEFAULT_SQL_LIMIT, MAX_RESULT_ROWS } from '../../../shared/queryLimits'
+import type {
+  FilterOperator,
+  PendingInsert,
+  QueryResult,
+  RowEdit,
+  TableSort
+} from '../../../shared/types'
+import { useT } from '../i18n/useT'
+import { toTsv } from '../lib/csv'
+import { pkValuesOf, rowKeyOf } from '../store/rowKey'
+import { useAppStore } from '../store/useAppStore'
+import { estimateColumnWidths, ROW_HEIGHT } from './columnWidths'
+import { deriveLead, nextArrowSelection } from './gridSelection'
 import styles from './ResultsGrid.module.css'
 
 type Row = Record<string, unknown>
@@ -56,6 +51,7 @@ export default function ResultsGrid(): JSX.Element {
       <div className={styles.runningBox}>
         <span>{t('workspace.running')}</span>
         <button
+          type="button"
           className={styles.stopButton}
           disabled={tab.canceling}
           onClick={() => void cancelTab(tab.id)}
@@ -67,7 +63,8 @@ export default function ResultsGrid(): JSX.Element {
   if (tab.error) {
     return (
       <div className={styles.errorBox}>
-        <b>{tab.error.code}</b>: {tab.error.messageKey ? t(tab.error.messageKey as TranslationKey) : tab.error.message}
+        <b>{tab.error.code}</b>:{' '}
+        {tab.error.messageKey ? t(tab.error.messageKey as TranslationKey) : tab.error.message}
       </div>
     )
   }
@@ -99,15 +96,17 @@ export default function ResultsGrid(): JSX.Element {
     tab.kind === 'sql' && tab.result?.autoLimited ? (
       <div className={styles.limitNotice}>
         <span>{t('workspace.autoLimitBanner', { limit: String(DEFAULT_SQL_LIMIT) })}</span>
-        <button className={styles.limitNoticeButton} onClick={() => void rerunWithoutAutoLimit(tab.id)}>
+        <button
+          type="button"
+          className={styles.limitNoticeButton}
+          onClick={() => void rerunWithoutAutoLimit(tab.id)}
+        >
           {t('workspace.autoLimitRerun')}
         </button>
       </div>
     ) : tab.kind === 'sql' && tab.result?.truncated ? (
       <div className={styles.limitNotice}>
-        <span>
-          {t('workspace.truncatedBanner', { limit: String(MAX_RESULT_ROWS) })}
-        </span>
+        <span>{t('workspace.truncatedBanner', { limit: String(MAX_RESULT_ROWS) })}</span>
       </div>
     ) : null
 
@@ -134,13 +133,9 @@ export default function ResultsGrid(): JSX.Element {
         }
         onRemoveInsert={editable ? (localId) => removeInsertRow(tab.id, localId) : undefined}
         onStageDeleteMany={
-          editable
-            ? (entries): void => stageDeleteMany(tab.id, entries)
-            : undefined
+          editable ? (entries): void => stageDeleteMany(tab.id, entries) : undefined
         }
-        onDuplicateRows={
-          editable ? (indices): void => duplicateRows(tab.id, indices) : undefined
-        }
+        onDuplicateRows={editable ? (indices): void => duplicateRows(tab.id, indices) : undefined}
         onQuickFilter={onQuickFilter}
       />
     </div>
@@ -286,13 +281,19 @@ function Grid({
   })
 
   if (result.columns.length === 0) {
-    return <div className={styles.placeholder}>{t('workspace.resultEmpty', { count: String(result.rowCount) })}</div>
+    return (
+      <div className={styles.placeholder}>
+        {t('workspace.resultEmpty', { count: String(result.rowCount) })}
+      </div>
+    )
   }
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: grid wrapper div handles keyboard navigation for the data grid
     <div
       ref={gridWrapRef}
       className={styles.gridWrap}
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: grid wrapper needs tabIndex for keyboard focus
       tabIndex={0}
       onKeyDown={(e) => {
         if (editing) return // セル編集中の入力を奪わない
@@ -373,8 +374,12 @@ function Grid({
             return (
               <>
                 {paddingTop > 0 && (
-                  <tr aria-hidden="true">
-                    <td className={styles.spacer} colSpan={result.columns.length} style={{ height: paddingTop }} />
+                  <tr>
+                    <td
+                      className={styles.spacer}
+                      colSpan={result.columns.length}
+                      style={{ height: paddingTop }}
+                    />
                   </tr>
                 )}
                 {virtualItems.map((vi) => {
@@ -401,8 +406,11 @@ function Grid({
                       {r.getVisibleCells().map((cell) => {
                         const colId = cell.column.id
                         const isDirty = rowEdit ? colId in rowEdit.values : false
-                        const value = isDirty ? rowEdit!.values[colId] : (cell.getValue() as unknown)
-                        const isEditingThis = editing?.rowKey === rowKey && editing?.column === colId
+                        const value = isDirty
+                          ? rowEdit?.values[colId]
+                          : (cell.getValue() as unknown)
+                        const isEditingThis =
+                          editing?.rowKey === rowKey && editing?.column === colId
 
                         const startEdit = (): void => {
                           if (!editable) return
@@ -440,7 +448,8 @@ function Grid({
                               onQuickFilter
                                 ? (e) => {
                                     e.preventDefault()
-                                    if (!selectedSet.has(r.index)) onSetSelection?.([r.index], r.index)
+                                    if (!selectedSet.has(r.index))
+                                      onSetSelection?.([r.index], r.index)
                                     setCtxMenu({
                                       kind: 'cell',
                                       x: e.clientX,
@@ -455,6 +464,7 @@ function Grid({
                             {isEditingThis ? (
                               <span className={styles.editWrap}>
                                 <input
+                                  // biome-ignore lint/a11y/noAutofocus: intentional focus management in edit cell
                                   autoFocus
                                   className={styles.editInput}
                                   value={draft}
@@ -466,6 +476,7 @@ function Grid({
                                   onBlur={confirm}
                                 />
                                 <button
+                                  type="button"
                                   className={styles.nullBtn}
                                   onMouseDown={(e) => {
                                     e.preventDefault()
@@ -487,8 +498,12 @@ function Grid({
                   )
                 })}
                 {paddingBottom > 0 && (
-                  <tr aria-hidden="true">
-                    <td className={styles.spacer} colSpan={result.columns.length} style={{ height: paddingBottom }} />
+                  <tr>
+                    <td
+                      className={styles.spacer}
+                      colSpan={result.columns.length}
+                      style={{ height: paddingBottom }}
+                    />
                   </tr>
                 )}
               </>
@@ -544,14 +559,11 @@ function Grid({
 
                 const cls = isEditingThis ? styles.editing : undefined
                 return (
-                  <td
-                    key={colId}
-                    className={cls}
-                    onDoubleClick={editable ? startEdit : undefined}
-                  >
+                  <td key={colId} className={cls} onDoubleClick={editable ? startEdit : undefined}>
                     {isEditingThis ? (
                       <span className={styles.editWrap}>
                         <input
+                          // biome-ignore lint/a11y/noAutofocus: intentional focus management in edit cell
                           autoFocus
                           className={styles.editInput}
                           value={draft}
@@ -579,6 +591,7 @@ function Grid({
       </table>
       {ctxMenu && (
         <div
+          role="menu"
           className={styles.ctxMenu}
           style={{ top: ctxMenu.y, left: ctxMenu.x }}
           onMouseDown={(e) => e.stopPropagation()}
@@ -587,7 +600,8 @@ function Grid({
             <>
               {ctxMenu.value === null || ctxMenu.value === undefined ? (
                 <>
-                  <div
+                  <button
+                    type="button"
                     className={styles.ctxItem}
                     onClick={() => {
                       onQuickFilter?.(ctxMenu.column, 'is_null', null)
@@ -595,8 +609,9 @@ function Grid({
                     }}
                   >
                     IS NULL
-                  </div>
-                  <div
+                  </button>
+                  <button
+                    type="button"
                     className={styles.ctxItem}
                     onClick={() => {
                       onQuickFilter?.(ctxMenu.column, 'is_not_null', null)
@@ -604,11 +619,12 @@ function Grid({
                     }}
                   >
                     IS NOT NULL
-                  </div>
+                  </button>
                 </>
               ) : (
                 <>
-                  <div
+                  <button
+                    type="button"
                     className={styles.ctxItem}
                     onClick={() => {
                       onQuickFilter?.(ctxMenu.column, '=', ctxMenu.value)
@@ -616,8 +632,9 @@ function Grid({
                     }}
                   >
                     {t('workspace.quickFilterEq')}
-                  </div>
-                  <div
+                  </button>
+                  <button
+                    type="button"
                     className={styles.ctxItem}
                     onClick={() => {
                       onQuickFilter?.(ctxMenu.column, '<>', ctxMenu.value)
@@ -625,8 +642,9 @@ function Grid({
                     }}
                   >
                     {t('workspace.quickFilterNeq')}
-                  </div>
-                  <div
+                  </button>
+                  <button
+                    type="button"
                     className={styles.ctxItem}
                     onClick={() => {
                       onQuickFilter?.(ctxMenu.column, 'contains', ctxMenu.value)
@@ -634,58 +652,68 @@ function Grid({
                     }}
                   >
                     {t('workspace.quickFilterContains')}
-                  </div>
+                  </button>
                 </>
               )}
-              {onStageDeleteMany && (() => {
-                // 選択中の結果行のみ対象（INSERT 行・範囲外は除外）。
-                const targets = [...selectedSet].filter((i) => i < result.rows.length).sort((a, b) => a - b)
-                if (targets.length === 0) return null
-                const entries = targets.map((i) => {
-                  const row = result.rows[i] as Row
-                  return { rowKey: rowKeyOf(primaryKey, row), pkValues: pkValuesOf(primaryKey, row) }
-                })
-                const allStaged = entries.every((e) => e.rowKey in deletes)
-                const n = targets.length
-                return (
-                  <>
-                    <div className={styles.ctxSep} />
-                    <div
-                      className={`${styles.ctxItem} ${allStaged ? '' : styles.ctxDanger}`}
-                      onClick={() => {
-                        onStageDeleteMany(entries)
-                        setCtxMenu(null)
-                      }}
-                    >
-                      {allStaged
-                        ? tPlural('workspace.deleteUndo', n, { count: String(n) })
-                        : tPlural('workspace.deleteStage', n, { count: String(n) })}
-                    </div>
-                    <div
-                      className={styles.ctxItem}
-                      onClick={() => {
-                        onDuplicateRows?.(targets)
-                        setCtxMenu(null)
-                      }}
-                    >
-                      {tPlural('workspace.duplicateRows', n, { count: String(n) })}
-                    </div>
-                    <div
-                      className={styles.ctxItem}
-                      onClick={() => {
-                        copySelectedRows(targets)
-                        setCtxMenu(null)
-                      }}
-                    >
-                      {tPlural('workspace.copyRows', n, { count: String(n) })}
-                    </div>
-                  </>
-                )
-              })()}
+              {onStageDeleteMany &&
+                (() => {
+                  // 選択中の結果行のみ対象（INSERT 行・範囲外は除外）。
+                  const targets = [...selectedSet]
+                    .filter((i) => i < result.rows.length)
+                    .sort((a, b) => a - b)
+                  if (targets.length === 0) return null
+                  const entries = targets.map((i) => {
+                    const row = result.rows[i] as Row
+                    return {
+                      rowKey: rowKeyOf(primaryKey, row),
+                      pkValues: pkValuesOf(primaryKey, row)
+                    }
+                  })
+                  const allStaged = entries.every((e) => e.rowKey in deletes)
+                  const n = targets.length
+                  return (
+                    <>
+                      <div className={styles.ctxSep} />
+                      <button
+                        type="button"
+                        className={`${styles.ctxItem} ${allStaged ? '' : styles.ctxDanger}`}
+                        onClick={() => {
+                          onStageDeleteMany(entries)
+                          setCtxMenu(null)
+                        }}
+                      >
+                        {allStaged
+                          ? tPlural('workspace.deleteUndo', n, { count: String(n) })
+                          : tPlural('workspace.deleteStage', n, { count: String(n) })}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.ctxItem}
+                        onClick={() => {
+                          onDuplicateRows?.(targets)
+                          setCtxMenu(null)
+                        }}
+                      >
+                        {tPlural('workspace.duplicateRows', n, { count: String(n) })}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.ctxItem}
+                        onClick={() => {
+                          copySelectedRows(targets)
+                          setCtxMenu(null)
+                        }}
+                      >
+                        {tPlural('workspace.copyRows', n, { count: String(n) })}
+                      </button>
+                    </>
+                  )
+                })()}
             </>
           )}
           {ctxMenu.kind === 'insert' && (
-            <div
+            <button
+              type="button"
               className={`${styles.ctxItem} ${styles.ctxDanger}`}
               onClick={() => {
                 onRemoveInsert?.(ctxMenu.localId)
@@ -693,7 +721,7 @@ function Grid({
               }}
             >
               {t('workspace.discardInsertRow')}
-            </div>
+            </button>
           )}
         </div>
       )}

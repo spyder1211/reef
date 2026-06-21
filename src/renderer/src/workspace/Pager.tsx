@@ -1,6 +1,6 @@
-import { useAppStore } from '../store/useAppStore'
-import { totalPages, pageRange, canGoNext } from '../store/pager'
 import { useT } from '../i18n/useT'
+import { canGoNext, pageRange, totalPages } from '../store/pager'
+import { useAppStore } from '../store/useAppStore'
 import styles from './Pager.module.css'
 
 const PAGE_SIZES = [50, 100, 500]
@@ -40,7 +40,7 @@ export default function Pager(): JSX.Element | null {
       </label>
 
       <div className={styles.nav}>
-        <button disabled={!prevOk} onClick={() => void setPage(tab.id, tab.page - 1)}>
+        <button type="button" disabled={!prevOk} onClick={() => void setPage(tab.id, tab.page - 1)}>
           {t('workspace.pagePrev')}
         </button>
         <span className={styles.pageNo}>
@@ -48,14 +48,18 @@ export default function Pager(): JSX.Element | null {
             ? t('workspace.pageIndicator', { page: String(tab.page + 1), total: String(pages) })
             : t('workspace.pageIndicatorUnknown', { page: String(tab.page + 1) })}
         </span>
-        <button disabled={!nextOk} onClick={() => void setPage(tab.id, tab.page + 1)}>
+        <button type="button" disabled={!nextOk} onClick={() => void setPage(tab.id, tab.page + 1)}>
           {t('workspace.pageNext')}
         </button>
       </div>
 
       <div className={styles.range}>
         {tab.total !== null
-          ? t('workspace.rowRange', { start: String(start), end: String(end), total: tab.total.toLocaleString() })
+          ? t('workspace.rowRange', {
+              start: String(start),
+              end: String(end),
+              total: tab.total.toLocaleString()
+            })
           : t('workspace.rowRangeUnknown', { start: String(start), end: String(end) })}
       </div>
     </div>

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { estimateColumnWidths, MIN_COL_WIDTH, MAX_COL_WIDTH, ROW_HEIGHT } from './columnWidths'
+import { describe, expect, it } from 'vitest'
+import { estimateColumnWidths, MAX_COL_WIDTH, MIN_COL_WIDTH, ROW_HEIGHT } from './columnWidths'
 
 // 1文字 = 10px の決定論的フェイク計測器
 const measure = (text: string): number => text.length * 10

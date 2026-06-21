@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { maybeApplyAutoLimit } from './autoLimit'
 
 describe('maybeApplyAutoLimit', () => {
@@ -34,7 +34,9 @@ describe('maybeApplyAutoLimit', () => {
   })
 
   it('WITH … UPDATE には付与しない', () => {
-    expect(maybeApplyAutoLimit('WITH c AS (SELECT id FROM t) UPDATE t SET x = 1', 1).applied).toBe(false)
+    expect(maybeApplyAutoLimit('WITH c AS (SELECT id FROM t) UPDATE t SET x = 1', 1).applied).toBe(
+      false
+    )
   })
 
   it('SELECT 以外（SHOW/DESCRIBE/INSERT/UPDATE）には付与しない', () => {

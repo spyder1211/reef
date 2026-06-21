@@ -2,9 +2,28 @@ import { DEFAULT_SQL_LIMIT } from '../../shared/queryLimits'
 
 // 主verb候補（先頭または WITH 後に最初に現れる文の種別）。SELECT のときだけ自動LIMIT対象。
 const STATEMENT_VERBS = new Set([
-  'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'CREATE', 'ALTER',
-  'DROP', 'TRUNCATE', 'RENAME', 'GRANT', 'REVOKE', 'CALL', 'LOAD',
-  'SET', 'SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN', 'USE', 'ANALYZE', 'OPTIMIZE'
+  'SELECT',
+  'INSERT',
+  'UPDATE',
+  'DELETE',
+  'REPLACE',
+  'CREATE',
+  'ALTER',
+  'DROP',
+  'TRUNCATE',
+  'RENAME',
+  'GRANT',
+  'REVOKE',
+  'CALL',
+  'LOAD',
+  'SET',
+  'SHOW',
+  'DESCRIBE',
+  'DESC',
+  'EXPLAIN',
+  'USE',
+  'ANALYZE',
+  'OPTIMIZE'
 ])
 
 // 括弧深度0（トップレベル）の英単語トークンを大文字で集める。
@@ -21,9 +40,15 @@ function topLevelWords(sql: string): string[] {
       const quote = ch
       i++
       while (i < n) {
-        if (quote !== '`' && sql[i] === '\\') { i += 2; continue } // バックスラッシュエスケープ
+        if (quote !== '`' && sql[i] === '\\') {
+          i += 2
+          continue
+        } // バックスラッシュエスケープ
         if (sql[i] === quote) {
-          if (sql[i + 1] === quote) { i += 2; continue } // 二重引用符エスケープ（'' ""）
+          if (sql[i + 1] === quote) {
+            i += 2
+            continue
+          } // 二重引用符エスケープ（'' ""）
           i++
           break
         }
@@ -31,8 +56,16 @@ function topLevelWords(sql: string): string[] {
       }
       continue
     }
-    if (ch === '(') { depth++; i++; continue }
-    if (ch === ')') { if (depth > 0) depth--; i++; continue }
+    if (ch === '(') {
+      depth++
+      i++
+      continue
+    }
+    if (ch === ')') {
+      if (depth > 0) depth--
+      i++
+      continue
+    }
     if (depth === 0 && /[A-Za-z_]/.test(ch)) {
       let j = i + 1
       while (j < n && /[A-Za-z0-9_]/.test(sql[j])) j++
@@ -57,7 +90,7 @@ export function maybeApplyAutoLimit(
     const mainVerb = words.find((w) => STATEMENT_VERBS.has(w)) // WITH/RECURSIVE/CTE名/AS は跨ぐ
     if (mainVerb !== 'SELECT') return { sql, applied: false }
     if (words.includes('LIMIT')) return { sql, applied: false } // トップレベルLIMITあり
-    return { sql: sql.replace(/\s+$/, '') + ` LIMIT ${DEFAULT_SQL_LIMIT}`, applied: true }
+    return { sql: `${sql.replace(/\s+$/, '')} LIMIT ${DEFAULT_SQL_LIMIT}`, applied: true }
   } catch {
     return { sql, applied: false }
   }

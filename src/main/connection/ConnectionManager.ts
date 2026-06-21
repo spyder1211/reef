@@ -1,12 +1,12 @@
-import mysql from 'mysql2/promise'
 import type { Connection as Mysql2Connection } from 'mysql2'
+import mysql from 'mysql2/promise'
+import { MAX_RESULT_ROWS } from '../../shared/queryLimits'
 import type { ConnectionConfig, QueryResult, SqlStatement, TableSchema } from '../../shared/types'
+import { SqlStatementSplitter } from '../import/sqlStatementSplitter'
+import { maybeApplyAutoLimit } from './autoLimit'
 import { extractTableNames } from './extractTableNames'
 import { fieldTypeName } from './mysqlTypes'
-import { SqlStatementSplitter } from '../import/sqlStatementSplitter'
-import { QueryCancelledError, isQueryInterrupted } from './queryCancellation'
-import { maybeApplyAutoLimit } from './autoLimit'
-import { MAX_RESULT_ROWS } from '../../shared/queryLimits'
+import { isQueryInterrupted, QueryCancelledError } from './queryCancellation'
 
 export class ConnectionManager {
   private pool: mysql.Pool | null = null
@@ -49,7 +49,10 @@ export class ConnectionManager {
     const dataRows = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
     const columns = (fields ?? []).map((f) => {
       const ff = f as { name: string; type?: number }
-      return { name: ff.name, type: typeof ff.type === 'number' ? fieldTypeName(ff.type) : undefined }
+      return {
+        name: ff.name,
+        type: typeof ff.type === 'number' ? fieldTypeName(ff.type) : undefined
+      }
     })
     return { columns, rows: dataRows, rowCount: dataRows.length, durationMs }
   }
@@ -151,7 +154,7 @@ export class ConnectionManager {
   // 主キー列名を Seq_in_index 順で返す。主キーがなければ []（複合主キー対応）。
   async primaryKey(table: string): Promise<string[]> {
     if (!this.pool) throw new Error('Not connected')
-    const quoted = '`' + table.replace(/`/g, '``') + '`'
+    const quoted = `\`${table.replace(/`/g, '``')}\``
     const [rows] = await this.pool.query(`SHOW KEYS FROM ${quoted} WHERE Key_name = 'PRIMARY'`)
     const list = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
     return list
@@ -163,18 +166,22 @@ export class ConnectionManager {
   // 接続中の DB スコープ。該当無しなら []。
   async autoIncrementColumns(table: string): Promise<string[]> {
     if (!this.pool) throw new Error('Not connected')
-    const quoted = '`' + table.replace(/`/g, '``') + '`'
+    const quoted = `\`${table.replace(/`/g, '``')}\``
     const [rows] = await this.pool.query(`SHOW COLUMNS FROM ${quoted}`)
     const list = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
     return list
-      .filter((r) => String(r.Extra ?? '').toLowerCase().includes('auto_increment'))
+      .filter((r) =>
+        String(r.Extra ?? '')
+          .toLowerCase()
+          .includes('auto_increment')
+      )
       .map((r) => String(r.Field))
   }
 
   // テーブル構造（カラム・インデックス・DDL）をまとめて取得する（Structure ビュー用）。
   async tableSchema(table: string): Promise<TableSchema> {
     if (!this.pool) throw new Error('Not connected')
-    const quoted = '`' + table.replace(/`/g, '``') + '`'
+    const quoted = `\`${table.replace(/`/g, '``')}\``
 
     const [colRows] = await this.pool.query(`SHOW FULL COLUMNS FROM ${quoted}`)
     const columns = (Array.isArray(colRows) ? (colRows as Record<string, unknown>[]) : []).map(
@@ -223,7 +230,8 @@ export class ConnectionManager {
     const map: Record<string, string[]> = {}
     for (const r of Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []) {
       const t = String(r.t)
-      ;(map[t] ??= []).push(String(r.c))
+      if (!map[t]) map[t] = []
+      map[t].push(String(r.c))
     }
     return map
   }

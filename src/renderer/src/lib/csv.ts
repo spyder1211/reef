@@ -8,7 +8,7 @@ function escapeCell(value: unknown): string {
   const s = String(value)
   // ダブルクォート・カンマ・CR・LF のいずれかを含む場合はクォートし、内部の " を "" に2重化する。
   if (/[",\r\n]/.test(s)) {
-    return '"' + s.replace(/"/g, '""') + '"'
+    return `"${s.replace(/"/g, '""')}"`
   }
   return s
 }
@@ -31,7 +31,7 @@ function escapeTsvCell(value: unknown): string {
   if (value === null || value === undefined) return ''
   const s = String(value)
   if (/["\t\r\n]/.test(s)) {
-    return '"' + s.replace(/"/g, '""') + '"'
+    return `"${s.replace(/"/g, '""')}"`
   }
   return s
 }

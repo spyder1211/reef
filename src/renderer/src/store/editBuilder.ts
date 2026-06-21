@@ -1,7 +1,7 @@
-import type { RowEdit, PendingInsert, SqlStatement } from '../../../shared/types'
+import type { PendingInsert, RowEdit, SqlStatement } from '../../../shared/types'
 
 export function quoteIdent(name: string): string {
-  return '`' + name.replace(/`/g, '``') + '`'
+  return `\`${name.replace(/`/g, '``')}\``
 }
 
 /**
@@ -53,10 +53,7 @@ export function buildUpdateStatements(
  * null は明示的に NULL として渡す。
  * values がすべて空文字 or 空の PendingInsert はスキップ。
  */
-export function buildInsertStatements(
-  table: string,
-  inserts: PendingInsert[]
-): SqlStatement[] {
+export function buildInsertStatements(table: string, inserts: PendingInsert[]): SqlStatement[] {
   const statements: SqlStatement[] = []
   for (const insert of inserts) {
     const cols = Object.keys(insert.values).filter((c) => insert.values[c] !== '')

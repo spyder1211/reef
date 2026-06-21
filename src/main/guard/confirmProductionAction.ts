@@ -1,4 +1,4 @@
-import { dialog, type BrowserWindow, type MessageBoxOptions } from 'electron'
+import { type BrowserWindow, dialog, type MessageBoxOptions } from 'electron'
 import { t } from '../i18n'
 
 export type ConfirmTier = 'write' | 'catastrophic'
