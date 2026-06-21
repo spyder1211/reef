@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ImportProgress, ImportSummary, SqlImportRequest } from '../../../shared/types'
+import { useT } from '../i18n/useT'
 import styles from './SqlImportModal.module.css'
 import { isCancelled } from '../store/helpers'
 
@@ -12,6 +13,7 @@ function formatBytes(n: number): string {
 }
 
 export default function SqlImportModal(): JSX.Element | null {
+  const { t } = useT()
   const [phase, setPhase] = useState<Phase>('closed')
   const [req, setReq] = useState<SqlImportRequest | null>(null)
   const [progress, setProgress] = useState<ImportProgress | null>(null)
@@ -60,33 +62,31 @@ export default function SqlImportModal(): JSX.Element | null {
   return (
     <div className={styles.backdrop} onClick={phase === 'running' ? undefined : close}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.title}>SQL ダンプを import / restore</div>
+        <div className={styles.title}>{t('workspace.importTitle')}</div>
 
         {phase === 'confirm' && (
           <>
             <div className={styles.row}>
-              <span className={styles.k}>接続中の DB</span>
-              <b>{req.dbName || '(未選択)'}</b>
+              <span className={styles.k}>{t('workspace.importDbLabel')}</span>
+              <b>{req.dbName || t('workspace.importNoDb')}</b>
             </div>
             <div className={styles.row}>
-              <span className={styles.k}>ファイル</span>
+              <span className={styles.k}>{t('workspace.importFileLabel')}</span>
               <span>{req.fileName}</span>
             </div>
             <div className={styles.row}>
-              <span className={styles.k}>サイズ</span>
+              <span className={styles.k}>{t('workspace.importSizeLabel')}</span>
               <span>{formatBytes(req.totalBytes)}</span>
             </div>
             <div className={styles.warn}>
-              この dump は <b>DROP / CREATE / INSERT</b> を含む可能性があり、対象 DB の既存データを
-              上書きします。MySQL の DDL は暗黙コミットされるため、途中で失敗してもそこまでの変更は
-              ロールバックされません。
+              {t('workspace.importWarn')}
             </div>
             <div className={styles.actions}>
               <button className={styles.btn} onClick={close}>
-                キャンセル
+                {t('common.cancel')}
               </button>
               <button className={styles.btnDanger} onClick={() => void handleRun()}>
-                実行する
+                {t('workspace.importRun')}
               </button>
             </div>
           </>
@@ -98,14 +98,14 @@ export default function SqlImportModal(): JSX.Element | null {
               <div className={styles.barFill} style={{ width: `${pct}%` }} />
             </div>
             <div className={styles.row}>
-              <span className={styles.k}>進捗</span>
+              <span className={styles.k}>{t('workspace.importProgressLabel')}</span>
               <span>
-                {pct}%（{formatBytes(progress.bytesRead)} / {formatBytes(progress.totalBytes)}）
+                {t('workspace.importByteProgress', { pct, read: formatBytes(progress.bytesRead), total: formatBytes(progress.totalBytes) })}
               </span>
             </div>
             <div className={styles.row}>
-              <span className={styles.k}>実行済み</span>
-              <span>{progress.executedCount} 文</span>
+              <span className={styles.k}>{t('workspace.importExecutedLabel')}</span>
+              <span>{t('workspace.importStatements', { count: String(progress.executedCount) })}</span>
             </div>
             {progress.currentPreview && <div className={styles.preview}>{progress.currentPreview}</div>}
           </>
@@ -116,14 +116,16 @@ export default function SqlImportModal(): JSX.Element | null {
             {fatal && <div className={styles.error}>{fatal}</div>}
             {summary && summary.status === 'completed' && (
               <div className={styles.ok}>
-                完了：{summary.executedCount} 文を実行しました（{summary.durationMs} ms）
+                {t('workspace.importDone', { count: String(summary.executedCount), ms: String(summary.durationMs) })}
               </div>
             )}
             {summary && summary.status === 'failed' && summary.failure && (
               <div className={styles.error}>
                 <div>
-                  失敗：{summary.failure.statementIndex} 文目でエラー（ここまで {summary.executedCount}{' '}
-                  文を適用済み）
+                  {t('workspace.importFailed', {
+                    index: String(summary.failure.statementIndex),
+                    executed: String(summary.executedCount)
+                  })}
                 </div>
                 <div className={styles.preview}>{summary.failure.statementPreview}</div>
                 <div className={styles.msg}>{summary.failure.message}</div>
@@ -131,7 +133,7 @@ export default function SqlImportModal(): JSX.Element | null {
             )}
             <div className={styles.actions}>
               <button className={styles.btnPrimary} onClick={close}>
-                閉じる
+                {t('common.close')}
               </button>
             </div>
           </>

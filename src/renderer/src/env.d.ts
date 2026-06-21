@@ -14,6 +14,7 @@ import type {
   TableSchema,
   QueryHistoryEntry
 } from '../../shared/types'
+import type { Locale, LocalePreference } from '../../shared/i18n/types'
 
 declare global {
   // electron.vite.config.ts の define で package.json の version を埋め込む。
@@ -60,6 +61,10 @@ declare global {
       history: {
         list: () => Promise<ApiResult<QueryHistoryEntry[]>>
         clear: () => Promise<ApiResult<null>>
+      }
+      i18n: {
+        bootstrap: { systemLocale: Locale; preference: LocalePreference; effective: Locale }
+        setLocale: (preference: LocalePreference) => Promise<{ effective: Locale }>
       }
     }
   }

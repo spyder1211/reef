@@ -11,6 +11,10 @@ import { registerImportHandlers } from './import/registerImportHandlers'
 import { createConnectionStores } from './connection/createProfileStore'
 import { buildAppMenu } from './menu'
 import { CSP } from '../shared/csp'
+import { createSettingsStore } from './settings/createSettingsStore'
+import { registerI18nHandlers } from './ipc/registerI18nHandlers'
+import { setLocale } from './i18n'
+import { systemLocaleFromElectron, resolveLocale } from '../shared/i18n/resolveLocale'
 
 // アプリの表示名。macOS のアプリメニューやダイアログのタイトルに使われる。
 // dev/prod を問わず確実に反映させるため明示設定する（package.json の
@@ -95,7 +99,14 @@ app.whenReady().then(() => {
   registerConnectionHandlers(manager, profileStore, groupStore, tunnel)
   registerFileHandlers()
   registerImportHandlers(manager)
-  Menu.setApplicationMenu(buildAppMenu(manager))
+  // 言語設定を解決してから menu を構築する（menu ラベルが t() を使うため）。
+  const settings = createSettingsStore()
+  const system = systemLocaleFromElectron(app.getLocale())
+  setLocale(resolveLocale(settings.getLocalePreference(), system))
+
+  const rebuildMenu = (): void => Menu.setApplicationMenu(buildAppMenu(manager))
+  registerI18nHandlers(settings, rebuildMenu)
+  rebuildMenu()
   createWindow(manager)
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow(manager)

@@ -1,5 +1,6 @@
 import { useAppStore } from '../store/useAppStore'
 import { isProductionProfile } from '../store/helpers'
+import { useT } from '../i18n/useT'
 import Sidebar from './Sidebar'
 import TabBar from './TabBar'
 import QueryEditor from './QueryEditor'
@@ -16,6 +17,7 @@ import DetailPane from './DetailPane'
 import styles from './WorkspaceShell.module.css'
 
 export default function WorkspaceShell(): JSX.Element {
+  const { t } = useT()
   const activeKind = useAppStore((s) => {
     const t = s.tabs.find((t) => t.id === s.activeTabId)
     return t?.kind ?? null
@@ -50,7 +52,7 @@ export default function WorkspaceShell(): JSX.Element {
           </span>
           <span className={styles.prodLabel}>PRODUCTION</span>
           <span className={styles.prodText}>
-            本番環境です。データ操作は十分に注意してください。
+            {t('workspace.prodBanner')}
           </span>
         </div>
       )}
@@ -60,7 +62,7 @@ export default function WorkspaceShell(): JSX.Element {
           <TabBar />
           {activeKind === null ? (
             <div className={styles.empty}>
-              左のテーブルを選ぶか「＋」でクエリタブを開いてください
+              {t('workspace.empty')}
             </div>
           ) : (
             <>
@@ -76,7 +78,7 @@ export default function WorkspaceShell(): JSX.Element {
                       }
                       onClick={() => tableTab && setTableView(tableTab.id, 'data')}
                     >
-                      データ
+                      {t('workspace.viewData')}
                     </button>
                     <button
                       className={
@@ -86,7 +88,7 @@ export default function WorkspaceShell(): JSX.Element {
                       }
                       onClick={() => tableTab && setTableView(tableTab.id, 'structure')}
                     >
-                      構造
+                      {t('workspace.viewStructure')}
                     </button>
                   </div>
                   {view === 'data' && (
@@ -96,8 +98,8 @@ export default function WorkspaceShell(): JSX.Element {
                           className={styles.toolBtn}
                           disabled={tableTab.running}
                           onClick={() => addInsertRow(tableTab.id)}
-                          title="行を追加"
-                          aria-label="行を追加"
+                          title={t('workspace.addRow')}
+                          aria-label={t('workspace.addRow')}
                         >
                           <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
                             <line x1="8" y1="3.5" x2="8" y2="12.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -108,8 +110,8 @@ export default function WorkspaceShell(): JSX.Element {
                       <button
                         className={splitView ? `${styles.toolBtn} ${styles.toolBtnOn}` : styles.toolBtn}
                         onClick={() => toggleSplitView()}
-                        title={splitView ? '分割を解除' : '左右に分割して同じテーブルを見る'}
-                        aria-label={splitView ? '分割を解除' : '左右に分割'}
+                        title={splitView ? t('workspace.splitOn') : t('workspace.splitOff')}
+                        aria-label={splitView ? t('workspace.splitAriaOn') : t('workspace.splitAriaOff')}
                       >
                         <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
                           <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
@@ -119,8 +121,8 @@ export default function WorkspaceShell(): JSX.Element {
                       <button
                         className={detailOpen ? `${styles.toolBtn} ${styles.toolBtnOn}` : styles.toolBtn}
                         onClick={() => toggleDetail()}
-                        title="詳細ペインの表示切り替え"
-                        aria-label="詳細ペインの表示切り替え"
+                        title={t('workspace.detailToggle')}
+                        aria-label={t('workspace.detailToggle')}
                       >
                         <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
                           <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
@@ -137,8 +139,8 @@ export default function WorkspaceShell(): JSX.Element {
                   <button
                     className={historyOpen ? `${styles.toolBtn} ${styles.toolBtnOn}` : styles.toolBtn}
                     onClick={() => toggleHistory()}
-                    title="クエリ履歴"
-                    aria-label="クエリ履歴"
+                    title={t('workspace.queryHistory')}
+                    aria-label={t('workspace.queryHistory')}
                   >
                     <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
                       <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.3" />

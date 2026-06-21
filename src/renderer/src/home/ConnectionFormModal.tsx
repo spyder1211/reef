@@ -6,6 +6,7 @@ import type {
   SshSettings
 } from '../../../shared/types'
 import { useAppStore } from '../store/useAppStore'
+import { useT } from '../i18n/useT'
 import { TAG_ORDER, TAG_COLORS, TAG_LABELS } from '../lib/tags'
 import styles from './ConnectionFormModal.module.css'
 
@@ -28,6 +29,7 @@ function defaultSsh(): SshSettings {
 }
 
 export default function ConnectionFormModal(): JSX.Element {
+  const { t } = useT()
   const editingId = useAppStore((s) => s.editingId)
   const profiles = useAppStore((s) => s.profiles)
   const closeForm = useAppStore((s) => s.closeForm)
@@ -107,29 +109,36 @@ export default function ConnectionFormModal(): JSX.Element {
     }
   }
 
+  const testLabel =
+    testState === 'testing'
+      ? t('connectionForm.testTesting')
+      : testState === 'ok'
+        ? t('connectionForm.testOk')
+        : t('connectionForm.testIdle')
+
   return (
     <div className={styles.backdrop} onClick={closeForm}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.title}>MySQL 接続</div>
+        <div className={styles.title}>{t('connectionForm.title')}</div>
 
-        <Field label="名前">
+        <Field label={t('connectionForm.name')}>
           <input className={styles.input} value={form.name} onChange={(e) => update('name', e.target.value)} autoFocus />
         </Field>
 
-        <Field label="タグ">
+        <Field label={t('connectionForm.tag')}>
           <div className={styles.swatches}>
-            {TAG_ORDER.map((t) => {
-              const selected = form.tag === t
+            {TAG_ORDER.map((tag) => {
+              const selected = form.tag === tag
               return (
                 <button
-                  key={t}
+                  key={tag}
                   type="button"
                   className={`${styles.tagOption} ${selected ? styles.tagSelected : ''}`}
-                  style={selected ? { borderColor: TAG_COLORS[t], color: TAG_COLORS[t] } : undefined}
-                  onClick={() => update('tag', t as ConnectionTag)}
+                  style={selected ? { borderColor: TAG_COLORS[tag], color: TAG_COLORS[tag] } : undefined}
+                  onClick={() => update('tag', tag as ConnectionTag)}
                 >
-                  <span className={styles.tagDot} style={{ background: TAG_COLORS[t] }} />
-                  {TAG_LABELS[t] || 'なし'}
+                  <span className={styles.tagDot} style={{ background: TAG_COLORS[tag] }} />
+                  {TAG_LABELS[tag] || t('connectionForm.tagNone')}
                 </button>
               )
             })}
@@ -161,7 +170,7 @@ export default function ConnectionFormModal(): JSX.Element {
 
         {!encAvailable && (
           <div className={styles.encWarn}>
-            この環境では認証情報（パスワード・SSH 秘匿値）を暗号化保存できないため、保存されません。
+            {t('connectionForm.encWarn')}
           </div>
         )}
 
@@ -173,14 +182,14 @@ export default function ConnectionFormModal(): JSX.Element {
           />
         </Field>
 
-        <Field label="SSH トンネル">
+        <Field label={t('connectionForm.sshTunnel')}>
           <label className={styles.checkRow}>
             <input
               type="checkbox"
               checked={ssh?.enabled ?? false}
               onChange={(e) => updateSsh('enabled', e.target.checked)}
             />
-            踏み台（bastion）経由で接続する
+            {t('connectionForm.sshViaBastion')}
           </label>
         </Field>
 
@@ -210,7 +219,7 @@ export default function ConnectionFormModal(): JSX.Element {
               />
             </Field>
 
-            <Field label="認証方法">
+            <Field label={t('connectionForm.authMethod')}>
               <div className={styles.radioRow}>
                 <label className={styles.checkRow}>
                   <input
@@ -219,7 +228,7 @@ export default function ConnectionFormModal(): JSX.Element {
                     checked={ssh.authMethod === 'password'}
                     onChange={() => updateSsh('authMethod', 'password')}
                   />
-                  パスワード
+                  {t('connectionForm.authPassword')}
                 </label>
                 <label className={styles.checkRow}>
                   <input
@@ -228,7 +237,7 @@ export default function ConnectionFormModal(): JSX.Element {
                     checked={ssh.authMethod === 'privateKey'}
                     onChange={() => updateSsh('authMethod', 'privateKey')}
                   />
-                  秘密鍵
+                  {t('connectionForm.authPrivateKey')}
                 </label>
               </div>
             </Field>
@@ -239,13 +248,13 @@ export default function ConnectionFormModal(): JSX.Element {
                   className={styles.input}
                   type="password"
                   value={ssh.password ?? ''}
-                  placeholder={editing ? '（変更しない場合は空欄）' : ''}
+                  placeholder={editing ? t('connectionForm.leaveBlankToKeep') : ''}
                   onChange={(e) => updateSsh('password', e.target.value)}
                 />
               </Field>
             ) : (
               <>
-                <Field label="秘密鍵">
+                <Field label={t('connectionForm.privateKey')}>
                   <input
                     className={styles.input}
                     value={ssh.privateKeyPath ?? ''}
@@ -253,15 +262,15 @@ export default function ConnectionFormModal(): JSX.Element {
                     placeholder="~/.ssh/id_ed25519"
                   />
                   <button type="button" className={styles.btn} onClick={() => void handlePickKey()}>
-                    選択…
+                    {t('connectionForm.choose')}
                   </button>
                 </Field>
-                <Field label="パスフレーズ">
+                <Field label={t('connectionForm.passphrase')}>
                   <input
                     className={styles.input}
                     type="password"
                     value={ssh.passphrase ?? ''}
-                    placeholder={editing ? '（変更しない場合は空欄）' : '（任意）'}
+                    placeholder={editing ? t('connectionForm.leaveBlankToKeep') : t('connectionForm.passphraseOptional')}
                     onChange={(e) => updateSsh('passphrase', e.target.value)}
                   />
                 </Field>
@@ -270,7 +279,7 @@ export default function ConnectionFormModal(): JSX.Element {
           </>
         )}
 
-        <div className={styles.note}>SSL は今後対応</div>
+        <div className={styles.note}>{t('connectionForm.sslNote')}</div>
 
         {error && (
           <div className={styles.error}>
@@ -280,13 +289,13 @@ export default function ConnectionFormModal(): JSX.Element {
 
         <div className={styles.actions}>
           <button className={styles.btn} onClick={() => void handleSave()}>
-            保存
+            {t('common.save')}
           </button>
           <button className={styles.btn} onClick={() => void handleTest()}>
-            {testState === 'testing' ? 'テスト中…' : testState === 'ok' ? '✓ 成功' : 'テスト'}
+            {testLabel}
           </button>
           <button className={styles.btnPrimary} onClick={() => void handleConnect()}>
-            接続
+            {t('common.connect')}
           </button>
         </div>
       </div>

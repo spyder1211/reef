@@ -1,5 +1,6 @@
 import { useState, useRef, type DragEvent } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { useT } from '../i18n/useT'
 import { TAG_COLORS, TAG_LABELS } from '../lib/tags'
 import { computeReorder, type GroupView } from '../lib/grouping'
 import ConnectionRow from './ConnectionRow'
@@ -17,6 +18,7 @@ export default function GroupSection({
   collapsed: boolean
   searching: boolean
 }): JSX.Element {
+  const { t } = useT()
   const groups = useAppStore((s) => s.groups)
   const toggleCollapse = useAppStore((s) => s.toggleCollapse)
   const renameGroup = useAppStore((s) => s.renameGroup)
@@ -109,7 +111,7 @@ export default function GroupSection({
           className={styles.caret}
           onClick={() => toggleCollapse(view.id)}
           disabled={searching}
-          title={expanded ? '折り畳む' : '展開する'}
+          title={expanded ? t('connectionGroup.collapseTitle') : t('connectionGroup.expandTitle')}
         >
           {expanded ? '▼' : '▶'}
         </button>
@@ -127,7 +129,7 @@ export default function GroupSection({
           />
         ) : (
           <span className={styles.name} onDoubleClick={startRename}>
-            {view.name}
+            {view.isUngrouped ? t('connectionGroup.ungrouped') : view.name}
           </span>
         )}
         <span className={styles.count}>{view.count}</span>
@@ -138,7 +140,7 @@ export default function GroupSection({
           <div key={sg.tag} className={styles.sub}>
             <div className={styles.subHead}>
               <span className={styles.dot} style={{ background: TAG_COLORS[sg.tag] }} />
-              {TAG_LABELS[sg.tag] || 'その他'}
+              {TAG_LABELS[sg.tag] || t('connectionGroup.other')}
             </div>
             {sg.profiles.map((p) => (
               <ConnectionRow key={p.id} profile={p} />
@@ -161,7 +163,7 @@ export default function GroupSection({
                 startRename()
               }}
             >
-              グループ名を変更
+              {t('connectionGroup.renameGroup')}
             </button>
             <div className={styles.menuSep} />
             <button
@@ -170,14 +172,14 @@ export default function GroupSection({
                 setMenu(null)
                 if (
                   window.confirm(
-                    `グループ「${view.name}」を削除します。中の接続は未分類へ移動します。よろしいですか？`
+                    t('connectionGroup.deleteConfirm', { name: view.name })
                   )
                 ) {
                   void deleteGroup(view.id)
                 }
               }}
             >
-              グループを削除
+              {t('connectionGroup.deleteGroup')}
             </button>
           </div>
         </>

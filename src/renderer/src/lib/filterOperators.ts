@@ -1,10 +1,14 @@
 import type { FilterOperator } from '../../../shared/types'
+import type { TranslationKey } from '../../../shared/i18n'
 
 export type OperatorValueKind = 'none' | 'single' | 'two' | 'list'
 
 export interface OperatorMeta {
   value: FilterOperator
-  label: string
+  // Static symbol labels (=, ≠, IN, etc.) are stored directly in `label`.
+  // Translatable labels use `labelKey`; the display component calls t(labelKey).
+  label?: string
+  labelKey?: TranslationKey
 }
 
 export const OPERATORS: OperatorMeta[] = [
@@ -14,8 +18,8 @@ export const OPERATORS: OperatorMeta[] = [
   { value: '>', label: '>' },
   { value: '<=', label: '≤' },
   { value: '>=', label: '≥' },
-  { value: 'contains', label: '含む' },
-  { value: 'not_contains', label: '含まない' },
+  { value: 'contains', labelKey: 'workspace.filterContains' },
+  { value: 'not_contains', labelKey: 'workspace.filterNotContains' },
   { value: 'in', label: 'IN' },
   { value: 'between', label: 'BETWEEN' },
   { value: 'is_null', label: 'IS NULL' },

@@ -5,6 +5,7 @@ import type { ApiResult, ImportSummary } from '../../shared/types'
 import { importSqlDump } from './SqlImporter'
 import { consumePendingImport, isImporting, setImporting } from './importState'
 import { guardProductionTier } from '../guard/productionGuard'
+import { t } from '../i18n'
 
 // 進捗 push の throttle 間隔（ミリ秒）。大きな dump で IPC を溢れさせない。
 const PROGRESS_THROTTLE_MS = 100
@@ -12,18 +13,18 @@ const PROGRESS_THROTTLE_MS = 100
 export function registerImportHandlers(manager: ConnectionManager): void {
   ipcMain.handle('sqlImport:start', async (e): Promise<ApiResult<ImportSummary>> => {
     // 本番では実行前に強い確認（pending を消費する前にガードする）。
-    if (!(await guardProductionTier(e, 'catastrophic', 'SQL ダンプの import / restore'))) {
+    if (!(await guardProductionTier(e, 'catastrophic', t('dialog.opSqlImport')))) {
       return { ok: false, error: { code: 'CANCELLED', message: '' } }
     }
     const filePath = consumePendingImport()
     if (!filePath) {
       return {
         ok: false,
-        error: { code: 'NO_PENDING_IMPORT', message: 'インポート対象のファイルが選択されていません' }
+        error: { code: 'NO_PENDING_IMPORT', message: t('error.noPendingImport') }
       }
     }
     if (isImporting()) {
-      return { ok: false, error: { code: 'IMPORT_BUSY', message: '別のインポートが実行中です' } }
+      return { ok: false, error: { code: 'IMPORT_BUSY', message: t('error.importBusy') } }
     }
     setImporting(true)
     let last = 0

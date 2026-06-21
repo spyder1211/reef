@@ -13,6 +13,8 @@ import type {
   PendingInsert,
   TableSchema
 } from '../../../shared/types'
+import type { Locale, LocalePreference } from '../../../shared/i18n/types'
+import { createTranslator } from '../../../shared/i18n'
 import { buildFilteredQuery, buildCountQuery } from './filterBuilder'
 import { toCsv } from '../lib/csv'
 import {
@@ -139,6 +141,9 @@ interface AppState {
   historyOpen: boolean // SQL タブのクエリ履歴パネル開閉
   formOpen: boolean
   editingId: string | null
+  locale: Locale
+  localePreference: LocalePreference
+  setLocalePreference: (pref: LocalePreference) => Promise<void>
 
   loadProfiles: () => Promise<void>
   setSearch: (s: string) => void
@@ -206,7 +211,8 @@ export const useAppStore = create<AppState>((set, get) => {
   // 未コミットの変更があるとき、ナビゲーション前に破棄してよいか確認する。
   function confirmDiscard(tab: TableTab): boolean {
     if (!hasUncommittedChanges(tab)) return true
-    return window.confirm('未コミットの変更があります。破棄して移動しますか？')
+    const { t } = createTranslator(get().locale)
+    return window.confirm(t('store.confirmDiscard'))
   }
 
   function setTabRunning(tabId: string): void {
@@ -347,6 +353,12 @@ export const useAppStore = create<AppState>((set, get) => {
     historyOpen: false,
     formOpen: false,
     editingId: null,
+    locale: window.api.i18n.bootstrap.effective,
+    localePreference: window.api.i18n.bootstrap.preference,
+    async setLocalePreference(pref) {
+      const { effective } = await window.api.i18n.setLocale(pref)
+      set({ localePreference: pref, locale: effective })
+    },
 
     async loadProfiles() {
       const res = await window.api.connections.list()
@@ -442,10 +454,8 @@ export const useAppStore = create<AppState>((set, get) => {
       // 本番環境は誤操作の影響が大きいため、テーブル一覧を開く前に毎回確認を挟む。
       // キャンセルされたら接続自体を行わず、接続一覧にとどまる。
       if (isProductionProfile(profile)) {
-        const ok = window.confirm(
-          `「${profile.name}」は本番環境（production）です。\n\n` +
-            '操作ミスは本番データに直接影響します。十分に注意してください。\n\n接続しますか？'
-        )
+        const { t } = createTranslator(get().locale)
+        const ok = window.confirm(t('store.confirmProdConnect', { name: profile.name }))
         if (!ok) return
       }
       set({ status: 'connecting', connectError: null })
@@ -483,8 +493,9 @@ export const useAppStore = create<AppState>((set, get) => {
     async returnToConnections() {
       if (get().status !== 'connected') return
       const hasChanges = get().tabs.some((t) => hasUncommittedChanges(t))
-      if (hasChanges && !window.confirm('未コミットの変更があります。破棄して接続一覧に戻りますか？')) {
-        return
+      if (hasChanges) {
+        const { t } = createTranslator(get().locale)
+        if (!window.confirm(t('store.confirmDiscardReturn'))) return
       }
       await get().disconnect()
     },
@@ -500,7 +511,8 @@ export const useAppStore = create<AppState>((set, get) => {
       // 閉じる対象は id 指定のタブ（アクティブとは限らない）。未コミット変更があれば確認する。
       const target = tabs.find((t) => t.id === id)
       if (target && hasUncommittedChanges(target)) {
-        if (!window.confirm('未コミットの変更があります。破棄してタブを閉じますか？')) return
+        const { t } = createTranslator(get().locale)
+        if (!window.confirm(t('store.confirmDiscardClose'))) return
       }
       const nextActive = pickNextActiveTabId(tabs, id, activeTabId)
       set({ tabs: tabs.filter((t) => t.id !== id), activeTabId: nextActive })
@@ -521,15 +533,16 @@ export const useAppStore = create<AppState>((set, get) => {
       if (!tab || tab.kind !== 'sql') return
       const stmt = singleStatementOf(tab.sql)
       if (!stmt) {
+        const { t } = createTranslator(get().locale)
         set({
-          tabs: get().tabs.map((t) =>
-            t.id === tab.id
+          tabs: get().tabs.map((tt) =>
+            tt.id === tab.id
               ? {
-                  ...t,
+                  ...tt,
                   result: null,
-                  error: { code: 'EXPLAIN_MULTI', message: 'EXPLAIN は単一文のみ実行できます' }
+                  error: { code: 'EXPLAIN_MULTI', message: t('store.explainMultiError'), messageKey: 'store.explainMultiError' }
                 }
-              : t
+              : tt
           )
         })
         return
@@ -619,11 +632,8 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     async truncateTable(name) {
-      if (
-        !window.confirm(
-          `テーブル「${name}」を空にします。全データが削除され、取り消せません。よろしいですか？`
-        )
-      ) {
+      const { t } = createTranslator(get().locale)
+      if (!window.confirm(t('store.confirmTruncate', { name }))) {
         return
       }
       try {
@@ -657,11 +667,8 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     async dropTable(name) {
-      if (
-        !window.confirm(
-          `テーブル「${name}」を削除します。この操作は取り消せません。よろしいですか？`
-        )
-      ) {
+      const { t } = createTranslator(get().locale)
+      if (!window.confirm(t('store.confirmDrop', { name }))) {
         return
       }
       try {
@@ -879,9 +886,10 @@ export const useAppStore = create<AppState>((set, get) => {
       if (statements.length === 0) {
         // ステージはあるが実行すべき文が無い（例: 空欄だけの INSERT 行）。
         // 黙って無反応になると詰むため、入力を促すエラーを表示する。
-        patchTableTab(tabId, (t) => ({
-          ...t,
-          editError: { code: 'CLIENT_ERROR', message: '入力された値がありません。新規行に値を入力してください。' }
+        const { t } = createTranslator(get().locale)
+        patchTableTab(tabId, (tt) => ({
+          ...tt,
+          editError: { code: 'CLIENT_ERROR', message: t('store.noInputToCommit'), messageKey: 'store.noInputToCommit' }
         }))
         return
       }
@@ -959,15 +967,16 @@ export const useAppStore = create<AppState>((set, get) => {
 
     async exportCsv(tabId, opts) {
       const tab = get().tabs.find((t): t is TableTab => t.id === tabId && t.kind === 'table')
+      const { t } = createTranslator(get().locale)
       if (!tab || !tab.result) {
-        return { ok: false, message: 'エクスポートできる結果がありません。' }
+        return { ok: false, message: t('store.exportNoResult') }
       }
 
       // 全件は重くなり得るため、件数が分かっていればフェッチ前に確認する。
       const EXPORT_CONFIRM_THRESHOLD = 50000
       let confirmedLarge = false
       if (opts.scope === 'all' && tab.total !== null && tab.total > EXPORT_CONFIRM_THRESHOLD) {
-        if (!window.confirm(`${tab.total} 件をエクスポートします。よろしいですか？`)) {
+        if (!window.confirm(t('store.confirmExportLarge', { count: String(tab.total) }))) {
           return { ok: true, canceled: true, message: '' }
         }
         confirmedLarge = true
@@ -998,7 +1007,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
       // tab.total が未カウント/古い場合のフォールバック: 実際の取得行数で確認する（事前確認済みなら省略）。
       if (opts.scope === 'all' && !confirmedLarge && rows.length > EXPORT_CONFIRM_THRESHOLD) {
-        if (!window.confirm(`${rows.length} 件をエクスポートします。よろしいですか？`)) {
+        if (!window.confirm(t('store.confirmExportLarge', { count: String(rows.length) }))) {
           return { ok: true, canceled: true, message: '' }
         }
       }
@@ -1008,7 +1017,7 @@ export const useAppStore = create<AppState>((set, get) => {
       if (opts.target === 'clipboard') {
         try {
           await navigator.clipboard.writeText(csv)
-          return { ok: true, message: 'クリップボードにコピーしました' }
+          return { ok: true, message: t('store.exportCopied') }
         } catch (err) {
           return { ok: false, message: err instanceof Error ? err.message : String(err) }
         }
@@ -1020,7 +1029,7 @@ export const useAppStore = create<AppState>((set, get) => {
         if (!res.ok) return { ok: false, message: res.error.message }
         if (res.data.canceled) return { ok: true, canceled: true, message: '' }
         const name = res.data.filePath?.split('/').pop() ?? res.data.filePath ?? ''
-        return { ok: true, message: `保存しました: ${name}` }
+        return { ok: true, message: t('store.exportSaved', { name }) }
       } catch (err) {
         return { ok: false, message: err instanceof Error ? err.message : String(err) }
       }
@@ -1028,9 +1037,10 @@ export const useAppStore = create<AppState>((set, get) => {
 
     // SQL タブの現在の結果を CSV 保存する。結果が無ければ何もしない。
     async exportSqlResultCsv(tabId) {
-      const tab = get().tabs.find((t) => t.id === tabId)
+      const { t } = createTranslator(get().locale)
+      const tab = get().tabs.find((tt) => tt.id === tabId)
       if (!tab || tab.kind !== 'sql' || !tab.result || tab.result.rows.length === 0) {
-        return { ok: false, message: 'エクスポートする結果がありません' }
+        return { ok: false, message: t('store.exportSqlNoResult') }
       }
       const columns = tab.result.columns.map((c) => c.name)
       const csv = toCsv(columns, tab.result.rows)
@@ -1039,7 +1049,7 @@ export const useAppStore = create<AppState>((set, get) => {
         if (!res.ok) return { ok: false, message: res.error.message }
         if (res.data.canceled) return { ok: true, canceled: true, message: '' }
         const name = res.data.filePath?.split('/').pop() ?? res.data.filePath ?? ''
-        return { ok: true, message: `保存しました: ${name}` }
+        return { ok: true, message: t('store.exportSaved', { name }) }
       } catch (err) {
         return { ok: false, message: err instanceof Error ? err.message : String(err) }
       }

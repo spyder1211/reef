@@ -1,11 +1,13 @@
 import { useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import ResultsGrid from './ResultsGrid'
+import { useT } from '../i18n/useT'
 import styles from './SplitGrids.module.css'
 
 // 同じアクティブタブを左右2枚の ResultsGrid で表示する。両者とも store の activeTab を読むため
 // 内容は同一で、スクロール位置だけが各 DOM で独立する（フィルタ/ページ/ソート/選択は共有）。
 // 中央の仕切りをドラッグして左ペインの幅（%）を調整できる。
 export default function SplitGrids(): JSX.Element {
+  const { t } = useT()
   const containerRef = useRef<HTMLDivElement>(null)
   const [leftPct, setLeftPct] = useState(50)
 
@@ -36,7 +38,7 @@ export default function SplitGrids(): JSX.Element {
       <div className={styles.pane} style={{ flex: `0 0 ${leftPct}%` }}>
         <ResultsGrid />
       </div>
-      <div className={styles.divider} onMouseDown={startDrag} title="ドラッグで幅を調整" />
+      <div className={styles.divider} onMouseDown={startDrag} title={t('workspace.splitDivider')} />
       <div className={styles.pane} style={{ flex: 1 }}>
         <ResultsGrid />
       </div>

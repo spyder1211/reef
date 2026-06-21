@@ -14,6 +14,7 @@ import type {
   TableSchema,
   QueryHistoryEntry
 } from '../shared/types'
+import type { Locale, LocalePreference } from '../shared/i18n/types'
 
 const api = {
   connect: (config: ConnectionConfig): Promise<ApiResult<null>> =>
@@ -97,6 +98,16 @@ const api = {
   history: {
     list: (): Promise<ApiResult<QueryHistoryEntry[]>> => ipcRenderer.invoke('history:list'),
     clear: (): Promise<ApiResult<null>> => ipcRenderer.invoke('history:clear')
+  },
+  i18n: {
+    // 初回レンダー前に同期取得（言語チラつき防止）。
+    bootstrap: ipcRenderer.sendSync('i18n:bootstrap') as {
+      systemLocale: Locale
+      preference: LocalePreference
+      effective: Locale
+    },
+    setLocale: (preference: LocalePreference): Promise<{ effective: Locale }> =>
+      ipcRenderer.invoke('i18n:setLocale', preference)
   }
 }
 

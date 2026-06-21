@@ -6,6 +6,7 @@ import { StringDecoder } from 'string_decoder'
 import type { ImportSummary, ImportProgress } from '../../shared/types'
 import { SqlStatementSplitter } from './sqlStatementSplitter'
 import { isGzipFile } from './gzip'
+import { t } from '../i18n'
 
 // statement プレビューの最大文字数
 const PREVIEW_LEN = 200
@@ -96,7 +97,7 @@ export async function importSqlDump(
     } catch (err) {
       // ここに来る例外は読み取り/展開の失敗のみ（DB エラーは runOne 内で握る）。
       if (gzip) {
-        throw new Error('gzip の展開に失敗しました（ファイルが壊れている可能性があります）')
+        throw new Error(t('error.gzipDecompressFailed'))
       }
       throw err
     } finally {

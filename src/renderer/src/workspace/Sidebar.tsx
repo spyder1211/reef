@@ -1,9 +1,11 @@
 import { useAppStore } from '../store/useAppStore'
 import Avatar from '../components/Avatar'
 import TableList from './TableList'
+import { useT } from '../i18n/useT'
 import styles from './Sidebar.module.css'
 
 export default function Sidebar(): JSX.Element {
+  const { t } = useT()
   const profile = useAppStore((s) => s.activeProfile)
   const disconnect = useAppStore((s) => s.disconnect)
 
@@ -20,7 +22,7 @@ export default function Sidebar(): JSX.Element {
       </div>
       <TableList />
       <button className={styles.back} onClick={() => void disconnect()}>
-        ← 接続一覧
+        {t('workspace.backToList')}
       </button>
     </div>
   )

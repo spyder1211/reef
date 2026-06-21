@@ -1,8 +1,11 @@
 import { useEffect } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { useT } from '../i18n/useT'
+import type { TranslationKey } from '../../../shared/i18n'
 import styles from './EditBar.module.css'
 
 export default function EditBar(): JSX.Element | null {
+  const { t } = useT()
   const tab = useAppStore((s) => {
     const t = s.tabs.find((t) => t.id === s.activeTabId)
     return t && t.kind === 'table' ? t : null
@@ -35,29 +38,29 @@ export default function EditBar(): JSX.Element | null {
 
   // 変更の内訳を組み立てる（0件の種別は省略）
   const parts: string[] = []
-  if (updateCount > 0) parts.push(`UPDATE ${updateCount} 件`)
-  if (insertCount > 0) parts.push(`INSERT ${insertCount} 行`)
-  if (deleteCount > 0) parts.push(`DELETE ${deleteCount} 行`)
+  if (updateCount > 0) parts.push(t('workspace.updateCount', { count: String(updateCount) }))
+  if (insertCount > 0) parts.push(t('workspace.insertCount', { count: String(insertCount) }))
+  if (deleteCount > 0) parts.push(t('workspace.deleteCount', { count: String(deleteCount) }))
   const summary = parts.join(' / ')
 
   return (
     <div className={styles.bar}>
-      <span className={styles.count}>● 未コミットの変更: {summary}</span>
+      <span className={styles.count}>{t('workspace.uncommitted', { summary })}</span>
       {tab.editError && (
         <span className={styles.err}>
-          {tab.editError.code}: {tab.editError.message}
+          {tab.editError.code}: {tab.editError.messageKey ? t(tab.editError.messageKey as TranslationKey) : tab.editError.message}
         </span>
       )}
       <span className={styles.spacer} />
       <button disabled={tab.running} onClick={() => discardEdits(tab.id)}>
-        破棄
+        {t('workspace.discard')}
       </button>
       <button
         className={styles.commit}
         disabled={tab.running}
         onClick={() => void commitEdits(tab.id)}
       >
-        コミット ⌘S
+        {t('workspace.commit')}
       </button>
     </div>
   )

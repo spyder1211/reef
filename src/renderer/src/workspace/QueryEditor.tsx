@@ -5,9 +5,11 @@ import { Prec } from '@codemirror/state'
 import { useMemo } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { useColorScheme } from '../lib/useColorScheme'
+import { useT } from '../i18n/useT'
 import styles from './QueryEditor.module.css'
 
 export default function QueryEditor(): JSX.Element | null {
+  const { t } = useT()
   const activeTabId = useAppStore((s) => s.activeTabId)
   const tab = useAppStore((s) => {
     const t = s.tabs.find((t) => t.id === s.activeTabId)
@@ -62,7 +64,7 @@ export default function QueryEditor(): JSX.Element | null {
         basicSetup={{ lineNumbers: true, highlightActiveLine: true }}
         onChange={(value) => setTabSql(tab.id, value)}
       />
-      <div className={styles.hint}>⌘↵ で実行 ・ ⌘E で EXPLAIN</div>
+      <div className={styles.hint}>{t('workspace.editorHint')}</div>
     </div>
   )
 }

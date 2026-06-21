@@ -1,7 +1,9 @@
 import { useAppStore } from '../store/useAppStore'
+import { useT } from '../i18n/useT'
 import styles from './TabBar.module.css'
 
 export default function TabBar(): JSX.Element {
+  const { t } = useT()
   const tabs = useAppStore((s) => s.tabs)
   const activeTabId = useAppStore((s) => s.activeTabId)
   const setActiveTab = useAppStore((s) => s.setActiveTab)
@@ -29,7 +31,7 @@ export default function TabBar(): JSX.Element {
           </button>
         </div>
       ))}
-      <button className={styles.add} onClick={() => addTab()} title="新しいクエリタブ">
+      <button className={styles.add} onClick={() => addTab()} title={t('workspace.newQueryTab')}>
         ＋
       </button>
     </div>

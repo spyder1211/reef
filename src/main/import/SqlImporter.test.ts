@@ -140,7 +140,7 @@ describe('importSqlDump', () => {
     const file = writeTmpRawGz('gzbad', corrupt)
     const { exec, manager } = fakeExecutor()
     await expect(importSqlDump(manager, file, vi.fn())).rejects.toThrow(
-      'gzip の展開に失敗しました'
+      'Failed to decompress gzip'
     )
     // 展開に失敗するため dump の文は 1 つも実行されない（SET 文以外は呼ばれない）。
     expect(dumpCalls(exec)).toHaveLength(0)
