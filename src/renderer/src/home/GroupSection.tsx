@@ -129,7 +129,7 @@ export default function GroupSection({
           />
         ) : (
           <span className={styles.name} onDoubleClick={startRename}>
-            {view.name}
+            {view.isUngrouped ? t('connectionGroup.ungrouped') : view.name}
           </span>
         )}
         <span className={styles.count}>{view.count}</span>

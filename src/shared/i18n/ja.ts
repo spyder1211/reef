@@ -36,6 +36,7 @@ export const ja: Record<TranslationKey, string> = {
   'connectionGroup.collapseTitle': '折り畳む',
   'connectionGroup.expandTitle': '展開する',
   'connectionGroup.other': 'その他',
+  'connectionGroup.ungrouped': '未分類',
   'connectionGroup.renameGroup': 'グループ名を変更',
   'connectionGroup.deleteGroup': 'グループを削除',
   'connectionGroup.deleteConfirm': 'グループ「{name}」を削除します。中の接続は未分類へ移動します。よろしいですか？',

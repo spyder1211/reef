@@ -34,6 +34,7 @@ export const en = {
   'connectionGroup.collapseTitle': 'Collapse',
   'connectionGroup.expandTitle': 'Expand',
   'connectionGroup.other': 'Other',
+  'connectionGroup.ungrouped': 'Ungrouped',
   'connectionGroup.renameGroup': 'Rename Group',
   'connectionGroup.deleteGroup': 'Delete Group',
   'connectionGroup.deleteConfirm': 'Delete group "{name}"? Connections inside will be moved to ungrouped.',

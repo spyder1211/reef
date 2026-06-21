@@ -3,6 +3,8 @@ import { TAG_ORDER } from './tags'
 import { filterProfiles } from '../store/helpers'
 
 export const UNGROUPED_ID = '__ungrouped__'
+// 未分類グループ（バケット）の内部 view.name。表示は GroupSection が isUngrouped を見て
+// t('connectionGroup.ungrouped') に差し替えるため、この値は UI には出ない内部 sentinel。
 export const UNGROUPED_NAME = '未分類'
 
 export interface EnvSubgroup {
