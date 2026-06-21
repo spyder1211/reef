@@ -6,9 +6,7 @@ export function filterProfiles<T extends { name: string; host: string; database?
 ): T[] {
   const q = search.trim().toLowerCase()
   if (!q) return profiles
-  return profiles.filter((p) =>
-    `${p.name} ${p.host} ${p.database ?? ''}`.toLowerCase().includes(q)
-  )
+  return profiles.filter((p) => `${p.name} ${p.host} ${p.database ?? ''}`.toLowerCase().includes(q))
 }
 
 export function pickNextActiveTabId(

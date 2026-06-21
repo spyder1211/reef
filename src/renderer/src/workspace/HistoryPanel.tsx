@@ -44,10 +44,20 @@ export default function HistoryPanel(): JSX.Element {
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
-        <button className={styles.iconBtn} onClick={handleClear} title={t('workspace.historyClear')} aria-label={t('workspace.historyClear')}>
+        <button
+          className={styles.iconBtn}
+          onClick={handleClear}
+          title={t('workspace.historyClear')}
+          aria-label={t('workspace.historyClear')}
+        >
           🗑
         </button>
-        <button className={styles.iconBtn} onClick={toggleHistory} title={t('common.close')} aria-label={t('common.close')}>
+        <button
+          className={styles.iconBtn}
+          onClick={toggleHistory}
+          title={t('common.close')}
+          aria-label={t('common.close')}
+        >
           ×
         </button>
       </div>
@@ -61,7 +71,9 @@ export default function HistoryPanel(): JSX.Element {
             >
               <span className={styles.sql}>{e.sql}</span>
               <span className={styles.meta}>
-                {new Date(e.executedAt).toLocaleString()}{t('workspace.historySep')}{e.durationMs}ms
+                {new Date(e.executedAt).toLocaleString()}
+                {t('workspace.historySep')}
+                {e.durationMs}ms
                 {e.ok ? '' : t('workspace.historyFailed')}
               </span>
             </button>

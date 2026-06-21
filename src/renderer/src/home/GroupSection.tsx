@@ -38,8 +38,7 @@ export default function GroupSection({
 
   function onDragOver(e: DragEvent): void {
     const types = e.dataTransfer.types
-    const accepts =
-      types.includes(CONN_MIME) || (types.includes(GROUP_MIME) && !view.isUngrouped)
+    const accepts = types.includes(CONN_MIME) || (types.includes(GROUP_MIME) && !view.isUngrouped)
     if (accepts) {
       e.preventDefault()
       setDropActive(true)
@@ -170,11 +169,7 @@ export default function GroupSection({
               className={`${styles.menuItem} ${styles.danger}`}
               onClick={() => {
                 setMenu(null)
-                if (
-                  window.confirm(
-                    t('connectionGroup.deleteConfirm', { name: view.name })
-                  )
-                ) {
+                if (window.confirm(t('connectionGroup.deleteConfirm', { name: view.name }))) {
                   void deleteGroup(view.id)
                 }
               }}

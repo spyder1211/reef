@@ -5,9 +5,18 @@ export type GuardTier = 'readonly' | 'write' | 'catastrophic'
 // 先頭キーワードが DROP/TRUNCATE → catastrophic、書き込み系 → write、それ以外 → readonly。
 const CATASTROPHIC = new Set(['DROP', 'TRUNCATE'])
 const WRITE = new Set([
-  'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'ALTER', 'CREATE',
-  'RENAME', 'GRANT', 'REVOKE', 'CALL', 'LOAD',
-  'WITH'   // CTE: WITH ... DML（先頭は WITH）。本番ガードを迂回させないため write 扱い
+  'INSERT',
+  'UPDATE',
+  'DELETE',
+  'REPLACE',
+  'ALTER',
+  'CREATE',
+  'RENAME',
+  'GRANT',
+  'REVOKE',
+  'CALL',
+  'LOAD',
+  'WITH' // CTE: WITH ... DML（先頭は WITH）。本番ガードを迂回させないため write 扱い
 ])
 
 // 1文の先頭キーワードを大文字で取り出す。先頭の空白・開き括弧・コメントは除去。

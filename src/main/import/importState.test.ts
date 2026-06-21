@@ -1,10 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import {
-  setPendingImport,
-  consumePendingImport,
-  isImporting,
-  setImporting
-} from './importState'
+import { setPendingImport, consumePendingImport, isImporting, setImporting } from './importState'
 
 describe('importState', () => {
   beforeEach(() => {

@@ -45,9 +45,7 @@ export default function DetailPane(): JSX.Element | null {
       ) : !row || !result ? (
         <div className={styles.placeholder}>{t('workspace.detailSelectHint')}</div>
       ) : isDeleted ? (
-        <div className={styles.placeholder}>
-          {t('workspace.detailDeletedHint')}
-        </div>
+        <div className={styles.placeholder}>{t('workspace.detailDeletedHint')}</div>
       ) : (
         <div className={styles.body}>
           {result.columns.map((col) => {
@@ -69,7 +67,11 @@ export default function DetailPane(): JSX.Element | null {
                     <button
                       className={styles.jsonToggle}
                       onClick={() => setExpanded((m) => ({ ...m, [col.name]: !m[col.name] }))}
-                      title={isExpanded ? t('workspace.detailJsonCollapse') : t('workspace.detailJsonExpand')}
+                      title={
+                        isExpanded
+                          ? t('workspace.detailJsonCollapse')
+                          : t('workspace.detailJsonExpand')
+                      }
                     >
                       {'{ }'}
                     </button>

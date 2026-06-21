@@ -10,7 +10,11 @@ function freshDeps(): StoreDeps {
     persist: (d) => {
       doc = d
     },
-    secret: { isAvailable: () => true, encrypt: (s) => `enc:${s}`, decrypt: (s) => s.replace(/^enc:/, '') },
+    secret: {
+      isAvailable: () => true,
+      encrypt: (s) => `enc:${s}`,
+      decrypt: (s) => s.replace(/^enc:/, '')
+    },
     genId: () => `id-${++counter}`
   }
 }
@@ -69,7 +73,14 @@ describe('GroupStore', () => {
   it('delete でグループが消え、所属接続の groupId が外れる（未分類化）', () => {
     const profiles = new ProfileStore(deps)
     const group = g.create('A')
-    const p = profiles.save({ name: 'p', tag: 'local', host: 'h', port: 3306, user: 'u', password: 'pw' })
+    const p = profiles.save({
+      name: 'p',
+      tag: 'local',
+      host: 'h',
+      port: 3306,
+      user: 'u',
+      password: 'pw'
+    })
     profiles.move(p.id, group.id)
     expect(profiles.list()[0].groupId).toBe(group.id)
 

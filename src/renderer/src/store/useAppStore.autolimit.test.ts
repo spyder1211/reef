@@ -5,8 +5,14 @@ function seedSqlTab(): void {
   useAppStore.setState({
     tabs: [
       {
-        kind: 'sql', id: 'tab-1', title: 'Q', sql: 'SELECT * FROM users',
-        result: null, error: null, running: false, canceling: false
+        kind: 'sql',
+        id: 'tab-1',
+        title: 'Q',
+        sql: 'SELECT * FROM users',
+        result: null,
+        error: null,
+        running: false,
+        canceling: false
       }
     ] as never,
     activeTabId: 'tab-1'

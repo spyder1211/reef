@@ -112,11 +112,7 @@ describe('SqlStatementSplitter チャンク境界の2文字トークン', () => 
 
   it('ブロックコメント終了 */ がチャンク境界を跨ぐ（SQL を欠落させない）', () => {
     const s = new SqlStatementSplitter()
-    const out = [
-      ...s.push('SELECT /* c *'),
-      ...s.push('/ 1;INSERT INTO t VALUES (1);'),
-      ...s.end()
-    ]
+    const out = [...s.push('SELECT /* c *'), ...s.push('/ 1;INSERT INTO t VALUES (1);'), ...s.end()]
     expect(out).toEqual(['SELECT  1', 'INSERT INTO t VALUES (1)'])
   })
 

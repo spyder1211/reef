@@ -72,10 +72,14 @@ describe('buildInsert', () => {
   })
   it('複数行（カンマ結合・NULL 含む）', () => {
     expect(
-      buildInsert('t', ['a', 'b'], [
-        { a: 1, b: 'x' },
-        { a: 2, b: null }
-      ])
+      buildInsert(
+        't',
+        ['a', 'b'],
+        [
+          { a: 1, b: 'x' },
+          { a: 2, b: null }
+        ]
+      )
     ).toBe("INSERT INTO `t` (`a`, `b`) VALUES (1, 'x'),(2, NULL);\n")
   })
 })

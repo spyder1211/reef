@@ -1,10 +1,5 @@
 import { useMemo, useRef, useState, useEffect } from 'react'
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  type ColumnDef
-} from '@tanstack/react-table'
+import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table'
 import type {
   QueryResult,
   TableSort,
@@ -67,7 +62,8 @@ export default function ResultsGrid(): JSX.Element {
   if (tab.error) {
     return (
       <div className={styles.errorBox}>
-        <b>{tab.error.code}</b>: {tab.error.messageKey ? t(tab.error.messageKey as TranslationKey) : tab.error.message}
+        <b>{tab.error.code}</b>:{' '}
+        {tab.error.messageKey ? t(tab.error.messageKey as TranslationKey) : tab.error.message}
       </div>
     )
   }
@@ -99,15 +95,16 @@ export default function ResultsGrid(): JSX.Element {
     tab.kind === 'sql' && tab.result?.autoLimited ? (
       <div className={styles.limitNotice}>
         <span>{t('workspace.autoLimitBanner', { limit: String(DEFAULT_SQL_LIMIT) })}</span>
-        <button className={styles.limitNoticeButton} onClick={() => void rerunWithoutAutoLimit(tab.id)}>
+        <button
+          className={styles.limitNoticeButton}
+          onClick={() => void rerunWithoutAutoLimit(tab.id)}
+        >
           {t('workspace.autoLimitRerun')}
         </button>
       </div>
     ) : tab.kind === 'sql' && tab.result?.truncated ? (
       <div className={styles.limitNotice}>
-        <span>
-          {t('workspace.truncatedBanner', { limit: String(MAX_RESULT_ROWS) })}
-        </span>
+        <span>{t('workspace.truncatedBanner', { limit: String(MAX_RESULT_ROWS) })}</span>
       </div>
     ) : null
 
@@ -134,13 +131,9 @@ export default function ResultsGrid(): JSX.Element {
         }
         onRemoveInsert={editable ? (localId) => removeInsertRow(tab.id, localId) : undefined}
         onStageDeleteMany={
-          editable
-            ? (entries): void => stageDeleteMany(tab.id, entries)
-            : undefined
+          editable ? (entries): void => stageDeleteMany(tab.id, entries) : undefined
         }
-        onDuplicateRows={
-          editable ? (indices): void => duplicateRows(tab.id, indices) : undefined
-        }
+        onDuplicateRows={editable ? (indices): void => duplicateRows(tab.id, indices) : undefined}
         onQuickFilter={onQuickFilter}
       />
     </div>
@@ -286,7 +279,11 @@ function Grid({
   })
 
   if (result.columns.length === 0) {
-    return <div className={styles.placeholder}>{t('workspace.resultEmpty', { count: String(result.rowCount) })}</div>
+    return (
+      <div className={styles.placeholder}>
+        {t('workspace.resultEmpty', { count: String(result.rowCount) })}
+      </div>
+    )
   }
 
   return (
@@ -374,7 +371,11 @@ function Grid({
               <>
                 {paddingTop > 0 && (
                   <tr aria-hidden="true">
-                    <td className={styles.spacer} colSpan={result.columns.length} style={{ height: paddingTop }} />
+                    <td
+                      className={styles.spacer}
+                      colSpan={result.columns.length}
+                      style={{ height: paddingTop }}
+                    />
                   </tr>
                 )}
                 {virtualItems.map((vi) => {
@@ -401,8 +402,11 @@ function Grid({
                       {r.getVisibleCells().map((cell) => {
                         const colId = cell.column.id
                         const isDirty = rowEdit ? colId in rowEdit.values : false
-                        const value = isDirty ? rowEdit!.values[colId] : (cell.getValue() as unknown)
-                        const isEditingThis = editing?.rowKey === rowKey && editing?.column === colId
+                        const value = isDirty
+                          ? rowEdit!.values[colId]
+                          : (cell.getValue() as unknown)
+                        const isEditingThis =
+                          editing?.rowKey === rowKey && editing?.column === colId
 
                         const startEdit = (): void => {
                           if (!editable) return
@@ -440,7 +444,8 @@ function Grid({
                               onQuickFilter
                                 ? (e) => {
                                     e.preventDefault()
-                                    if (!selectedSet.has(r.index)) onSetSelection?.([r.index], r.index)
+                                    if (!selectedSet.has(r.index))
+                                      onSetSelection?.([r.index], r.index)
                                     setCtxMenu({
                                       kind: 'cell',
                                       x: e.clientX,
@@ -488,7 +493,11 @@ function Grid({
                 })}
                 {paddingBottom > 0 && (
                   <tr aria-hidden="true">
-                    <td className={styles.spacer} colSpan={result.columns.length} style={{ height: paddingBottom }} />
+                    <td
+                      className={styles.spacer}
+                      colSpan={result.columns.length}
+                      style={{ height: paddingBottom }}
+                    />
                   </tr>
                 )}
               </>
@@ -544,11 +553,7 @@ function Grid({
 
                 const cls = isEditingThis ? styles.editing : undefined
                 return (
-                  <td
-                    key={colId}
-                    className={cls}
-                    onDoubleClick={editable ? startEdit : undefined}
-                  >
+                  <td key={colId} className={cls} onDoubleClick={editable ? startEdit : undefined}>
                     {isEditingThis ? (
                       <span className={styles.editWrap}>
                         <input
@@ -637,51 +642,57 @@ function Grid({
                   </div>
                 </>
               )}
-              {onStageDeleteMany && (() => {
-                // 選択中の結果行のみ対象（INSERT 行・範囲外は除外）。
-                const targets = [...selectedSet].filter((i) => i < result.rows.length).sort((a, b) => a - b)
-                if (targets.length === 0) return null
-                const entries = targets.map((i) => {
-                  const row = result.rows[i] as Row
-                  return { rowKey: rowKeyOf(primaryKey, row), pkValues: pkValuesOf(primaryKey, row) }
-                })
-                const allStaged = entries.every((e) => e.rowKey in deletes)
-                const n = targets.length
-                return (
-                  <>
-                    <div className={styles.ctxSep} />
-                    <div
-                      className={`${styles.ctxItem} ${allStaged ? '' : styles.ctxDanger}`}
-                      onClick={() => {
-                        onStageDeleteMany(entries)
-                        setCtxMenu(null)
-                      }}
-                    >
-                      {allStaged
-                        ? tPlural('workspace.deleteUndo', n, { count: String(n) })
-                        : tPlural('workspace.deleteStage', n, { count: String(n) })}
-                    </div>
-                    <div
-                      className={styles.ctxItem}
-                      onClick={() => {
-                        onDuplicateRows?.(targets)
-                        setCtxMenu(null)
-                      }}
-                    >
-                      {tPlural('workspace.duplicateRows', n, { count: String(n) })}
-                    </div>
-                    <div
-                      className={styles.ctxItem}
-                      onClick={() => {
-                        copySelectedRows(targets)
-                        setCtxMenu(null)
-                      }}
-                    >
-                      {tPlural('workspace.copyRows', n, { count: String(n) })}
-                    </div>
-                  </>
-                )
-              })()}
+              {onStageDeleteMany &&
+                (() => {
+                  // 選択中の結果行のみ対象（INSERT 行・範囲外は除外）。
+                  const targets = [...selectedSet]
+                    .filter((i) => i < result.rows.length)
+                    .sort((a, b) => a - b)
+                  if (targets.length === 0) return null
+                  const entries = targets.map((i) => {
+                    const row = result.rows[i] as Row
+                    return {
+                      rowKey: rowKeyOf(primaryKey, row),
+                      pkValues: pkValuesOf(primaryKey, row)
+                    }
+                  })
+                  const allStaged = entries.every((e) => e.rowKey in deletes)
+                  const n = targets.length
+                  return (
+                    <>
+                      <div className={styles.ctxSep} />
+                      <div
+                        className={`${styles.ctxItem} ${allStaged ? '' : styles.ctxDanger}`}
+                        onClick={() => {
+                          onStageDeleteMany(entries)
+                          setCtxMenu(null)
+                        }}
+                      >
+                        {allStaged
+                          ? tPlural('workspace.deleteUndo', n, { count: String(n) })
+                          : tPlural('workspace.deleteStage', n, { count: String(n) })}
+                      </div>
+                      <div
+                        className={styles.ctxItem}
+                        onClick={() => {
+                          onDuplicateRows?.(targets)
+                          setCtxMenu(null)
+                        }}
+                      >
+                        {tPlural('workspace.duplicateRows', n, { count: String(n) })}
+                      </div>
+                      <div
+                        className={styles.ctxItem}
+                        onClick={() => {
+                          copySelectedRows(targets)
+                          setCtxMenu(null)
+                        }}
+                      >
+                        {tPlural('workspace.copyRows', n, { count: String(n) })}
+                      </div>
+                    </>
+                  )
+                })()}
             </>
           )}
           {ctxMenu.kind === 'insert' && (

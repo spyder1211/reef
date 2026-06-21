@@ -47,9 +47,7 @@ export interface AppError {
 }
 
 // IPC の戻り値は例外を投げず、必ずこの判別共用体で返す
-export type ApiResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: AppError }
+export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: AppError }
 
 // 接続プロファイル（保存済み接続）
 export type ConnectionTag = 'production' | 'staging' | 'development' | 'local' | 'none'
@@ -90,10 +88,18 @@ export interface ConnectionProfileInput {
 
 // フィルター条件
 export type FilterOperator =
-  | '=' | '<>' | '<' | '>' | '<=' | '>='
-  | 'is_null' | 'is_not_null'
-  | 'contains' | 'not_contains'
-  | 'in' | 'between'
+  | '='
+  | '<>'
+  | '<'
+  | '>'
+  | '<='
+  | '>='
+  | 'is_null'
+  | 'is_not_null'
+  | 'contains'
+  | 'not_contains'
+  | 'in'
+  | 'between'
 
 export interface FilterCondition {
   id: string
@@ -125,7 +131,7 @@ export interface SqlStatement {
 
 // INSERT ステージング中の1行
 export interface PendingInsert {
-  localId: string                       // ローカル一意 ID（"ins-0", "ins-1" …）
+  localId: string // ローカル一意 ID（"ins-0", "ins-1" …）
   values: Record<string, string | null> // 列名 → 入力値（空文字は SQL から除外）
 }
 

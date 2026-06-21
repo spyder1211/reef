@@ -38,9 +38,6 @@ export async function guardProductionSql(
 }
 
 // メニュー用: フォーカス中ウィンドウを親に確認。
-export async function guardProductionMenu(
-  tier: ConfirmTier,
-  opLabel: string
-): Promise<boolean> {
+export async function guardProductionMenu(tier: ConfirmTier, opLabel: string): Promise<boolean> {
   return guard(BrowserWindow.getFocusedWindow(), tier, opLabel)
 }

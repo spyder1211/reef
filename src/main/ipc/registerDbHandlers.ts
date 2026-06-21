@@ -25,22 +25,19 @@ export function registerDbHandlers(
   // 本番ガードでキャンセルされた時の戻り値（renderer は code==='CANCELLED' を静かに扱う）。
   const CANCELLED = { ok: false as const, error: { code: 'CANCELLED', message: '' } }
 
-  ipcMain.handle(
-    'db:connect',
-    async (_e, config: ConnectionConfig): Promise<ApiResult<null>> => {
-      const errors = validateConnectionConfig(config)
-      if (errors.length > 0) {
-        return { ok: false, error: { code: 'INVALID_CONFIG', message: errors.join(', ') } }
-      }
-      try {
-        await connectWithTunnel(manager, config, tunnel)
-        clearProductionContext() // テスト接続はタグ不明のため非 production 扱い
-        return { ok: true, data: null }
-      } catch (err) {
-        return { ok: false, error: normalizeDbError(err) }
-      }
+  ipcMain.handle('db:connect', async (_e, config: ConnectionConfig): Promise<ApiResult<null>> => {
+    const errors = validateConnectionConfig(config)
+    if (errors.length > 0) {
+      return { ok: false, error: { code: 'INVALID_CONFIG', message: errors.join(', ') } }
     }
-  )
+    try {
+      await connectWithTunnel(manager, config, tunnel)
+      clearProductionContext() // テスト接続はタグ不明のため非 production 扱い
+      return { ok: true, data: null }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
+    }
+  })
 
   ipcMain.handle(
     'db:query',
@@ -57,7 +54,12 @@ export function registerDbHandlers(
 
   ipcMain.handle(
     'db:queryScript',
-    async (e, tabId: string, sql: string, skipAutoLimit?: boolean): Promise<ApiResult<QueryResult>> => {
+    async (
+      e,
+      tabId: string,
+      sql: string,
+      skipAutoLimit?: boolean
+    ): Promise<ApiResult<QueryResult>> => {
       if (!(await guardProductionSql(e, sql, t('dialog.opSqlQuery')))) return CANCELLED
       // キャンセル（実行前ガード／実行中 KILL）は履歴に残さない。成功/失敗時のみ history.add。
       // 履歴にはユーザー原文 sql を残す（自動付与した LIMIT 入りではない）。
@@ -103,16 +105,13 @@ export function registerDbHandlers(
     }
   })
 
-  ipcMain.handle(
-    'db:primaryKey',
-    async (_e, table: string): Promise<ApiResult<string[]>> => {
-      try {
-        return { ok: true, data: await manager.primaryKey(table) }
-      } catch (err) {
-        return { ok: false, error: normalizeDbError(err) }
-      }
+  ipcMain.handle('db:primaryKey', async (_e, table: string): Promise<ApiResult<string[]>> => {
+    try {
+      return { ok: true, data: await manager.primaryKey(table) }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
     }
-  )
+  })
 
   ipcMain.handle(
     'db:autoIncrementColumns',
@@ -125,16 +124,13 @@ export function registerDbHandlers(
     }
   )
 
-  ipcMain.handle(
-    'db:tableSchema',
-    async (_e, table: string): Promise<ApiResult<TableSchema>> => {
-      try {
-        return { ok: true, data: await manager.tableSchema(table) }
-      } catch (err) {
-        return { ok: false, error: normalizeDbError(err) }
-      }
+  ipcMain.handle('db:tableSchema', async (_e, table: string): Promise<ApiResult<TableSchema>> => {
+    try {
+      return { ok: true, data: await manager.tableSchema(table) }
+    } catch (err) {
+      return { ok: false, error: normalizeDbError(err) }
     }
-  )
+  })
 
   ipcMain.handle('db:schemaMap', async (): Promise<ApiResult<Record<string, string[]>>> => {
     try {

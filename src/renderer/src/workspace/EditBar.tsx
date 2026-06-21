@@ -48,7 +48,10 @@ export default function EditBar(): JSX.Element | null {
       <span className={styles.count}>{t('workspace.uncommitted', { summary })}</span>
       {tab.editError && (
         <span className={styles.err}>
-          {tab.editError.code}: {tab.editError.messageKey ? t(tab.editError.messageKey as TranslationKey) : tab.editError.message}
+          {tab.editError.code}:{' '}
+          {tab.editError.messageKey
+            ? t(tab.editError.messageKey as TranslationKey)
+            : tab.editError.message}
         </span>
       )}
       <span className={styles.spacer} />

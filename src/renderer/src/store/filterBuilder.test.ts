@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { buildFilteredQuery, buildCountQuery, sameFilterEffect, countUsableFilters } from './filterBuilder'
+import {
+  buildFilteredQuery,
+  buildCountQuery,
+  sameFilterEffect,
+  countUsableFilters
+} from './filterBuilder'
 import type { FilterCondition } from '../../../shared/types'
 
 const cols = ['id', 'name', 'date']
@@ -103,9 +108,11 @@ describe('buildFilteredQuery', () => {
   })
 
   it('識別子のバッククォートを2重化してエスケープ', () => {
-    const r = buildFilteredQuery('we`ird', ['c`ol'], [
-      { ...base, column: 'c`ol', operator: 'is_null' }
-    ])
+    const r = buildFilteredQuery(
+      'we`ird',
+      ['c`ol'],
+      [{ ...base, column: 'c`ol', operator: 'is_null' }]
+    )
     expect(r.sql).toBe('SELECT * FROM `we``ird` WHERE `c``ol` IS NULL LIMIT 100')
   })
 })
@@ -199,15 +206,26 @@ describe('buildCountQuery', () => {
 describe('sameFilterEffect', () => {
   const cols = ['id', 'name']
   const f = (over: Partial<FilterCondition>): FilterCondition => ({
-    id: 'x', enabled: true, column: 'id', operator: '=', value: '', value2: '', ...over
+    id: 'x',
+    enabled: true,
+    column: 'id',
+    operator: '=',
+    value: '',
+    value2: '',
+    ...over
   })
 
   it('id だけ違う同内容は true', () => {
-    expect(sameFilterEffect(cols, [f({ id: 'a', value: '5' })], [f({ id: 'b', value: '5' })])).toBe(true)
+    expect(sameFilterEffect(cols, [f({ id: 'a', value: '5' })], [f({ id: 'b', value: '5' })])).toBe(
+      true
+    )
   })
   it('無効化された条件の有無は効果に影響しない（true）', () => {
     const a = [f({ value: '5' })]
-    const b = [f({ value: '5' }), f({ column: 'name', operator: 'contains', value: 'z', enabled: false })]
+    const b = [
+      f({ value: '5' }),
+      f({ column: 'name', operator: 'contains', value: 'z', enabled: false })
+    ]
     expect(sameFilterEffect(cols, a, b)).toBe(true)
   })
   it('空値の条件追加は効果なし（true）', () => {
@@ -219,10 +237,18 @@ describe('sameFilterEffect', () => {
     expect(sameFilterEffect(cols, [f({ value: '5' })], [f({ value: '6' })])).toBe(false)
   })
   it('演算子の変更は false', () => {
-    expect(sameFilterEffect(cols, [f({ value: '5', operator: '=' })], [f({ value: '5', operator: '<>' })])).toBe(false)
+    expect(
+      sameFilterEffect(
+        cols,
+        [f({ value: '5', operator: '=' })],
+        [f({ value: '5', operator: '<>' })]
+      )
+    ).toBe(false)
   })
   it('列の変更は false', () => {
-    expect(sameFilterEffect(cols, [f({ column: 'id', value: '5' })], [f({ column: 'name', value: '5' })])).toBe(false)
+    expect(
+      sameFilterEffect(cols, [f({ column: 'id', value: '5' })], [f({ column: 'name', value: '5' })])
+    ).toBe(false)
   })
   it('ホワイトリスト外の列を含む差分は無視（true）', () => {
     const a = [f({ value: '5' })]
@@ -234,7 +260,13 @@ describe('sameFilterEffect', () => {
 describe('countUsableFilters', () => {
   const cols = ['id', 'name']
   const f = (over: Partial<FilterCondition>): FilterCondition => ({
-    id: 'x', enabled: true, column: 'id', operator: '=', value: '', value2: '', ...over
+    id: 'x',
+    enabled: true,
+    column: 'id',
+    operator: '=',
+    value: '',
+    value2: '',
+    ...over
   })
 
   it('有効＋実効のある条件のみ数える', () => {

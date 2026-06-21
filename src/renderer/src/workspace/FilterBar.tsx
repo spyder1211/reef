@@ -104,12 +104,20 @@ export default function FilterBar(): JSX.Element | null {
                 <input
                   className={styles.val}
                   value={f.value}
-                  placeholder={valueKind === 'list' ? t('workspace.filterValueList') : t('workspace.filterValue')}
+                  placeholder={
+                    valueKind === 'list'
+                      ? t('workspace.filterValueList')
+                      : t('workspace.filterValue')
+                  }
                   onChange={(e) => updateFilter(tab.id, f.id, { value: e.target.value })}
                   onKeyDown={applyOnEnter}
                 />
               )}
-              <button className={styles.iconBtn} onClick={() => removeFilter(tab.id, f.id)} title={t('workspace.filterRemove')}>
+              <button
+                className={styles.iconBtn}
+                onClick={() => removeFilter(tab.id, f.id)}
+                title={t('workspace.filterRemove')}
+              >
                 −
               </button>
               <button
@@ -132,7 +140,11 @@ export default function FilterBar(): JSX.Element | null {
         })
       )}
       <div className={styles.footer}>
-        <button className={styles.addBtn} disabled={!columnsReady} onClick={() => addFilter(tab.id)}>
+        <button
+          className={styles.addBtn}
+          disabled={!columnsReady}
+          onClick={() => addFilter(tab.id)}
+        >
           {t('workspace.filterAddBtn')}
         </button>
         {statusText && (
@@ -160,7 +172,8 @@ export default function FilterBar(): JSX.Element | null {
         </button>
       </div>
       <div className={styles.preview} title={preview}>
-        {(isDirty ? t('workspace.filterPreviewDirty') : t('workspace.filterPreviewApplied')) + preview}
+        {(isDirty ? t('workspace.filterPreviewDirty') : t('workspace.filterPreviewApplied')) +
+          preview}
       </div>
     </div>
   )

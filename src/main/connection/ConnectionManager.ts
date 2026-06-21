@@ -49,7 +49,10 @@ export class ConnectionManager {
     const dataRows = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
     const columns = (fields ?? []).map((f) => {
       const ff = f as { name: string; type?: number }
-      return { name: ff.name, type: typeof ff.type === 'number' ? fieldTypeName(ff.type) : undefined }
+      return {
+        name: ff.name,
+        type: typeof ff.type === 'number' ? fieldTypeName(ff.type) : undefined
+      }
     })
     return { columns, rows: dataRows, rowCount: dataRows.length, durationMs }
   }
@@ -167,7 +170,11 @@ export class ConnectionManager {
     const [rows] = await this.pool.query(`SHOW COLUMNS FROM ${quoted}`)
     const list = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
     return list
-      .filter((r) => String(r.Extra ?? '').toLowerCase().includes('auto_increment'))
+      .filter((r) =>
+        String(r.Extra ?? '')
+          .toLowerCase()
+          .includes('auto_increment')
+      )
       .map((r) => String(r.Field))
   }
 

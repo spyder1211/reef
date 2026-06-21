@@ -11,7 +11,15 @@ import { TAG_ORDER, TAG_COLORS, TAG_LABELS } from '../lib/tags'
 import styles from './ConnectionFormModal.module.css'
 
 function initialForm(): ConnectionProfileInput {
-  return { name: '', tag: 'local', host: '127.0.0.1', port: 3306, user: 'root', password: '', database: '' }
+  return {
+    name: '',
+    tag: 'local',
+    host: '127.0.0.1',
+    port: 3306,
+    user: 'root',
+    password: '',
+    database: ''
+  }
 }
 
 // SSH 設定の既定値（チェックボックス ON 時の初期状態）。
@@ -51,7 +59,10 @@ export default function ConnectionFormModal(): JSX.Element {
     })
   }, [])
 
-  function update<K extends keyof ConnectionProfileInput>(key: K, value: ConnectionProfileInput[K]): void {
+  function update<K extends keyof ConnectionProfileInput>(
+    key: K,
+    value: ConnectionProfileInput[K]
+  ): void {
     setForm((f) => ({ ...f, [key]: value }))
     setTestState('idle')
   }
@@ -122,7 +133,12 @@ export default function ConnectionFormModal(): JSX.Element {
         <div className={styles.title}>{t('connectionForm.title')}</div>
 
         <Field label={t('connectionForm.name')}>
-          <input className={styles.input} value={form.name} onChange={(e) => update('name', e.target.value)} autoFocus />
+          <input
+            className={styles.input}
+            value={form.name}
+            onChange={(e) => update('name', e.target.value)}
+            autoFocus
+          />
         </Field>
 
         <Field label={t('connectionForm.tag')}>
@@ -134,7 +150,9 @@ export default function ConnectionFormModal(): JSX.Element {
                   key={tag}
                   type="button"
                   className={`${styles.tagOption} ${selected ? styles.tagSelected : ''}`}
-                  style={selected ? { borderColor: TAG_COLORS[tag], color: TAG_COLORS[tag] } : undefined}
+                  style={
+                    selected ? { borderColor: TAG_COLORS[tag], color: TAG_COLORS[tag] } : undefined
+                  }
                   onClick={() => update('tag', tag as ConnectionTag)}
                 >
                   <span className={styles.tagDot} style={{ background: TAG_COLORS[tag] }} />
@@ -146,7 +164,11 @@ export default function ConnectionFormModal(): JSX.Element {
         </Field>
 
         <Field label="Host">
-          <input className={styles.input} value={form.host} onChange={(e) => update('host', e.target.value)} />
+          <input
+            className={styles.input}
+            value={form.host}
+            onChange={(e) => update('host', e.target.value)}
+          />
           <input
             className={styles.port}
             type="number"
@@ -156,7 +178,11 @@ export default function ConnectionFormModal(): JSX.Element {
         </Field>
 
         <Field label="User">
-          <input className={styles.input} value={form.user} onChange={(e) => update('user', e.target.value)} />
+          <input
+            className={styles.input}
+            value={form.user}
+            onChange={(e) => update('user', e.target.value)}
+          />
         </Field>
 
         <Field label="Password">
@@ -168,11 +194,7 @@ export default function ConnectionFormModal(): JSX.Element {
           />
         </Field>
 
-        {!encAvailable && (
-          <div className={styles.encWarn}>
-            {t('connectionForm.encWarn')}
-          </div>
-        )}
+        {!encAvailable && <div className={styles.encWarn}>{t('connectionForm.encWarn')}</div>}
 
         <Field label="Database">
           <input
@@ -270,7 +292,11 @@ export default function ConnectionFormModal(): JSX.Element {
                     className={styles.input}
                     type="password"
                     value={ssh.passphrase ?? ''}
-                    placeholder={editing ? t('connectionForm.leaveBlankToKeep') : t('connectionForm.passphraseOptional')}
+                    placeholder={
+                      editing
+                        ? t('connectionForm.leaveBlankToKeep')
+                        : t('connectionForm.passphraseOptional')
+                    }
                     onChange={(e) => updateSsh('passphrase', e.target.value)}
                   />
                 </Field>

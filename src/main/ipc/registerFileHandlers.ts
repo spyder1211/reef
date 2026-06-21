@@ -33,8 +33,14 @@ export function registerFileHandlers(): void {
     try {
       const win = BrowserWindow.fromWebContents(e.sender) ?? BrowserWindow.getFocusedWindow()
       const result = win
-        ? await dialog.showOpenDialog(win, { properties: ['openFile'], title: 'SSH \u79D8\u5BC6\u9375\u3092\u9078\u629E' })
-        : await dialog.showOpenDialog({ properties: ['openFile'], title: 'SSH \u79D8\u5BC6\u9375\u3092\u9078\u629E' })
+        ? await dialog.showOpenDialog(win, {
+            properties: ['openFile'],
+            title: 'SSH \u79D8\u5BC6\u9375\u3092\u9078\u629E'
+          })
+        : await dialog.showOpenDialog({
+            properties: ['openFile'],
+            title: 'SSH \u79D8\u5BC6\u9375\u3092\u9078\u629E'
+          })
       if (result.canceled || result.filePaths.length === 0) {
         return { ok: true, data: { canceled: true } }
       }

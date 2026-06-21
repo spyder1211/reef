@@ -73,7 +73,9 @@ describe('buildInsertStatements', () => {
   })
 
   it('複数列 INSERT', () => {
-    const inserts: PendingInsert[] = [{ localId: 'ins-0', values: { name: '太郎', email: 'a@b.com' } }]
+    const inserts: PendingInsert[] = [
+      { localId: 'ins-0', values: { name: '太郎', email: 'a@b.com' } }
+    ]
     const r = buildInsertStatements('users', inserts)
     expect(r[0].sql).toBe('INSERT INTO `users` (`name`, `email`) VALUES (?, ?)')
     expect(r[0].params).toEqual(['太郎', 'a@b.com'])
@@ -115,21 +117,21 @@ describe('buildInsertStatements', () => {
 
 describe('buildDeleteStatements', () => {
   it('単一 PK の DELETE', () => {
-    const deletes = { 'k1': { id: 6 } }
+    const deletes = { k1: { id: 6 } }
     expect(buildDeleteStatements('users', ['id'], deletes)).toEqual([
       { sql: 'DELETE FROM `users` WHERE `id` = ?', params: [6] }
     ])
   })
 
   it('複合 PK は WHERE を AND 結合', () => {
-    const deletes = { 'k1': { a: 1, b: 2 } }
+    const deletes = { k1: { a: 1, b: 2 } }
     const r = buildDeleteStatements('t', ['a', 'b'], deletes)
     expect(r[0].sql).toBe('DELETE FROM `t` WHERE `a` = ? AND `b` = ?')
     expect(r[0].params).toEqual([1, 2])
   })
 
   it('識別子のバッククォートを2重化', () => {
-    const deletes = { 'k1': { 'i`d': 3 } }
+    const deletes = { k1: { 'i`d': 3 } }
     const r = buildDeleteStatements('we`ird', ['i`d'], deletes)
     expect(r[0].sql).toBe('DELETE FROM `we``ird` WHERE `i``d` = ?')
   })

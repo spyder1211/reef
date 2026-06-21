@@ -66,7 +66,11 @@ function toView(
 }
 
 // ドラッグした要素をターゲットの直前へ挿入した新しい id 配列を返す（純関数）
-export function computeReorder(orderedIds: string[], draggedId: string, targetId: string): string[] {
+export function computeReorder(
+  orderedIds: string[],
+  draggedId: string,
+  targetId: string
+): string[] {
   if (draggedId === targetId) return orderedIds
   const without = orderedIds.filter((id) => id !== draggedId)
   const targetIdx = without.indexOf(targetId)

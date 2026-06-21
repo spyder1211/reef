@@ -27,7 +27,11 @@ export default function HomeScreen(): JSX.Element {
       <AppRail />
       <div className={styles.main}>
         <div className={styles.top}>
-          <button className={styles.plus} onClick={() => openForm()} title={t('home.newConnection')}>
+          <button
+            className={styles.plus}
+            onClick={() => openForm()}
+            title={t('home.newConnection')}
+          >
             ＋
           </button>
           <button

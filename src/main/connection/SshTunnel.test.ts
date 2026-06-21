@@ -6,7 +6,14 @@ describe('SshTunnel', () => {
     const tunnel = new SshTunnel()
     await expect(
       tunnel.open(
-        { enabled: true, host: '127.0.0.1', port: 1, user: 'x', authMethod: 'password', password: 'x' },
+        {
+          enabled: true,
+          host: '127.0.0.1',
+          port: 1,
+          user: 'x',
+          authMethod: 'password',
+          password: 'x'
+        },
         'db.example.com',
         3306
       )

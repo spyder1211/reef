@@ -8,8 +8,7 @@ describe('カタログ整合性', () => {
     expect(Object.keys(ja).sort()).toEqual(Object.keys(en).sort())
   })
   it('各キーの {token} 集合が en/ja で一致する', () => {
-    const tokens = (s: string): string[] =>
-      [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort()
+    const tokens = (s: string): string[] => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort()
     for (const key of Object.keys(en) as (keyof typeof en)[]) {
       expect(tokens(ja[key])).toEqual(tokens(en[key]))
     }

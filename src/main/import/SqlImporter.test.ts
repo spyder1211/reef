@@ -77,7 +77,10 @@ describe('importSqlDump', () => {
       'fail',
       'CREATE TABLE t (id INT);\nINSERT INTO bad VALUES (1);\nINSERT INTO t VALUES (2);\n'
     )
-    const { exec, manager } = fakeExecutor({ failOn: 'INSERT INTO bad', error: new Error('no such table') })
+    const { exec, manager } = fakeExecutor({
+      failOn: 'INSERT INTO bad',
+      error: new Error('no such table')
+    })
     const summary = await importSqlDump(manager, file, vi.fn())
     expect(summary.status).toBe('failed')
     expect(summary.executedCount).toBe(1) // CREATE TABLE のみ成功
@@ -139,9 +142,7 @@ describe('importSqlDump', () => {
     ])
     const file = writeTmpRawGz('gzbad', corrupt)
     const { exec, manager } = fakeExecutor()
-    await expect(importSqlDump(manager, file, vi.fn())).rejects.toThrow(
-      'Failed to decompress gzip'
-    )
+    await expect(importSqlDump(manager, file, vi.fn())).rejects.toThrow('Failed to decompress gzip')
     // 展開に失敗するため dump の文は 1 つも実行されない（SET 文以外は呼ばれない）。
     expect(dumpCalls(exec)).toHaveLength(0)
   })

@@ -55,7 +55,11 @@ export default function Pager(): JSX.Element | null {
 
       <div className={styles.range}>
         {tab.total !== null
-          ? t('workspace.rowRange', { start: String(start), end: String(end), total: tab.total.toLocaleString() })
+          ? t('workspace.rowRange', {
+              start: String(start),
+              end: String(end),
+              total: tab.total.toLocaleString()
+            })
           : t('workspace.rowRangeUnknown', { start: String(start), end: String(end) })}
       </div>
     </div>

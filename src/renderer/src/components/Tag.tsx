@@ -11,7 +11,10 @@ export default function Tag({
 }): JSX.Element | null {
   if (tag === 'none') return null
   return (
-    <span className={styles.tag} style={{ color: light ? 'rgba(255,255,255,0.85)' : TAG_COLORS[tag] }}>
+    <span
+      className={styles.tag}
+      style={{ color: light ? 'rgba(255,255,255,0.85)' : TAG_COLORS[tag] }}
+    >
       {TAG_LABELS[tag]}
     </span>
   )

@@ -78,9 +78,7 @@ export default function SqlImportModal(): JSX.Element | null {
               <span className={styles.k}>{t('workspace.importSizeLabel')}</span>
               <span>{formatBytes(req.totalBytes)}</span>
             </div>
-            <div className={styles.warn}>
-              {t('workspace.importWarn')}
-            </div>
+            <div className={styles.warn}>{t('workspace.importWarn')}</div>
             <div className={styles.actions}>
               <button className={styles.btn} onClick={close}>
                 {t('common.cancel')}
@@ -100,14 +98,22 @@ export default function SqlImportModal(): JSX.Element | null {
             <div className={styles.row}>
               <span className={styles.k}>{t('workspace.importProgressLabel')}</span>
               <span>
-                {t('workspace.importByteProgress', { pct, read: formatBytes(progress.bytesRead), total: formatBytes(progress.totalBytes) })}
+                {t('workspace.importByteProgress', {
+                  pct,
+                  read: formatBytes(progress.bytesRead),
+                  total: formatBytes(progress.totalBytes)
+                })}
               </span>
             </div>
             <div className={styles.row}>
               <span className={styles.k}>{t('workspace.importExecutedLabel')}</span>
-              <span>{t('workspace.importStatements', { count: String(progress.executedCount) })}</span>
+              <span>
+                {t('workspace.importStatements', { count: String(progress.executedCount) })}
+              </span>
             </div>
-            {progress.currentPreview && <div className={styles.preview}>{progress.currentPreview}</div>}
+            {progress.currentPreview && (
+              <div className={styles.preview}>{progress.currentPreview}</div>
+            )}
           </>
         )}
 
@@ -116,7 +122,10 @@ export default function SqlImportModal(): JSX.Element | null {
             {fatal && <div className={styles.error}>{fatal}</div>}
             {summary && summary.status === 'completed' && (
               <div className={styles.ok}>
-                {t('workspace.importDone', { count: String(summary.executedCount), ms: String(summary.durationMs) })}
+                {t('workspace.importDone', {
+                  count: String(summary.executedCount),
+                  ms: String(summary.durationMs)
+                })}
               </div>
             )}
             {summary && summary.status === 'failed' && summary.failure && (

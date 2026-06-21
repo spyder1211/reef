@@ -1,5 +1,11 @@
 import type { ConnectionManager } from '../connection/ConnectionManager'
-import { quoteIdent, buildDropAndCreate, buildInsert, dumpHeader, dumpFooter } from './sqlDumpHelpers'
+import {
+  quoteIdent,
+  buildDropAndCreate,
+  buildInsert,
+  dumpHeader,
+  dumpFooter
+} from './sqlDumpHelpers'
 import { t } from '../i18n'
 
 export interface DumpResult {

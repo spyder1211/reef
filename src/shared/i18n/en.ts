@@ -37,7 +37,8 @@ export const en = {
   'connectionGroup.ungrouped': 'Ungrouped',
   'connectionGroup.renameGroup': 'Rename Group',
   'connectionGroup.deleteGroup': 'Delete Group',
-  'connectionGroup.deleteConfirm': 'Delete group "{name}"? Connections inside will be moved to ungrouped.',
+  'connectionGroup.deleteConfirm':
+    'Delete group "{name}"? Connections inside will be moved to ungrouped.',
   'connectionForm.title': 'MySQL Connection',
   'connectionForm.name': 'Name',
   'connectionForm.tag': 'Tag',
@@ -52,7 +53,8 @@ export const en = {
   'connectionForm.passphrase': 'Passphrase',
   'connectionForm.leaveBlankToKeep': '(leave blank to keep)',
   'connectionForm.passphraseOptional': '(optional)',
-  'connectionForm.encWarn': 'Credentials cannot be saved (encryption unavailable in this environment).',
+  'connectionForm.encWarn':
+    'Credentials cannot be saved (encryption unavailable in this environment).',
   'connectionForm.sslNote': 'SSL support coming soon',
   'connectionForm.testIdle': 'Test',
   'connectionForm.testTesting': 'Testing…',
@@ -96,7 +98,8 @@ export const en = {
   'workspace.resultEmpty': 'No results ({count} rows)',
   'workspace.autoLimitBanner': 'Showing first {limit} rows (auto-LIMIT applied — not all rows)',
   'workspace.autoLimitRerun': 'Re-run without auto-LIMIT',
-  'workspace.truncatedBanner': 'Result truncated to first {limit} rows. Use CSV export for all rows.',
+  'workspace.truncatedBanner':
+    'Result truncated to first {limit} rows. Use CSV export for all rows.',
   'workspace.quickFilterEq': '= Filter by this value',
   'workspace.quickFilterNeq': '≠ Not this value',
   'workspace.quickFilterContains': 'Contains',
@@ -163,7 +166,8 @@ export const en = {
   'workspace.importFileLabel': 'File',
   'workspace.importSizeLabel': 'Size',
   'workspace.importNoDb': '(none selected)',
-  'workspace.importWarn': 'This dump may contain DROP / CREATE / INSERT statements and will overwrite existing data in the target DB. MySQL DDL is auto-committed, so changes up to the point of failure cannot be rolled back.',
+  'workspace.importWarn':
+    'This dump may contain DROP / CREATE / INSERT statements and will overwrite existing data in the target DB. MySQL DDL is auto-committed, so changes up to the point of failure cannot be rolled back.',
   'workspace.importRun': 'Execute',
   'workspace.importProgressLabel': 'Progress',
   'workspace.importExecutedLabel': 'Executed',
@@ -177,8 +181,10 @@ export const en = {
   'store.confirmDiscard': 'You have uncommitted changes. Discard and continue?',
   'store.confirmDiscardReturn': 'You have uncommitted changes. Discard and return to connections?',
   'store.confirmDiscardClose': 'You have uncommitted changes. Discard and close this tab?',
-  'store.confirmProdConnect': '"{name}" is a production environment.\n\nMistakes will directly affect production data. Proceed?',
-  'store.confirmTruncate': 'This will empty table "{name}". All rows will be deleted and cannot be undone. Continue?',
+  'store.confirmProdConnect':
+    '"{name}" is a production environment.\n\nMistakes will directly affect production data. Proceed?',
+  'store.confirmTruncate':
+    'This will empty table "{name}". All rows will be deleted and cannot be undone. Continue?',
   'store.confirmDrop': 'This will drop table "{name}". This action cannot be undone. Continue?',
   'store.confirmExportLarge': 'Export {count} rows?',
   'store.exportNoResult': 'No result to export.',
@@ -191,7 +197,8 @@ export const en = {
   'dialog.production.confirm': 'Run',
   'dialog.production.message': 'Attempting to run "{op}" on production ({conn}).',
   'dialog.production.detail': 'This will directly affect production data. Are you sure?',
-  'dialog.production.detailCatastrophic': 'This may destroy or replace production data. Please review carefully.',
+  'dialog.production.detailCatastrophic':
+    'This may destroy or replace production data. Please review carefully.',
   'dialog.production.checkboxLabel': 'I understand this is production and want to proceed',
   'error.hostRequired': 'host is required',
   'error.portRange': 'port must be between 1 and 65535',

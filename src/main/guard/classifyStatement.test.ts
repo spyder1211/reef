@@ -30,7 +30,9 @@ describe('classifyStatement', () => {
   it('WITH (CTE) 始まりは write 扱い（本番ガードを迂回させない）', () => {
     expect(classifyStatement('WITH cte AS (SELECT 1) DELETE FROM t')).toBe('write')
     expect(classifyStatement('WITH cte AS (SELECT 1) UPDATE t SET a=1')).toBe('write')
-    expect(classifyStatement('WITH cte AS (SELECT 1) INSERT INTO t SELECT * FROM cte')).toBe('write')
+    expect(classifyStatement('WITH cte AS (SELECT 1) INSERT INTO t SELECT * FROM cte')).toBe(
+      'write'
+    )
   })
   it('先頭コメント付きの破壊的文を迂回させない（実キーワードで判定）', () => {
     expect(classifyStatement('-- 古いテーブルを削除\nDROP TABLE users')).toBe('catastrophic')

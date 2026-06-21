@@ -11,7 +11,11 @@ export default function StatusBar(): JSX.Element {
 
   return (
     <div className={styles.status}>
-      <span>{r ? t('workspace.statusRow', { count: String(r.rowCount), ms: String(r.durationMs) }) : '—'}</span>
+      <span>
+        {r
+          ? t('workspace.statusRow', { count: String(r.rowCount), ms: String(r.durationMs) })
+          : '—'}
+      </span>
       <span className={styles.right}>
         <span className={styles.dot} style={{ background: TAG_COLORS[profile?.tag ?? 'none'] }} />
         {profile?.name}

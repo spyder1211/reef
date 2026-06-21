@@ -5,8 +5,14 @@ function resetStore(): void {
   useAppStore.setState({
     tabs: [
       {
-        kind: 'sql', id: 'tab-1', title: 'Q', sql: 'SELECT SLEEP(9)',
-        result: null, error: null, running: true, canceling: false
+        kind: 'sql',
+        id: 'tab-1',
+        title: 'Q',
+        sql: 'SELECT SLEEP(9)',
+        result: null,
+        error: null,
+        running: true,
+        canceling: false
       }
     ] as never,
     activeTabId: 'tab-1'
