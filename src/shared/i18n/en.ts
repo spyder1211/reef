@@ -1,6 +1,5 @@
 export const en = {
   'common.cancel': 'Cancel',
-  'common.execute': 'Run',
   'common.close': 'Close',
   'common.save': 'Save',
   'common.edit': 'Edit',
@@ -89,7 +88,6 @@ export const en = {
   'workspace.filterPreviewDirty': 'Pending: ',
   'workspace.filterPreviewApplied': 'Applied: ',
   'workspace.editorHint': '⌘↵ to run · ⌘E to EXPLAIN',
-  'workspace.runQuery': 'Run query (⌘↵)',
   'workspace.running': 'Running…',
   'workspace.stopping': 'Stopping…',
   'workspace.stop': 'Stop',

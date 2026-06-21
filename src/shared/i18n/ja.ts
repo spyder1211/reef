@@ -2,7 +2,6 @@ import type { TranslationKey } from './index'
 
 export const ja: Record<TranslationKey, string> = {
   'common.cancel': 'キャンセル',
-  'common.execute': '実行',
   'common.close': '閉じる',
   'common.save': '保存',
   'common.edit': '編集',
@@ -91,7 +90,6 @@ export const ja: Record<TranslationKey, string> = {
   'workspace.filterPreviewDirty': '未適用: ',
   'workspace.filterPreviewApplied': '適用中: ',
   'workspace.editorHint': '⌘↵ で実行 ・ ⌘E で EXPLAIN',
-  'workspace.runQuery': 'クエリを実行（⌘↵）',
   'workspace.running': '実行中…',
   'workspace.stopping': '停止中…',
   'workspace.stop': '停止',
