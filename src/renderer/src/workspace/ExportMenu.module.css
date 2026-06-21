@@ -36,6 +36,13 @@
   font-size: 12px;
 }
 .item {
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  color: inherit;
   padding: 6px 14px;
   cursor: pointer;
   white-space: nowrap;
