@@ -40,6 +40,10 @@ export interface QueryResult {
 export interface AppError {
   code: string
   message: string
+  // renderer TranslationKey — present when the message originates from a client-side translation.
+  // Display components should prefer t(messageKey) over the stored message string so that
+  // the displayed text follows locale switches without re-running the store action.
+  messageKey?: string
 }
 
 // IPC の戻り値は例外を投げず、必ずこの判別共用体で返す

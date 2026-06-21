@@ -540,7 +540,7 @@ export const useAppStore = create<AppState>((set, get) => {
               ? {
                   ...tt,
                   result: null,
-                  error: { code: 'EXPLAIN_MULTI', message: t('store.explainMultiError') }
+                  error: { code: 'EXPLAIN_MULTI', message: t('store.explainMultiError'), messageKey: 'store.explainMultiError' }
                 }
               : tt
           )
@@ -889,7 +889,7 @@ export const useAppStore = create<AppState>((set, get) => {
         const { t } = createTranslator(get().locale)
         patchTableTab(tabId, (tt) => ({
           ...tt,
-          editError: { code: 'CLIENT_ERROR', message: t('store.noInputToCommit') }
+          editError: { code: 'CLIENT_ERROR', message: t('store.noInputToCommit'), messageKey: 'store.noInputToCommit' }
         }))
         return
       }

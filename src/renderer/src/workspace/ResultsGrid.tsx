@@ -20,6 +20,7 @@ import { rowKeyOf, pkValuesOf } from '../store/rowKey'
 import { toTsv } from '../lib/csv'
 import { deriveLead, nextArrowSelection } from './gridSelection'
 import { useT } from '../i18n/useT'
+import type { TranslationKey } from '../../../shared/i18n'
 import styles from './ResultsGrid.module.css'
 
 type Row = Record<string, unknown>
@@ -66,7 +67,7 @@ export default function ResultsGrid(): JSX.Element {
   if (tab.error) {
     return (
       <div className={styles.errorBox}>
-        <b>{tab.error.code}</b>: {tab.error.message}
+        <b>{tab.error.code}</b>: {tab.error.messageKey ? t(tab.error.messageKey as TranslationKey) : tab.error.message}
       </div>
     )
   }

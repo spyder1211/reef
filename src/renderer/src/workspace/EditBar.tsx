@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { useT } from '../i18n/useT'
+import type { TranslationKey } from '../../../shared/i18n'
 import styles from './EditBar.module.css'
 
 export default function EditBar(): JSX.Element | null {
@@ -47,7 +48,7 @@ export default function EditBar(): JSX.Element | null {
       <span className={styles.count}>{t('workspace.uncommitted', { summary })}</span>
       {tab.editError && (
         <span className={styles.err}>
-          {tab.editError.code}: {tab.editError.message}
+          {tab.editError.code}: {tab.editError.messageKey ? t(tab.editError.messageKey as TranslationKey) : tab.editError.message}
         </span>
       )}
       <span className={styles.spacer} />
