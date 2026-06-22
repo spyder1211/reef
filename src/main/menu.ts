@@ -127,6 +127,14 @@ export function buildAppMenu(manager: ConnectionManager): Menu {
       label: t('menu.file'),
       submenu: [
         {
+          label: t('menu.newTab'),
+          accelerator: 'CmdOrCtrl+T',
+          click: (_item, win) => {
+            if (win instanceof BrowserWindow) win.webContents.send('app:new-tab')
+          }
+        },
+        { type: 'separator' },
+        {
           label: t('menu.exportSqlDump'),
           click: () => {
             // 捕捉漏れ（ダイアログ拒否など）でメインプロセスが落ちないよう最終防衛で握る。
@@ -144,7 +152,22 @@ export function buildAppMenu(manager: ConnectionManager): Menu {
           }
         },
         { type: 'separator' },
-        isMac ? { role: 'close' } : { role: 'quit' }
+        {
+          label: t('menu.closeTab'),
+          accelerator: 'CmdOrCtrl+W',
+          click: (_item, win) => {
+            if (win instanceof BrowserWindow) win.webContents.send('app:close-tab')
+          }
+        },
+        ...(isMac
+          ? [
+              {
+                label: t('menu.closeWindow'),
+                accelerator: 'Shift+CmdOrCtrl+W',
+                role: 'close' as const
+              }
+            ]
+          : [{ role: 'quit' as const }])
       ]
     },
     { role: 'editMenu' },

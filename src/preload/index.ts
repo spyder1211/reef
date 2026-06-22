@@ -58,6 +58,20 @@ const api = {
     ipcRenderer.on('app:reload-active-tab', handler)
     return () => ipcRenderer.removeListener('app:reload-active-tab', handler)
   },
+  // File →「New Tab」(Cmd+T) で発火。新規 SQL タブを開く。解除関数を返す。
+  onNewTab: (cb: () => void): (() => void) => {
+    const handler = (): void => cb()
+    ipcRenderer.on('app:new-tab', handler)
+    return () => ipcRenderer.removeListener('app:new-tab', handler)
+  },
+  // File →「Close Tab」(Cmd+W) で発火。アクティブタブを閉じる。解除関数を返す。
+  onCloseTab: (cb: () => void): (() => void) => {
+    const handler = (): void => cb()
+    ipcRenderer.on('app:close-tab', handler)
+    return () => ipcRenderer.removeListener('app:close-tab', handler)
+  },
+  // 閉じるタブが無い時のフォールバックでウィンドウを閉じる（main 側で win.close()）。
+  closeWindow: (): void => ipcRenderer.send('app:close-window'),
   sqlImport: {
     // File メニューからの開始要求を購読。登録解除関数を返す。
     onRequest: (cb: (req: SqlImportRequest) => void): (() => void) => {
