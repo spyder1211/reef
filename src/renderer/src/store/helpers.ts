@@ -50,3 +50,25 @@ export function hasUncommittedChanges(tab: {
     Object.keys(tab.deletes ?? {}).length > 0
   )
 }
+
+// 番号ショートカット(Cmd+1..9)用。n は 1 始まり。1〜8 は tabs[n-1]、9 は常に末尾。
+// 対応するタブが無ければ null（呼び出し側で no-op）。
+export function tabIdAtPosition(tabs: { id: string }[], n: number): string | null {
+  if (n === 9) return tabs[tabs.length - 1]?.id ?? null
+  if (n >= 1 && n <= 8) return tabs[n - 1]?.id ?? null
+  return null
+}
+
+// 相対切替(Cmd+Shift+] / [)用。activeId を基準に dir(+1 次 / -1 前)へ巡回する。
+// 空配列は null、activeId 不在(通常は発生しない)は安全側で先頭を返す。
+export function adjacentTabId(
+  tabs: { id: string }[],
+  activeId: string | null,
+  dir: 1 | -1
+): string | null {
+  if (tabs.length === 0) return null
+  const idx = tabs.findIndex((t) => t.id === activeId)
+  if (idx === -1) return tabs[0].id
+  const next = (idx + dir + tabs.length) % tabs.length
+  return tabs[next].id
+}
