@@ -1,5 +1,6 @@
+import { useEffect } from 'react'
 import { useT } from '../i18n/useT'
-import { isProductionProfile } from '../store/helpers'
+import { adjacentTabId, isProductionProfile, tabIdAtPosition } from '../store/helpers'
 import { useAppStore } from '../store/useAppStore'
 import DetailPane from './DetailPane'
 import EditBar from './EditBar'
@@ -42,6 +43,29 @@ export default function WorkspaceShell(): JSX.Element {
   const view = tableTab?.view ?? 'data'
   const showData = activeKind === 'table' && view === 'data'
   const showStructure = activeKind === 'table' && view === 'structure'
+
+  // Cmd+1..9 で番号ジャンプ(9=末尾)、Cmd+Shift+] / [ で次/前タブへ巡回。
+  // 最新状態は getState() で参照（stale closure 回避）。WorkspaceShell は接続中のみマウント。
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      const mod = e.metaKey || e.ctrlKey
+      if (!mod) return
+      const s = useAppStore.getState()
+      let nextId: string | null = null
+      // Shift 押下時は e.key が '}' / '{' になるため、配列はレイアウト非依存の e.code で判定する。
+      if (e.shiftKey && (e.code === 'BracketRight' || e.code === 'BracketLeft')) {
+        nextId = adjacentTabId(s.tabs, s.activeTabId, e.code === 'BracketRight' ? 1 : -1)
+      } else if (!e.shiftKey && e.key >= '1' && e.key <= '9') {
+        nextId = tabIdAtPosition(s.tabs, Number(e.key))
+      } else {
+        return
+      }
+      e.preventDefault()
+      if (nextId) s.setActiveTab(nextId)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   return (
     <div className={styles.root}>
