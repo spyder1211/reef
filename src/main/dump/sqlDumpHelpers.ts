@@ -1,9 +1,9 @@
 // SQL ダンプの直列化ヘルパー（純粋関数・副作用なし）。
 // 値は JS ランタイム型で判定する（ConnectionManager は dateStrings:true のため日時は文字列で届く）。
-import { quoteIdent as _quoteIdent } from '../../shared/sqlIdent'
+import { quoteIdent } from '../../shared/sqlIdent'
 
-// 再エクスポート（既存の internal imports との互換性のため）
-export const quoteIdent = _quoteIdent
+// quoteIdent は共有モジュールに一本化。sqlDumpHelpers.test.ts 等の既存 import 互換のため再エクスポート。
+export { quoteIdent }
 
 // MySQL 文字列リテラルのエスケープ（シングルクォート囲み）。各マッチを独立に置換するため2重化は起きない。
 function escapeString(s: string): string {
