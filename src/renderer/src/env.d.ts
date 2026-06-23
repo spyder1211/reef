@@ -42,6 +42,9 @@ declare global {
       pickPrivateKey: () => Promise<ApiResult<SaveFileResult>>
       onReturnToConnections: (cb: () => void) => () => void
       onReloadActiveTab: (cb: () => void) => () => void
+      onNewTab: (cb: () => void) => () => void
+      onCloseTab: (cb: () => void) => () => void
+      closeWindow: () => void
       sqlImport: {
         onRequest: (cb: (req: SqlImportRequest) => void) => () => void
         start: () => Promise<ApiResult<ImportSummary>>

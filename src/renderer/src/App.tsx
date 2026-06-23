@@ -29,6 +29,24 @@ export default function App(): JSX.Element {
     })
   }, [])
 
+  // Cmd+T（File → New Tab）で新規 SQL タブ。接続中のみ。
+  useEffect(() => {
+    return window.api.onNewTab(() => {
+      const s = useAppStore.getState()
+      if (s.status === 'connected') s.addTab()
+    })
+  }, [])
+
+  // Cmd+W（File → Close Tab）。接続中でアクティブタブがあれば閉じる。
+  // 無ければウィンドウを閉じる（接続中→接続一覧へ / 未接続→終了、既存 close 挙動）。
+  useEffect(() => {
+    return window.api.onCloseTab(() => {
+      const s = useAppStore.getState()
+      if (s.status === 'connected' && s.activeTabId) s.closeTab(s.activeTabId)
+      else window.api.closeWindow()
+    })
+  }, [])
+
   return (
     <>
       {status === 'connected' ? <WorkspaceShell /> : <HomeScreen />}

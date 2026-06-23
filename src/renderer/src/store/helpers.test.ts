@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { initials } from '../lib/tags'
 import {
+  adjacentTabId,
   filterProfiles,
   hasUncommittedChanges,
   isCancelled,
   isProductionProfile,
-  pickNextActiveTabId
+  pickNextActiveTabId,
+  tabIdAtPosition
 } from './helpers'
 
 describe('filterProfiles', () => {
@@ -93,5 +95,58 @@ describe('isCancelled', () => {
   })
   it('成功結果は false', () => {
     expect(isCancelled({ ok: true, data: null })).toBe(false)
+  })
+})
+
+describe('tabIdAtPosition', () => {
+  const tabs = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+  it('n=1..3 は対応位置のタブ', () => {
+    expect(tabIdAtPosition(tabs, 1)).toBe('a')
+    expect(tabIdAtPosition(tabs, 2)).toBe('b')
+    expect(tabIdAtPosition(tabs, 3)).toBe('c')
+  })
+  it('n=9 は常に末尾', () => {
+    expect(tabIdAtPosition(tabs, 9)).toBe('c')
+  })
+  it('対応位置にタブが無ければ null', () => {
+    expect(tabIdAtPosition(tabs, 4)).toBeNull()
+    expect(tabIdAtPosition(tabs, 8)).toBeNull()
+  })
+  it('範囲外番号は null', () => {
+    expect(tabIdAtPosition(tabs, 0)).toBeNull()
+    expect(tabIdAtPosition(tabs, 10)).toBeNull()
+  })
+  it('空配列は null', () => {
+    expect(tabIdAtPosition([], 1)).toBeNull()
+    expect(tabIdAtPosition([], 9)).toBeNull()
+  })
+})
+
+describe('adjacentTabId', () => {
+  const tabs = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+  it('次のタブ', () => {
+    expect(adjacentTabId(tabs, 'a', 1)).toBe('b')
+    expect(adjacentTabId(tabs, 'b', 1)).toBe('c')
+  })
+  it('前のタブ', () => {
+    expect(adjacentTabId(tabs, 'c', -1)).toBe('b')
+    expect(adjacentTabId(tabs, 'b', -1)).toBe('a')
+  })
+  it('末尾→先頭にラップ', () => {
+    expect(adjacentTabId(tabs, 'c', 1)).toBe('a')
+  })
+  it('先頭→末尾にラップ', () => {
+    expect(adjacentTabId(tabs, 'a', -1)).toBe('c')
+  })
+  it('1 タブは同一を返す', () => {
+    expect(adjacentTabId([{ id: 'x' }], 'x', 1)).toBe('x')
+    expect(adjacentTabId([{ id: 'x' }], 'x', -1)).toBe('x')
+  })
+  it('空配列は null', () => {
+    expect(adjacentTabId([], null, 1)).toBeNull()
+  })
+  it('activeId 不在/ null は先頭', () => {
+    expect(adjacentTabId(tabs, 'zzz', 1)).toBe('a')
+    expect(adjacentTabId(tabs, null, -1)).toBe('a')
   })
 })

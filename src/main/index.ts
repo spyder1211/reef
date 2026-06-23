@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { app, BrowserWindow, Menu, session, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, session, shell } from 'electron'
 import { CSP } from '../shared/csp'
 import { resolveLocale, systemLocaleFromElectron } from '../shared/i18n/resolveLocale'
 import { ConnectionManager } from './connection/ConnectionManager'
@@ -99,6 +99,11 @@ app.whenReady().then(() => {
   registerConnectionHandlers(manager, profileStore, groupStore, tunnel)
   registerFileHandlers()
   registerImportHandlers(manager)
+  // Cmd+W で閉じるタブが無い場合のフォールバック。renderer から呼ばれる。
+  // close() は既存の win.on('close') 介入（接続中→接続一覧へ / 未接続→終了）を通る。
+  ipcMain.on('app:close-window', (e) => {
+    BrowserWindow.fromWebContents(e.sender)?.close()
+  })
   // 言語設定を解決してから menu を構築する（menu ラベルが t() を使うため）。
   const settings = createSettingsStore()
   const system = systemLocaleFromElectron(app.getLocale())
