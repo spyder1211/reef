@@ -1,8 +1,5 @@
+import { quoteIdent } from '../../../shared/sqlIdent'
 import type { PendingInsert, RowEdit, SqlStatement } from '../../../shared/types'
-
-export function quoteIdent(name: string): string {
-  return `\`${name.replace(/`/g, '``')}\``
-}
 
 /**
  * TRUNCATE 文を組む。テーブル定義は残し全行を削除する（取り消し不可・暗黙コミット）。

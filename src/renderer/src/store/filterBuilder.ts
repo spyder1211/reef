@@ -1,8 +1,5 @@
+import { quoteIdent } from '../../../shared/sqlIdent'
 import type { FilterCondition, TableSort } from '../../../shared/types'
-
-function quoteIdent(name: string): string {
-  return `\`${name.replace(/`/g, '``')}\``
-}
 
 function inItems(value: string): string[] {
   return value
