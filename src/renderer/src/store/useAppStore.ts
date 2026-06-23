@@ -26,6 +26,7 @@ import {
 import { singleStatementOf } from './explain'
 import { buildCountQuery, buildFilteredQuery } from './filterBuilder'
 import {
+  clearedStaging,
   hasUncommittedChanges,
   isCancelled,
   isProductionProfile,
@@ -681,12 +682,7 @@ export const useAppStore = create<AppState>((set, get) => {
         if (tab) {
           patchTableTab(tab.id, (t) => ({
             ...t,
-            edits: {},
-            inserts: [],
-            deletes: {},
-            editError: null,
-            selectedRowIndices: [],
-            selectionAnchor: null,
+            ...clearedStaging(),
             page: 0
           }))
           await runTable(tab.id, { recount: true })
@@ -755,12 +751,7 @@ export const useAppStore = create<AppState>((set, get) => {
         ...t,
         appliedFilters: t.filters,
         page: 0,
-        edits: {},
-        inserts: [],
-        deletes: {},
-        editError: null,
-        selectedRowIndices: [],
-        selectionAnchor: null
+        ...clearedStaging()
       }))
       await runTable(tabId, { recount: true })
     },
@@ -796,12 +787,7 @@ export const useAppStore = create<AppState>((set, get) => {
           filters,
           appliedFilters: filters,
           page: 0,
-          edits: {},
-          inserts: [],
-          deletes: {},
-          editError: null,
-          selectedRowIndices: [],
-          selectionAnchor: null
+          ...clearedStaging()
         }
       })
       await runTable(tabId, { recount: true })
@@ -814,12 +800,7 @@ export const useAppStore = create<AppState>((set, get) => {
         ...t,
         sort: cycleSort(t.sort, column),
         page: 0,
-        edits: {},
-        inserts: [],
-        deletes: {},
-        editError: null,
-        selectedRowIndices: [],
-        selectionAnchor: null
+        ...clearedStaging()
       }))
       await runTable(tabId, { recount: false })
     },
@@ -830,12 +811,7 @@ export const useAppStore = create<AppState>((set, get) => {
       patchTableTab(tabId, (t) => ({
         ...t,
         page: Math.max(0, page),
-        edits: {},
-        inserts: [],
-        deletes: {},
-        editError: null,
-        selectedRowIndices: [],
-        selectionAnchor: null
+        ...clearedStaging()
       }))
       await runTable(tabId, { recount: false })
     },
@@ -848,12 +824,7 @@ export const useAppStore = create<AppState>((set, get) => {
         ...t,
         pageSize: safe,
         page: 0,
-        edits: {},
-        inserts: [],
-        deletes: {},
-        editError: null,
-        selectedRowIndices: [],
-        selectionAnchor: null
+        ...clearedStaging()
       }))
       await runTable(tabId, { recount: false })
     },
@@ -978,12 +949,7 @@ export const useAppStore = create<AppState>((set, get) => {
         }
         patchTableTab(tabId, (t) => ({
           ...t,
-          edits: {},
-          inserts: [],
-          deletes: {},
-          editError: null,
-          selectedRowIndices: [],
-          selectionAnchor: null
+          ...clearedStaging()
         }))
         await runTable(tabId, { recount: true }) // INSERT/DELETE は行数が変わる
       } catch (err) {

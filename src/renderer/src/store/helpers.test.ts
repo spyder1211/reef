@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { initials } from '../lib/tags'
 import {
   adjacentTabId,
+  clearedStaging,
   filterProfiles,
   hasUncommittedChanges,
   isCancelled,
@@ -148,5 +149,25 @@ describe('adjacentTabId', () => {
   it('activeId 不在/ null は先頭', () => {
     expect(adjacentTabId(tabs, 'zzz', 1)).toBe('a')
     expect(adjacentTabId(tabs, null, -1)).toBe('a')
+  })
+})
+
+describe('clearedStaging', () => {
+  it('ステージング・編集エラー・行選択を初期化した6フィールドを返す', () => {
+    expect(clearedStaging()).toEqual({
+      edits: {},
+      inserts: [],
+      deletes: {},
+      editError: null,
+      selectedRowIndices: [],
+      selectionAnchor: null
+    })
+  })
+  it('呼び出しごとに新しい参照を返す（共有ミューテーション防止）', () => {
+    const a = clearedStaging()
+    const b = clearedStaging()
+    expect(a).not.toBe(b)
+    expect(a.inserts).not.toBe(b.inserts)
+    expect(a.edits).not.toBe(b.edits)
   })
 })

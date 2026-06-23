@@ -1,4 +1,7 @@
 import type { ApiResult } from '../../../shared/types'
+// TableTab は useAppStore.ts 内で定義・export されている。型のみ import なので
+// コンパイル時に消え、useAppStore→helpers の実行時 import と循環しない。
+import type { TableTab } from './useAppStore'
 
 export function filterProfiles<T extends { name: string; host: string; database?: string }>(
   profiles: T[],
@@ -71,4 +74,21 @@ export function adjacentTabId(
   if (idx === -1) return tabs[0].id
   const next = (idx + dir + tabs.length) % tabs.length
   return tabs[next].id
+}
+
+// データ再取得でステージング（未コミットの編集・追加・削除）と、それに紐づく編集エラー・
+// 行選択が古い行を指さないよう一括初期化した部分オブジェクトを返す。1箇所でも漏らすと
+// ステージ残存バグ（消えた行への UPDATE/DELETE）になるため、この6フィールドの単一の出所とする。
+export function clearedStaging(): Pick<
+  TableTab,
+  'edits' | 'inserts' | 'deletes' | 'editError' | 'selectedRowIndices' | 'selectionAnchor'
+> {
+  return {
+    edits: {},
+    inserts: [],
+    deletes: {},
+    editError: null,
+    selectedRowIndices: [],
+    selectionAnchor: null
+  }
 }
