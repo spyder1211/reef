@@ -2,7 +2,8 @@
 // 値は JS ランタイム型で判定する（ConnectionManager は dateStrings:true のため日時は文字列で届く）。
 import { quoteIdent } from '../../shared/sqlIdent'
 
-// quoteIdent は共有モジュールに一本化。sqlDumpHelpers.test.ts 等の既存 import 互換のため再エクスポート。
+// quoteIdent は共有モジュールに一本化。SqlDumper.ts と sqlDumpHelpers.test.ts が
+// ./sqlDumpHelpers から import するため、再エクスポートで互換を保つ（削除しないこと）。
 export { quoteIdent }
 
 // MySQL 文字列リテラルのエスケープ（シングルクォート囲み）。各マッチを独立に置換するため2重化は起きない。
