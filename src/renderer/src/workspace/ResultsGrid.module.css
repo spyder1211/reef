@@ -125,13 +125,11 @@
   color: var(--danger);
 }
 .ctxMenu {
-  position: fixed;
   background: var(--menu-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 4px 16px var(--shadow);
   padding: 4px 0;
-  z-index: 1000;
   min-width: 160px;
   font-size: 12px;
 }

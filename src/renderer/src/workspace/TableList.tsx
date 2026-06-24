@@ -2,6 +2,7 @@ import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useT } from '../i18n/useT'
 import { filterTables, matchRange } from '../lib/tableSearch'
 import { useAppStore } from '../store/useAppStore'
+import ContextMenu from '../ui/ContextMenu'
 import styles from './TableList.module.css'
 
 export default function TableList(): JSX.Element {
@@ -44,14 +45,6 @@ export default function TableList(): JSX.Element {
     const el = listRef.current?.querySelector<HTMLElement>(`[data-index="${activeIndex}"]`)
     el?.scrollIntoView({ block: 'nearest' })
   }, [activeIndex])
-
-  // コンテキストメニューをページ外クリックで閉じる（ResultsGrid と同パターン）
-  useEffect(() => {
-    if (!ctxMenu) return
-    const close = (): void => setCtxMenu(null)
-    document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
-  }, [ctxMenu])
 
   const open = (name: string): void => {
     void selectTable(name)
@@ -118,14 +111,15 @@ export default function TableList(): JSX.Element {
         )}
       </div>
       {ctxMenu && (
-        <div
-          role="menu"
+        <ContextMenu
+          open
+          anchor={{ x: ctxMenu.x, y: ctxMenu.y }}
+          onClose={() => setCtxMenu(null)}
           className={styles.ctxMenu}
-          style={{ top: ctxMenu.y, left: ctxMenu.x }}
-          onMouseDown={(e) => e.stopPropagation()}
         >
           <button
             type="button"
+            role="menuitem"
             className={styles.ctxItem}
             onClick={() => {
               void navigator.clipboard.writeText(ctxMenu.table)
@@ -134,9 +128,13 @@ export default function TableList(): JSX.Element {
           >
             {t('workspace.copyTableName')}
           </button>
-          <div className={styles.ctxSep} />
+          {/* biome-ignore lint/a11y/useFocusableInteractive: static menu separator does not need focus */}
+          {/* biome-ignore lint/a11y/useSemanticElements: div with CSS class matches existing separator styling */}
+          {/* biome-ignore lint/a11y/useAriaPropsForRole: static separator in menu does not require aria-valuenow */}
+          <div className={styles.ctxSep} role="separator" />
           <button
             type="button"
+            role="menuitem"
             className={styles.ctxItem}
             onClick={() => {
               void truncateTable(ctxMenu.table)
@@ -145,9 +143,13 @@ export default function TableList(): JSX.Element {
           >
             {t('workspace.truncateTable')}
           </button>
-          <div className={styles.ctxSep} />
+          {/* biome-ignore lint/a11y/useFocusableInteractive: static menu separator does not need focus */}
+          {/* biome-ignore lint/a11y/useSemanticElements: div with CSS class matches existing separator styling */}
+          {/* biome-ignore lint/a11y/useAriaPropsForRole: static separator in menu does not require aria-valuenow */}
+          <div className={styles.ctxSep} role="separator" />
           <button
             type="button"
+            role="menuitem"
             className={`${styles.ctxItem} ${styles.ctxDanger}`}
             onClick={() => {
               void dropTable(ctxMenu.table)
@@ -156,7 +158,7 @@ export default function TableList(): JSX.Element {
           >
             {t('workspace.dropTable')}
           </button>
-        </div>
+        </ContextMenu>
       )}
     </div>
   )

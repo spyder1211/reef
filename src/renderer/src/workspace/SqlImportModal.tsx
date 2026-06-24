@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ImportProgress, ImportSummary, SqlImportRequest } from '../../../shared/types'
 import { useT } from '../i18n/useT'
 import { isCancelled } from '../store/helpers'
+import Modal from '../ui/Modal'
 import styles from './SqlImportModal.module.css'
 
 type Phase = 'closed' | 'confirm' | 'running' | 'result'
@@ -60,106 +61,98 @@ export default function SqlImportModal(): JSX.Element | null {
       : 0
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: modal backdrop closes on click/Escape when not running
-    <div
-      className={styles.backdrop}
-      onClick={phase === 'running' ? undefined : close}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape' && phase !== 'running') close()
-      }}
+    <Modal
+      open
+      onClose={close}
+      dismissable={phase !== 'running'}
+      ariaLabel={t('workspace.importTitle')}
+      className={styles.modal}
     >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: modal panel stops event propagation */}
-      <div
-        className={styles.modal}
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <div className={styles.title}>{t('workspace.importTitle')}</div>
+      <div className={styles.title}>{t('workspace.importTitle')}</div>
 
-        {phase === 'confirm' && (
-          <>
-            <div className={styles.row}>
-              <span className={styles.k}>{t('workspace.importDbLabel')}</span>
-              <b>{req.dbName || t('workspace.importNoDb')}</b>
-            </div>
-            <div className={styles.row}>
-              <span className={styles.k}>{t('workspace.importFileLabel')}</span>
-              <span>{req.fileName}</span>
-            </div>
-            <div className={styles.row}>
-              <span className={styles.k}>{t('workspace.importSizeLabel')}</span>
-              <span>{formatBytes(req.totalBytes)}</span>
-            </div>
-            <div className={styles.warn}>{t('workspace.importWarn')}</div>
-            <div className={styles.actions}>
-              <button type="button" className={styles.btn} onClick={close}>
-                {t('common.cancel')}
-              </button>
-              <button type="button" className={styles.btnDanger} onClick={() => void handleRun()}>
-                {t('workspace.importRun')}
-              </button>
-            </div>
-          </>
-        )}
+      {phase === 'confirm' && (
+        <>
+          <div className={styles.row}>
+            <span className={styles.k}>{t('workspace.importDbLabel')}</span>
+            <b>{req.dbName || t('workspace.importNoDb')}</b>
+          </div>
+          <div className={styles.row}>
+            <span className={styles.k}>{t('workspace.importFileLabel')}</span>
+            <span>{req.fileName}</span>
+          </div>
+          <div className={styles.row}>
+            <span className={styles.k}>{t('workspace.importSizeLabel')}</span>
+            <span>{formatBytes(req.totalBytes)}</span>
+          </div>
+          <div className={styles.warn}>{t('workspace.importWarn')}</div>
+          <div className={styles.actions}>
+            <button type="button" className={styles.btn} onClick={close}>
+              {t('common.cancel')}
+            </button>
+            <button type="button" className={styles.btnDanger} onClick={() => void handleRun()}>
+              {t('workspace.importRun')}
+            </button>
+          </div>
+        </>
+      )}
 
-        {phase === 'running' && progress && (
-          <>
-            <div className={styles.bar}>
-              <div className={styles.barFill} style={{ width: `${pct}%` }} />
-            </div>
-            <div className={styles.row}>
-              <span className={styles.k}>{t('workspace.importProgressLabel')}</span>
-              <span>
-                {t('workspace.importByteProgress', {
-                  pct,
-                  read: formatBytes(progress.bytesRead),
-                  total: formatBytes(progress.totalBytes)
-                })}
-              </span>
-            </div>
-            <div className={styles.row}>
-              <span className={styles.k}>{t('workspace.importExecutedLabel')}</span>
-              <span>
-                {t('workspace.importStatements', { count: String(progress.executedCount) })}
-              </span>
-            </div>
-            {progress.currentPreview && (
-              <div className={styles.preview}>{progress.currentPreview}</div>
-            )}
-          </>
-        )}
+      {phase === 'running' && progress && (
+        <>
+          <div className={styles.bar}>
+            <div className={styles.barFill} style={{ width: `${pct}%` }} />
+          </div>
+          <div className={styles.row}>
+            <span className={styles.k}>{t('workspace.importProgressLabel')}</span>
+            <span>
+              {t('workspace.importByteProgress', {
+                pct,
+                read: formatBytes(progress.bytesRead),
+                total: formatBytes(progress.totalBytes)
+              })}
+            </span>
+          </div>
+          <div className={styles.row}>
+            <span className={styles.k}>{t('workspace.importExecutedLabel')}</span>
+            <span>
+              {t('workspace.importStatements', { count: String(progress.executedCount) })}
+            </span>
+          </div>
+          {progress.currentPreview && (
+            <div className={styles.preview}>{progress.currentPreview}</div>
+          )}
+        </>
+      )}
 
-        {phase === 'result' && (
-          <>
-            {fatal && <div className={styles.error}>{fatal}</div>}
-            {summary && summary.status === 'completed' && (
-              <div className={styles.ok}>
-                {t('workspace.importDone', {
-                  count: String(summary.executedCount),
-                  ms: String(summary.durationMs)
+      {phase === 'result' && (
+        <>
+          {fatal && <div className={styles.error}>{fatal}</div>}
+          {summary && summary.status === 'completed' && (
+            <div className={styles.ok}>
+              {t('workspace.importDone', {
+                count: String(summary.executedCount),
+                ms: String(summary.durationMs)
+              })}
+            </div>
+          )}
+          {summary && summary.status === 'failed' && summary.failure && (
+            <div className={styles.error}>
+              <div>
+                {t('workspace.importFailed', {
+                  index: String(summary.failure.statementIndex),
+                  executed: String(summary.executedCount)
                 })}
               </div>
-            )}
-            {summary && summary.status === 'failed' && summary.failure && (
-              <div className={styles.error}>
-                <div>
-                  {t('workspace.importFailed', {
-                    index: String(summary.failure.statementIndex),
-                    executed: String(summary.executedCount)
-                  })}
-                </div>
-                <div className={styles.preview}>{summary.failure.statementPreview}</div>
-                <div className={styles.msg}>{summary.failure.message}</div>
-              </div>
-            )}
-            <div className={styles.actions}>
-              <button type="button" className={styles.btnPrimary} onClick={close}>
-                {t('common.close')}
-              </button>
+              <div className={styles.preview}>{summary.failure.statementPreview}</div>
+              <div className={styles.msg}>{summary.failure.message}</div>
             </div>
-          </>
-        )}
-      </div>
-    </div>
+          )}
+          <div className={styles.actions}>
+            <button type="button" className={styles.btnPrimary} onClick={close}>
+              {t('common.close')}
+            </button>
+          </div>
+        </>
+      )}
+    </Modal>
   )
 }
