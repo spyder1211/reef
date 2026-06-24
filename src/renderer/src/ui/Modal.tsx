@@ -64,7 +64,12 @@ export default function Modal({
         return
       }
       const cur = items.indexOf(document.activeElement as HTMLElement)
-      const next = cur === -1 ? (e.shiftKey ? items.length - 1 : 0) : wrapIndex(cur, items.length, e.shiftKey ? -1 : 1)
+      const next =
+        cur === -1
+          ? e.shiftKey
+            ? items.length - 1
+            : 0
+          : wrapIndex(cur, items.length, e.shiftKey ? -1 : 1)
       e.preventDefault()
       items[next].focus()
     }
@@ -77,7 +82,6 @@ export default function Modal({
       role="presentation"
       onClick={dismissable ? onClose : undefined}
     >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: dialog container manages keyboard focus */}
       <div
         ref={containerRef}
         className={className ? `${styles.container} ${className}` : styles.container}
