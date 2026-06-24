@@ -29,13 +29,12 @@ export default function ContextMenu({
     const el = menuRef.current
     if (!el) return
     const rect = el.getBoundingClientRect()
-    setPos(
-      clampMenuPosition(
-        anchor,
-        { width: rect.width, height: rect.height },
-        { width: window.innerWidth, height: window.innerHeight }
-      )
+    const next = clampMenuPosition(
+      anchor,
+      { width: rect.width, height: rect.height },
+      { width: window.innerWidth, height: window.innerHeight }
     )
+    setPos((prev) => (prev.top === next.top && prev.left === next.left ? prev : next))
   }, [open, anchor])
 
   // 開いたら先頭の有効項目へフォーカス。
