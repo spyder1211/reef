@@ -1,6 +1,6 @@
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { TranslationKey } from '../../../shared/i18n'
 import { DEFAULT_SQL_LIMIT, MAX_RESULT_ROWS } from '../../../shared/queryLimits'
 import type {
@@ -14,6 +14,7 @@ import { useT } from '../i18n/useT'
 import { toTsv } from '../lib/csv'
 import { pkValuesOf, rowKeyOf } from '../store/rowKey'
 import { useAppStore } from '../store/useAppStore'
+import ContextMenu from '../ui/ContextMenu'
 import { estimateColumnWidths, ROW_HEIGHT } from './columnWidths'
 import { deriveLead, nextArrowSelection } from './gridSelection'
 import styles from './ResultsGrid.module.css'
@@ -227,14 +228,6 @@ function Grid({
       onSetSelection([index], index)
     }
   }
-
-  // コンテキストメニューをページ外クリックで閉じる
-  useEffect(() => {
-    if (!ctxMenu) return
-    const close = (): void => setCtxMenu(null)
-    document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
-  }, [ctxMenu])
 
   const columns = useMemo<ColumnDef<Row>[]>(
     () =>
@@ -590,11 +583,11 @@ function Grid({
         </tbody>
       </table>
       {ctxMenu && (
-        <div
-          role="menu"
+        <ContextMenu
+          open
+          anchor={{ x: ctxMenu.x, y: ctxMenu.y }}
+          onClose={() => setCtxMenu(null)}
           className={styles.ctxMenu}
-          style={{ top: ctxMenu.y, left: ctxMenu.x }}
-          onMouseDown={(e) => e.stopPropagation()}
         >
           {ctxMenu.kind === 'cell' && (
             <>
@@ -602,6 +595,7 @@ function Grid({
                 <>
                   <button
                     type="button"
+                    role="menuitem"
                     className={styles.ctxItem}
                     onClick={() => {
                       onQuickFilter?.(ctxMenu.column, 'is_null', null)
@@ -612,6 +606,7 @@ function Grid({
                   </button>
                   <button
                     type="button"
+                    role="menuitem"
                     className={styles.ctxItem}
                     onClick={() => {
                       onQuickFilter?.(ctxMenu.column, 'is_not_null', null)
@@ -625,6 +620,7 @@ function Grid({
                 <>
                   <button
                     type="button"
+                    role="menuitem"
                     className={styles.ctxItem}
                     onClick={() => {
                       onQuickFilter?.(ctxMenu.column, '=', ctxMenu.value)
@@ -635,6 +631,7 @@ function Grid({
                   </button>
                   <button
                     type="button"
+                    role="menuitem"
                     className={styles.ctxItem}
                     onClick={() => {
                       onQuickFilter?.(ctxMenu.column, '<>', ctxMenu.value)
@@ -645,6 +642,7 @@ function Grid({
                   </button>
                   <button
                     type="button"
+                    role="menuitem"
                     className={styles.ctxItem}
                     onClick={() => {
                       onQuickFilter?.(ctxMenu.column, 'contains', ctxMenu.value)
@@ -673,9 +671,13 @@ function Grid({
                   const n = targets.length
                   return (
                     <>
-                      <div className={styles.ctxSep} />
+                      {/* biome-ignore lint/a11y/useFocusableInteractive: static menu separator does not need focus */}
+                      {/* biome-ignore lint/a11y/useSemanticElements: div with CSS class matches existing separator styling */}
+                      {/* biome-ignore lint/a11y/useAriaPropsForRole: static separator in menu does not require aria-valuenow */}
+                      <div className={styles.ctxSep} role="separator" />
                       <button
                         type="button"
+                        role="menuitem"
                         className={`${styles.ctxItem} ${allStaged ? '' : styles.ctxDanger}`}
                         onClick={() => {
                           onStageDeleteMany(entries)
@@ -688,6 +690,7 @@ function Grid({
                       </button>
                       <button
                         type="button"
+                        role="menuitem"
                         className={styles.ctxItem}
                         onClick={() => {
                           onDuplicateRows?.(targets)
@@ -698,6 +701,7 @@ function Grid({
                       </button>
                       <button
                         type="button"
+                        role="menuitem"
                         className={styles.ctxItem}
                         onClick={() => {
                           copySelectedRows(targets)
@@ -714,6 +718,7 @@ function Grid({
           {ctxMenu.kind === 'insert' && (
             <button
               type="button"
+              role="menuitem"
               className={`${styles.ctxItem} ${styles.ctxDanger}`}
               onClick={() => {
                 onRemoveInsert?.(ctxMenu.localId)
@@ -723,7 +728,7 @@ function Grid({
               {t('workspace.discardInsertRow')}
             </button>
           )}
-        </div>
+        </ContextMenu>
       )}
     </div>
   )
