@@ -2,6 +2,34 @@
 
 [English](RELEASE_NOTES.md) · [日本語](RELEASE_NOTES.ja.md)
 
+## v1.0.0 (2026-06-24) — The Reef debut: open source, internationalization, and overlay accessibility
+
+This is the first release under the new name **Reef** (formerly Table++), and the project's debut as **open source**. Alongside the rename it bundles the long-deferred follow-up batch — UI internationalization, tab keyboard shortcuts, and accessibility for modals and context menus — plus a development foundation (Biome) and behavior-preserving internal cleanups.
+
+### Renamed to Reef, now open source (#48, #49, #50)
+- The app and project were renamed **Table++ → Reef**, the README and notes were translated to English, the source was released under the **MIT license**, and the repository was made **public** on GitHub. The app icon was refreshed to the Reef brand and repository URLs were updated. (`docs/superpowers` working notes are excluded from the published tree.)
+
+### Internationalization — English / Japanese (#51)
+- The entire UI is now **internationalized (English / Japanese)**. It uses a lightweight custom catalog (`src/shared/i18n`, with **zero new dependencies**); the default is English, the system locale is auto-detected on first launch, and you can switch languages from a settings modal. Both the renderer and the native menus follow the selection.
+
+### Tab keyboard shortcuts (#53)
+- Workspace tabs can now be driven from the keyboard: **⌘T** opens a new SQL tab, **⌘W** closes the active tab (falling back to closing the window when no tab remains), **⌘1–8** jump to the Nth tab and **⌘9** to the last, and **⌘⇧] / ⌘⇧[** cycle to the next / previous tab. New Tab and Close Tab also appear in the menu bar.
+
+### Accessibility for modals & context menus (#55)
+- Modals and right-click menus were rebuilt on shared, accessible components. Modals now have **dialog semantics** (`role="dialog"` / `aria-modal`), **Escape to close**, a **focus trap** (Tab / Shift+Tab cycle within the dialog), initial focus, and **focus restoration** to the trigger on close (the import dialog stays open while a restore is running).
+- Context menus now **clamp and flip at the screen edges** (no more clipping in a bottom or right corner) and support **keyboard navigation** (↑/↓ to move, Enter to activate, Esc to close), with proper `menu` / `menuitem` roles and event isolation so menu keystrokes don't leak to the grid behind them.
+
+### Development foundation: Biome (#52)
+- **Biome** was introduced for linting and formatting, and a **lint job was added to CI**, so style issues and a class of bugs are caught automatically on every push and pull request.
+
+### Internal cleanups (#54)
+- Low-risk debt cleanups that don't change behavior: the renderer's `window.api` type is now sourced from the preload's single `Api` definition; the table view's staging reset (across seven call sites) was consolidated into one helper; and the identifier-escaping `quoteIdent` was unified into one shared module.
+
+### Coming next (v0.5 and beyond)
+- Foreign-key jump / additional export formats / a settings screen / type-aware cell editing / code signing & notarization, and more
+
+---
+
 ## v0.4.0 (2026-06-20) — Query cancellation × large data × dev foundation
 
 Following the "foundation for using power safely" laid in v0.3.0, v0.4 focuses on **the ergonomics of handling heavy, large queries safely and comfortably** and **a development foundation that rejects broken changes**. It doesn't freeze when you touch large data, you can stop a query at any time, and you won't accidentally pour a huge result set into the app — a batch that reduces the friction of a workflow that peeks at production daily.
