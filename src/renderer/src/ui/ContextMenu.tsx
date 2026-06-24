@@ -80,6 +80,7 @@ export default function ContextMenu({
         className={className ? `${styles.menu} ${className}` : styles.menu}
         style={{ top: pos.top, left: pos.left }}
         onMouseDown={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
         onKeyDown={onKeyDown}
       >
         {children}
