@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
+import { handleContextMenuKey } from '../lib/contextMenuKeyboard'
 import { clampMenuPosition } from '../lib/menuPosition'
-import { wrapIndex } from '../lib/overlay'
 import styles from './ContextMenu.module.css'
 
 interface ContextMenuProps {
@@ -51,19 +51,13 @@ export default function ContextMenu({
     )
 
   const onKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key === 'Escape') {
-      e.stopPropagation()
-      onClose()
-      return
-    }
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      const list = items()
-      if (list.length === 0) return
-      const cur = list.indexOf(document.activeElement as HTMLElement)
-      const next = cur === -1 ? 0 : wrapIndex(cur, list.length, e.key === 'ArrowDown' ? 1 : -1)
-      e.preventDefault()
-      list[next].focus()
-    }
+    const list = items()
+    handleContextMenuKey(e, {
+      currentIndex: list.indexOf(document.activeElement as HTMLElement),
+      itemCount: list.length,
+      focusItem: (index) => list[index]?.focus(),
+      close: onClose
+    })
     // Enter/Space はネイティブ button が既定で発火するため明示不要。
   }
 
