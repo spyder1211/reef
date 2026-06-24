@@ -1,6 +1,7 @@
 import type { LocalePreference } from '../../../shared/i18n/types'
 import { useT } from '../i18n/useT'
 import { useAppStore } from '../store/useAppStore'
+import Modal from '../ui/Modal'
 import styles from './SettingsModal.module.css'
 
 export default function SettingsModal({ onClose }: { onClose: () => void }): JSX.Element {
@@ -15,38 +16,24 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): JSX
   ]
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: modal backdrop closes on click/Escape
-    <div
-      className={styles.backdrop}
-      onClick={onClose}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') onClose()
-      }}
-    >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: modal panel stops event propagation */}
-      <div
-        className={styles.modal}
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <h2 className={styles.title}>{t('settings.title')}</h2>
-        <label className={styles.row}>
-          <span>{t('settings.language')}</span>
-          <select
-            value={preference}
-            onChange={(e) => void setLocalePreference(e.target.value as LocalePreference)}
-          >
-            {options.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="button" className={styles.close} onClick={onClose}>
-          {t('common.close')}
-        </button>
-      </div>
-    </div>
+    <Modal open onClose={onClose} ariaLabel={t('settings.title')} className={styles.modal}>
+      <h2 className={styles.title}>{t('settings.title')}</h2>
+      <label className={styles.row}>
+        <span>{t('settings.language')}</span>
+        <select
+          value={preference}
+          onChange={(e) => void setLocalePreference(e.target.value as LocalePreference)}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <button type="button" className={styles.close} onClick={onClose}>
+        {t('common.close')}
+      </button>
+    </Modal>
   )
 }

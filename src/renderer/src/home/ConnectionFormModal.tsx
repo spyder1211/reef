@@ -8,6 +8,7 @@ import type {
 import { useT } from '../i18n/useT'
 import { TAG_COLORS, TAG_LABELS, TAG_ORDER } from '../lib/tags'
 import { useAppStore } from '../store/useAppStore'
+import Modal from '../ui/Modal'
 import styles from './ConnectionFormModal.module.css'
 
 function initialForm(): ConnectionProfileInput {
@@ -128,217 +129,203 @@ export default function ConnectionFormModal(): JSX.Element {
         : t('connectionForm.testIdle')
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: modal backdrop closes on click/Escape
-    <div
-      className={styles.backdrop}
-      onClick={closeForm}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') closeForm()
-      }}
-    >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: modal panel stops event propagation */}
-      <div
-        className={styles.modal}
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <div className={styles.title}>{t('connectionForm.title')}</div>
+    <Modal open onClose={closeForm} ariaLabel={t('connectionForm.title')} className={styles.modal}>
+      <div className={styles.title}>{t('connectionForm.title')}</div>
 
-        <Field label={t('connectionForm.name')}>
+      <Field label={t('connectionForm.name')}>
+        <input
+          className={styles.input}
+          value={form.name}
+          onChange={(e) => update('name', e.target.value)}
+          // biome-ignore lint/a11y/noAutofocus: intentional focus management
+          autoFocus
+        />
+      </Field>
+
+      <Field label={t('connectionForm.tag')}>
+        <div className={styles.swatches}>
+          {TAG_ORDER.map((tag) => {
+            const selected = form.tag === tag
+            return (
+              <button
+                key={tag}
+                type="button"
+                className={`${styles.tagOption} ${selected ? styles.tagSelected : ''}`}
+                style={
+                  selected ? { borderColor: TAG_COLORS[tag], color: TAG_COLORS[tag] } : undefined
+                }
+                onClick={() => update('tag', tag as ConnectionTag)}
+              >
+                <span className={styles.tagDot} style={{ background: TAG_COLORS[tag] }} />
+                {TAG_LABELS[tag] || t('connectionForm.tagNone')}
+              </button>
+            )
+          })}
+        </div>
+      </Field>
+
+      <Field label="Host">
+        <input
+          className={styles.input}
+          value={form.host}
+          onChange={(e) => update('host', e.target.value)}
+        />
+        <input
+          className={styles.port}
+          type="number"
+          value={form.port}
+          onChange={(e) => update('port', Number(e.target.value))}
+        />
+      </Field>
+
+      <Field label="User">
+        <input
+          className={styles.input}
+          value={form.user}
+          onChange={(e) => update('user', e.target.value)}
+        />
+      </Field>
+
+      <Field label="Password">
+        <input
+          className={styles.input}
+          type="password"
+          value={form.password}
+          onChange={(e) => update('password', e.target.value)}
+        />
+      </Field>
+
+      {!encAvailable && <div className={styles.encWarn}>{t('connectionForm.encWarn')}</div>}
+
+      <Field label="Database">
+        <input
+          className={styles.input}
+          value={form.database ?? ''}
+          onChange={(e) => update('database', e.target.value)}
+        />
+      </Field>
+
+      <Field label={t('connectionForm.sshTunnel')}>
+        <label className={styles.checkRow}>
           <input
-            className={styles.input}
-            value={form.name}
-            onChange={(e) => update('name', e.target.value)}
-            // biome-ignore lint/a11y/noAutofocus: intentional focus management
-            autoFocus
+            type="checkbox"
+            checked={ssh?.enabled ?? false}
+            onChange={(e) => updateSsh('enabled', e.target.checked)}
           />
-        </Field>
+          {t('connectionForm.sshViaBastion')}
+        </label>
+      </Field>
 
-        <Field label={t('connectionForm.tag')}>
-          <div className={styles.swatches}>
-            {TAG_ORDER.map((tag) => {
-              const selected = form.tag === tag
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  className={`${styles.tagOption} ${selected ? styles.tagSelected : ''}`}
-                  style={
-                    selected ? { borderColor: TAG_COLORS[tag], color: TAG_COLORS[tag] } : undefined
-                  }
-                  onClick={() => update('tag', tag as ConnectionTag)}
-                >
-                  <span className={styles.tagDot} style={{ background: TAG_COLORS[tag] }} />
-                  {TAG_LABELS[tag] || t('connectionForm.tagNone')}
-                </button>
-              )
-            })}
-          </div>
-        </Field>
-
-        <Field label="Host">
-          <input
-            className={styles.input}
-            value={form.host}
-            onChange={(e) => update('host', e.target.value)}
-          />
-          <input
-            className={styles.port}
-            type="number"
-            value={form.port}
-            onChange={(e) => update('port', Number(e.target.value))}
-          />
-        </Field>
-
-        <Field label="User">
-          <input
-            className={styles.input}
-            value={form.user}
-            onChange={(e) => update('user', e.target.value)}
-          />
-        </Field>
-
-        <Field label="Password">
-          <input
-            className={styles.input}
-            type="password"
-            value={form.password}
-            onChange={(e) => update('password', e.target.value)}
-          />
-        </Field>
-
-        {!encAvailable && <div className={styles.encWarn}>{t('connectionForm.encWarn')}</div>}
-
-        <Field label="Database">
-          <input
-            className={styles.input}
-            value={form.database ?? ''}
-            onChange={(e) => update('database', e.target.value)}
-          />
-        </Field>
-
-        <Field label={t('connectionForm.sshTunnel')}>
-          <label className={styles.checkRow}>
+      {ssh?.enabled && (
+        <>
+          <Field label="SSH Host">
             <input
-              type="checkbox"
-              checked={ssh?.enabled ?? false}
-              onChange={(e) => updateSsh('enabled', e.target.checked)}
+              className={styles.input}
+              value={ssh.host}
+              onChange={(e) => updateSsh('host', e.target.value)}
+              placeholder="bastion.example.com"
             />
-            {t('connectionForm.sshViaBastion')}
-          </label>
-        </Field>
+            <input
+              className={styles.port}
+              type="number"
+              value={ssh.port}
+              onChange={(e) => updateSsh('port', Number(e.target.value))}
+            />
+          </Field>
 
-        {ssh?.enabled && (
-          <>
-            <Field label="SSH Host">
+          <Field label="SSH User">
+            <input
+              className={styles.input}
+              value={ssh.user}
+              onChange={(e) => updateSsh('user', e.target.value)}
+              placeholder="ec2-user"
+            />
+          </Field>
+
+          <Field label={t('connectionForm.authMethod')}>
+            <div className={styles.radioRow}>
+              <label className={styles.checkRow}>
+                <input
+                  type="radio"
+                  name="sshAuth"
+                  checked={ssh.authMethod === 'password'}
+                  onChange={() => updateSsh('authMethod', 'password')}
+                />
+                {t('connectionForm.authPassword')}
+              </label>
+              <label className={styles.checkRow}>
+                <input
+                  type="radio"
+                  name="sshAuth"
+                  checked={ssh.authMethod === 'privateKey'}
+                  onChange={() => updateSsh('authMethod', 'privateKey')}
+                />
+                {t('connectionForm.authPrivateKey')}
+              </label>
+            </div>
+          </Field>
+
+          {ssh.authMethod === 'password' ? (
+            <Field label="SSH Password">
               <input
                 className={styles.input}
-                value={ssh.host}
-                onChange={(e) => updateSsh('host', e.target.value)}
-                placeholder="bastion.example.com"
-              />
-              <input
-                className={styles.port}
-                type="number"
-                value={ssh.port}
-                onChange={(e) => updateSsh('port', Number(e.target.value))}
+                type="password"
+                value={ssh.password ?? ''}
+                placeholder={editing ? t('connectionForm.leaveBlankToKeep') : ''}
+                onChange={(e) => updateSsh('password', e.target.value)}
               />
             </Field>
-
-            <Field label="SSH User">
-              <input
-                className={styles.input}
-                value={ssh.user}
-                onChange={(e) => updateSsh('user', e.target.value)}
-                placeholder="ec2-user"
-              />
-            </Field>
-
-            <Field label={t('connectionForm.authMethod')}>
-              <div className={styles.radioRow}>
-                <label className={styles.checkRow}>
-                  <input
-                    type="radio"
-                    name="sshAuth"
-                    checked={ssh.authMethod === 'password'}
-                    onChange={() => updateSsh('authMethod', 'password')}
-                  />
-                  {t('connectionForm.authPassword')}
-                </label>
-                <label className={styles.checkRow}>
-                  <input
-                    type="radio"
-                    name="sshAuth"
-                    checked={ssh.authMethod === 'privateKey'}
-                    onChange={() => updateSsh('authMethod', 'privateKey')}
-                  />
-                  {t('connectionForm.authPrivateKey')}
-                </label>
-              </div>
-            </Field>
-
-            {ssh.authMethod === 'password' ? (
-              <Field label="SSH Password">
+          ) : (
+            <>
+              <Field label={t('connectionForm.privateKey')}>
+                <input
+                  className={styles.input}
+                  value={ssh.privateKeyPath ?? ''}
+                  onChange={(e) => updateSsh('privateKeyPath', e.target.value)}
+                  placeholder="~/.ssh/id_ed25519"
+                />
+                <button type="button" className={styles.btn} onClick={() => void handlePickKey()}>
+                  {t('connectionForm.choose')}
+                </button>
+              </Field>
+              <Field label={t('connectionForm.passphrase')}>
                 <input
                   className={styles.input}
                   type="password"
-                  value={ssh.password ?? ''}
-                  placeholder={editing ? t('connectionForm.leaveBlankToKeep') : ''}
-                  onChange={(e) => updateSsh('password', e.target.value)}
+                  value={ssh.passphrase ?? ''}
+                  placeholder={
+                    editing
+                      ? t('connectionForm.leaveBlankToKeep')
+                      : t('connectionForm.passphraseOptional')
+                  }
+                  onChange={(e) => updateSsh('passphrase', e.target.value)}
                 />
               </Field>
-            ) : (
-              <>
-                <Field label={t('connectionForm.privateKey')}>
-                  <input
-                    className={styles.input}
-                    value={ssh.privateKeyPath ?? ''}
-                    onChange={(e) => updateSsh('privateKeyPath', e.target.value)}
-                    placeholder="~/.ssh/id_ed25519"
-                  />
-                  <button type="button" className={styles.btn} onClick={() => void handlePickKey()}>
-                    {t('connectionForm.choose')}
-                  </button>
-                </Field>
-                <Field label={t('connectionForm.passphrase')}>
-                  <input
-                    className={styles.input}
-                    type="password"
-                    value={ssh.passphrase ?? ''}
-                    placeholder={
-                      editing
-                        ? t('connectionForm.leaveBlankToKeep')
-                        : t('connectionForm.passphraseOptional')
-                    }
-                    onChange={(e) => updateSsh('passphrase', e.target.value)}
-                  />
-                </Field>
-              </>
-            )}
-          </>
-        )}
+            </>
+          )}
+        </>
+      )}
 
-        <div className={styles.note}>{t('connectionForm.sslNote')}</div>
+      <div className={styles.note}>{t('connectionForm.sslNote')}</div>
 
-        {error && (
-          <div className={styles.error}>
-            <b>{error.code}</b>: {error.message}
-          </div>
-        )}
-
-        <div className={styles.actions}>
-          <button type="button" className={styles.btn} onClick={() => void handleSave()}>
-            {t('common.save')}
-          </button>
-          <button type="button" className={styles.btn} onClick={() => void handleTest()}>
-            {testLabel}
-          </button>
-          <button type="button" className={styles.btnPrimary} onClick={() => void handleConnect()}>
-            {t('common.connect')}
-          </button>
+      {error && (
+        <div className={styles.error}>
+          <b>{error.code}</b>: {error.message}
         </div>
+      )}
+
+      <div className={styles.actions}>
+        <button type="button" className={styles.btn} onClick={() => void handleSave()}>
+          {t('common.save')}
+        </button>
+        <button type="button" className={styles.btn} onClick={() => void handleTest()}>
+          {testLabel}
+        </button>
+        <button type="button" className={styles.btnPrimary} onClick={() => void handleConnect()}>
+          {t('common.connect')}
+        </button>
       </div>
-    </div>
+    </Modal>
   )
 }
 
