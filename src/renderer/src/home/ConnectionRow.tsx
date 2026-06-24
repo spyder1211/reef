@@ -4,6 +4,7 @@ import Avatar from '../components/Avatar'
 import Tag from '../components/Tag'
 import { useT } from '../i18n/useT'
 import { useAppStore } from '../store/useAppStore'
+import ContextMenu from '../ui/ContextMenu'
 import styles from './ConnectionRow.module.css'
 
 export default function ConnectionRow({ profile }: { profile: ConnectionProfile }): JSX.Element {
@@ -73,49 +74,50 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
       </div>
 
       {menu && (
-        <>
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop closes menu on mousedown */}
-          <div className={styles.menuBackdrop} onMouseDown={() => setMenu(null)} />
-          <div
-            role="menu"
-            className={styles.menu}
-            style={{ left: menu.x, top: menu.y }}
-            onMouseDown={(e) => e.stopPropagation()}
-            onDoubleClick={(e) => e.stopPropagation()}
+        <ContextMenu
+          open
+          anchor={{ x: menu.x, y: menu.y }}
+          onClose={() => setMenu(null)}
+          className={styles.menu}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            className={styles.menuItem}
+            onClick={() => {
+              setMenu(null)
+              void duplicateProfile(profile.id)
+            }}
           >
-            <button
-              type="button"
-              className={styles.menuItem}
-              onClick={() => {
-                setMenu(null)
-                void duplicateProfile(profile.id)
-              }}
-            >
-              {t('common.duplicate')}
-            </button>
-            <button
-              type="button"
-              className={styles.menuItem}
-              onClick={() => {
-                setMenu(null)
-                openForm(profile.id)
-              }}
-            >
-              {t('common.edit')}
-            </button>
-            <div className={styles.menuSep} />
-            <button
-              type="button"
-              className={`${styles.menuItem} ${styles.danger}`}
-              onClick={() => {
-                setMenu(null)
-                void deleteProfile(profile.id)
-              }}
-            >
-              {t('common.delete')}
-            </button>
-          </div>
-        </>
+            {t('common.duplicate')}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className={styles.menuItem}
+            onClick={() => {
+              setMenu(null)
+              openForm(profile.id)
+            }}
+          >
+            {t('common.edit')}
+          </button>
+          {/* biome-ignore lint/a11y/useFocusableInteractive: static menu separator does not need focus */}
+          {/* biome-ignore lint/a11y/useSemanticElements: div with CSS class matches existing separator styling */}
+          {/* biome-ignore lint/a11y/useAriaPropsForRole: static separator in menu does not require aria-valuenow */}
+          <div className={styles.menuSep} role="separator" />
+          <button
+            type="button"
+            role="menuitem"
+            className={`${styles.menuItem} ${styles.danger}`}
+            onClick={() => {
+              setMenu(null)
+              void deleteProfile(profile.id)
+            }}
+          >
+            {t('common.delete')}
+          </button>
+        </ContextMenu>
       )}
     </div>
   )

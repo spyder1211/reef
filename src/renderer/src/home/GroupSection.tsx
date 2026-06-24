@@ -3,6 +3,7 @@ import { useT } from '../i18n/useT'
 import { computeReorder, type GroupView } from '../lib/grouping'
 import { TAG_COLORS, TAG_LABELS } from '../lib/tags'
 import { useAppStore } from '../store/useAppStore'
+import ContextMenu from '../ui/ContextMenu'
 import ConnectionRow from './ConnectionRow'
 import styles from './GroupSection.module.css'
 
@@ -159,40 +160,41 @@ export default function GroupSection({
         ))}
 
       {menu && (
-        <>
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop closes menu on mousedown */}
-          <div className={styles.menuBackdrop} onMouseDown={() => setMenu(null)} />
-          <div
-            role="menu"
-            className={styles.menu}
-            style={{ left: menu.x, top: menu.y }}
-            onMouseDown={(e) => e.stopPropagation()}
+        <ContextMenu
+          open
+          anchor={{ x: menu.x, y: menu.y }}
+          onClose={() => setMenu(null)}
+          className={styles.menu}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            className={styles.menuItem}
+            onClick={() => {
+              setMenu(null)
+              startRename()
+            }}
           >
-            <button
-              type="button"
-              className={styles.menuItem}
-              onClick={() => {
-                setMenu(null)
-                startRename()
-              }}
-            >
-              {t('connectionGroup.renameGroup')}
-            </button>
-            <div className={styles.menuSep} />
-            <button
-              type="button"
-              className={`${styles.menuItem} ${styles.danger}`}
-              onClick={() => {
-                setMenu(null)
-                if (window.confirm(t('connectionGroup.deleteConfirm', { name: view.name }))) {
-                  void deleteGroup(view.id)
-                }
-              }}
-            >
-              {t('connectionGroup.deleteGroup')}
-            </button>
-          </div>
-        </>
+            {t('connectionGroup.renameGroup')}
+          </button>
+          {/* biome-ignore lint/a11y/useFocusableInteractive: static menu separator does not need focus */}
+          {/* biome-ignore lint/a11y/useSemanticElements: div with CSS class matches existing separator styling */}
+          {/* biome-ignore lint/a11y/useAriaPropsForRole: static separator in menu does not require aria-valuenow */}
+          <div className={styles.menuSep} role="separator" />
+          <button
+            type="button"
+            role="menuitem"
+            className={`${styles.menuItem} ${styles.danger}`}
+            onClick={() => {
+              setMenu(null)
+              if (window.confirm(t('connectionGroup.deleteConfirm', { name: view.name }))) {
+                void deleteGroup(view.id)
+              }
+            }}
+          >
+            {t('connectionGroup.deleteGroup')}
+          </button>
+        </ContextMenu>
       )}
     </div>
   )
