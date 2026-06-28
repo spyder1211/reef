@@ -4,6 +4,25 @@ export const ROW_HEIGHT = 25
 
 export const MIN_COL_WIDTH = 48 // 列幅の下限（px）
 export const MAX_COL_WIDTH = 480 // 列幅の上限（px）。超過分はセル内 ellipsis 省略
+export const MANUAL_MAX_COL_WIDTH = 1200 // 手動ドラッグ時の上限(px)。自動上限 480 より広げられる
+
+// 手動幅を [MIN_COL_WIDTH, MANUAL_MAX_COL_WIDTH] にクランプ（四捨五入）。
+export function clampManualWidth(width: number): number {
+  return Math.round(Math.max(MIN_COL_WIDTH, Math.min(MANUAL_MAX_COL_WIDTH, width)))
+}
+
+// 自動実測幅に手動 override を重ねた実効幅。override は現在の列名にだけ適用する
+// （列が変わるクエリ後の古い override は無視＝無害）。
+export function mergeColumnWidths(
+  autoWidths: number[],
+  columnNames: string[],
+  overrides: Record<string, number>
+): number[] {
+  return autoWidths.map((auto, i) => {
+    const o = overrides[columnNames[i]]
+    return o != null ? o : auto
+  })
+}
 
 const DEFAULT_SAMPLE_ROWS = 200 // 幅計測に使う先頭サンプル行数
 const DEFAULT_PADDING = 24 // td 左右パディング相当の余白（px）

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { estimateColumnWidths, MAX_COL_WIDTH, MIN_COL_WIDTH, ROW_HEIGHT } from './columnWidths'
+import {
+  clampManualWidth,
+  estimateColumnWidths,
+  MANUAL_MAX_COL_WIDTH,
+  MAX_COL_WIDTH,
+  MIN_COL_WIDTH,
+  mergeColumnWidths,
+  ROW_HEIGHT
+} from './columnWidths'
 
 // 1文字 = 10px の決定論的フェイク計測器
 const measure = (text: string): number => text.length * 10
@@ -45,5 +53,29 @@ describe('estimateColumnWidths', () => {
 
   it('ROW_HEIGHT は仮想化用に 25 で固定', () => {
     expect(ROW_HEIGHT).toBe(25)
+  })
+})
+
+describe('clampManualWidth', () => {
+  it('下限 MIN_COL_WIDTH でクランプ', () => {
+    expect(clampManualWidth(10)).toBe(MIN_COL_WIDTH)
+  })
+  it('上限 MANUAL_MAX_COL_WIDTH でクランプ', () => {
+    expect(clampManualWidth(99999)).toBe(MANUAL_MAX_COL_WIDTH)
+  })
+  it('範囲内は四捨五入', () => {
+    expect(clampManualWidth(200.6)).toBe(201)
+  })
+})
+
+describe('mergeColumnWidths', () => {
+  it('override 未設定は auto 幅', () => {
+    expect(mergeColumnWidths([100, 200], ['a', 'b'], {})).toEqual([100, 200])
+  })
+  it('override を該当列に適用', () => {
+    expect(mergeColumnWidths([100, 200], ['a', 'b'], { b: 350 })).toEqual([100, 350])
+  })
+  it('現在の列名にない override は無視', () => {
+    expect(mergeColumnWidths([100], ['a'], { z: 999 })).toEqual([100])
   })
 })
