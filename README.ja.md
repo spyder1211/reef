@@ -1,10 +1,27 @@
+<div align="center">
+
+<img src="docs/assets/icon.png" alt="Reef" width="120" height="120" />
+
 # Reef
+
+**タブ無制限の MySQL クライアント（macOS デスクトップアプリ）**
+
+接続管理・テーブル閲覧・レコード編集・SQL 実行・ダンプ入出力を 1 つの軽量デスクトップアプリで。
 
 [English](README.md) · [日本語](README.ja.md)
 
-タブ無制限の MySQL クライアント（macOS デスクトップアプリ）。接続管理・テーブル閲覧・レコード編集・SQL 実行・ダンプの入出力までをまかなえる軽量クライアントです。
+<br/>
 
-Electron + React + TypeScript で構築されています。
+[![ダウンロード](https://img.shields.io/github/v/release/spyder1211/reef?label=download&logo=apple&logoColor=white&color=1f6feb)](https://github.com/spyder1211/reef/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+![Platform: macOS arm64](https://img.shields.io/badge/platform-macOS%20arm64-000000?logo=apple&logoColor=white)
+![Electron 31](https://img.shields.io/badge/Electron-31-47848F?logo=electron&logoColor=white)
+![React 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+
+</div>
+
+Reef は **Electron + React + TypeScript** で構築された軽量デスクトップアプリです。接続管理・テーブル閲覧・レコード編集・SQL 実行・ダンプの入出力までをまかなえます。
 
 ## 主な機能
 
