@@ -16,6 +16,7 @@ import type {
   TableSort
 } from '../../../shared/types'
 import { toCsv } from '../lib/csv'
+import { clampManualWidth } from '../workspace/columnWidths'
 import {
   buildDeleteStatements,
   buildDropStatement,
@@ -41,6 +42,7 @@ interface BaseTab {
   error: AppError | null
   running: boolean
   canceling: boolean // 停止要求送信中（停止ボタンの「停止中…」表示用）
+  columnWidths: Record<string, number> // 列名→手動幅(px)。未設定列は自動幅。タブ単位・非永続
 }
 export interface SqlTab extends BaseTab {
   kind: 'sql'
@@ -91,7 +93,8 @@ function makeSqlTab(index: number): SqlTab {
     result: null,
     error: null,
     running: false,
-    canceling: false
+    canceling: false,
+    columnWidths: {}
   }
 }
 
@@ -122,7 +125,8 @@ function makeTableTab(name: string): TableTab {
     error: null,
     // 開いた直後は初回クエリ実行中とみなし、結果ペインのプレースホルダ点滅を防ぐ
     running: true,
-    canceling: false
+    canceling: false,
+    columnWidths: {}
   }
 }
 
@@ -208,6 +212,8 @@ interface AppState {
     entries: { rowKey: string; pkValues: Record<string, unknown> }[]
   ) => void
   duplicateRows: (tabId: string, rowIndices: number[]) => void
+  setColumnWidth: (tabId: string, column: string, width: number) => void
+  clearColumnWidth: (tabId: string, column: string) => void
   exportCsv: (
     tabId: string,
     opts: { scope: 'page' | 'all'; target: 'file' | 'clipboard' }
@@ -1091,6 +1097,26 @@ export const useAppStore = create<AppState>((set, get) => {
       } catch (err) {
         return { ok: false, message: err instanceof Error ? err.message : String(err) }
       }
+    },
+
+    setColumnWidth(tabId, column, width) {
+      const w = clampManualWidth(width)
+      set((s) => ({
+        tabs: s.tabs.map((t) =>
+          t.id === tabId ? { ...t, columnWidths: { ...t.columnWidths, [column]: w } } : t
+        )
+      }))
+    },
+
+    clearColumnWidth(tabId, column) {
+      set((s) => ({
+        tabs: s.tabs.map((t) => {
+          if (t.id !== tabId) return t
+          const next = { ...t.columnWidths }
+          delete next[column]
+          return { ...t, columnWidths: next }
+        })
+      }))
     },
 
     toggleDetail() {
