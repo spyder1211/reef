@@ -6,8 +6,8 @@ import { SqlStatementSplitter } from '../import/sqlStatementSplitter'
 import { maybeApplyAutoLimit } from './autoLimit'
 import { extractTableNames } from './extractTableNames'
 import { fieldTypeName } from './mysqlTypes'
-import { extractRows } from './resultRows'
 import { isQueryInterrupted, QueryCancelledError } from './queryCancellation'
+import { extractRows } from './resultRows'
 
 export class ConnectionManager {
   private pool: mysql.Pool | null = null
