@@ -16,6 +16,7 @@ import { pkValuesOf, rowKeyOf } from '../store/rowKey'
 import { useAppStore } from '../store/useAppStore'
 import ContextMenu from '../ui/ContextMenu'
 import { estimateColumnWidths, ROW_HEIGHT } from './columnWidths'
+import { firstEditableColumn } from './gridEditing'
 import { deriveLead, nextArrowSelection } from './gridSelection'
 import styles from './ResultsGrid.module.css'
 import { isAffectedResult } from './resultStatus'
@@ -194,6 +195,13 @@ function Grid({
   // Enter/Esc 確定後に trailing blur が再度 confirm するのを防ぐ（編集開始ごとにリセット）
   const committedRef = useRef(false)
 
+  // 編集開始を一元化（per-cell の startEdit と Enter キーで共有）。
+  const beginEdit = (rowKey: string, column: string, initial: unknown): void => {
+    committedRef.current = false
+    setEditing({ rowKey, column })
+    setDraft(initial === null || initial === undefined ? '' : String(initial))
+  }
+
   const [ctxMenu, setCtxMenu] = useState<CtxMenu | null>(null)
   const gridWrapRef = useRef<HTMLDivElement>(null)
 
@@ -329,6 +337,22 @@ function Grid({
               scrollEl.scrollTop = rowBottom - scrollEl.clientHeight
             }
           }
+        } else if (e.key === 'Enter') {
+          // 単一行選択中に Enter で先頭編集可能列の編集を開始（編集中は冒頭で return 済み）。
+          if (!editable) return
+          if (selectedRowIndices.length !== 1) return
+          const column = firstEditableColumn(result.columns)
+          if (column == null) return
+          e.preventDefault()
+          const idx = selectedRowIndices[0]
+          if (idx < result.rows.length) {
+            const row = result.rows[idx] as Row
+            beginEdit(rowKeyOf(primaryKey, row), column, row[column])
+          } else {
+            const insert = inserts[idx - result.rows.length]
+            if (!insert) return
+            beginEdit(`insert-${insert.localId}`, column, insert.values[column])
+          }
         }
       }}
     >
@@ -413,9 +437,7 @@ function Grid({
 
                         const startEdit = (): void => {
                           if (!editable) return
-                          committedRef.current = false
-                          setEditing({ rowKey, column: colId })
-                          setDraft(value === null || value === undefined ? '' : String(value))
+                          beginEdit(rowKey, colId, value)
                         }
                         const confirm = (): void => {
                           if (committedRef.current) return
@@ -541,9 +563,7 @@ function Grid({
 
                 const startEdit = (): void => {
                   if (!editable) return
-                  committedRef.current = false
-                  setEditing({ rowKey: `insert-${insert.localId}`, column: colId })
-                  setDraft(value === null || value === undefined ? '' : String(value))
+                  beginEdit(`insert-${insert.localId}`, colId, value)
                 }
                 const confirm = (): void => {
                   if (committedRef.current) return
