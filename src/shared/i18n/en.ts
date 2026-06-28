@@ -128,6 +128,8 @@ export const en = {
   'workspace.deleteCount': 'DELETE {count} rows',
   'workspace.discard': 'Discard',
   'workspace.commit': 'Commit ⌘S',
+  'workspace.affectedRows': '✓ {count} rows affected',
+  'workspace.statusAffected': '{count} affected · {ms} ms',
   'workspace.statusRow': '{count} rows · {ms} ms',
   'workspace.detailTitle': 'Record detail',
   'workspace.detailInsertHint': 'Edit new rows in the grid',

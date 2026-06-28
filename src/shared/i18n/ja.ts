@@ -131,6 +131,8 @@ export const ja: Record<TranslationKey, string> = {
   'workspace.deleteCount': 'DELETE {count} 行',
   'workspace.discard': '破棄',
   'workspace.commit': 'コミット ⌘S',
+  'workspace.affectedRows': '✓ {count} 行に影響しました',
+  'workspace.statusAffected': '{count} 行に影響 · {ms} ms',
   'workspace.statusRow': '{count} 行 · {ms} ms',
   'workspace.detailTitle': 'レコード詳細',
   'workspace.detailInsertHint': '新規行はグリッドで編集してください',

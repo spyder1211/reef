@@ -18,6 +18,7 @@ import ContextMenu from '../ui/ContextMenu'
 import { estimateColumnWidths, ROW_HEIGHT } from './columnWidths'
 import { deriveLead, nextArrowSelection } from './gridSelection'
 import styles from './ResultsGrid.module.css'
+import { isAffectedResult } from './resultStatus'
 
 type Row = Record<string, unknown>
 
@@ -276,7 +277,9 @@ function Grid({
   if (result.columns.length === 0) {
     return (
       <div className={styles.placeholder}>
-        {t('workspace.resultEmpty', { count: String(result.rowCount) })}
+        {isAffectedResult(result)
+          ? t('workspace.affectedRows', { count: String(result.affectedRows) })
+          : t('workspace.resultEmpty', { count: String(result.rowCount) })}
       </div>
     )
   }
