@@ -567,6 +567,18 @@ function Grid({
                           }}
                           onBlur={confirm}
                         />
+                        <button
+                          type="button"
+                          className={styles.nullBtn}
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            committedRef.current = true
+                            onUpdateInsert?.(insert.localId, colId, null)
+                            setEditing(null)
+                          }}
+                        >
+                          NULL
+                        </button>
                       </span>
                     ) : value === null ? (
                       <span className={styles.null}>NULL</span>
