@@ -68,4 +68,14 @@ describe('connect の本番ガード', () => {
     expect(connectSpy).toHaveBeenCalledOnce()
     expect(useAppStore.getState().status).toBe('connected')
   })
+
+  it('connecting 中に connect を呼んでも二重接続しない', async () => {
+    const connectSpy = vi.fn(async () => ({ ok: true, data: undefined }))
+    vi.stubGlobal('window', { confirm: vi.fn(() => true), api: okApi(connectSpy) })
+
+    useAppStore.setState({ status: 'connecting' })
+    await useAppStore.getState().connect(profile('local'))
+
+    expect(connectSpy).not.toHaveBeenCalled()
+  })
 })
