@@ -23,6 +23,23 @@ Connection management · table browsing · record editing · SQL execution · du
 
 Reef is a lightweight desktop app built with **Electron + React + TypeScript**. It covers connection management, table browsing, record editing, SQL execution, and dump import/export.
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/assets/screenshots/en/table.png" alt="Browse and edit table records with a row-detail pane" width="100%" />
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/screenshots/en/home.png" alt="Connection list grouped by environment" /></td>
+    <td width="50%"><img src="docs/assets/screenshots/en/sql.png" alt="SQL editor with a live result grid" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Connections grouped by environment</sub></td>
+    <td align="center"><sub>SQL editor with a live result grid</sub></td>
+  </tr>
+</table>
+
 ## Features
 
 ### Connection management
