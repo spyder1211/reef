@@ -15,7 +15,7 @@ import { toTsv } from '../lib/csv'
 import { pkValuesOf, rowKeyOf } from '../store/rowKey'
 import { useAppStore } from '../store/useAppStore'
 import ContextMenu from '../ui/ContextMenu'
-import { estimateColumnWidths, ROW_HEIGHT } from './columnWidths'
+import { estimateColumnWidths, mergeColumnWidths, ROW_HEIGHT } from './columnWidths'
 import { firstEditableColumn } from './gridEditing'
 import { deriveLead, nextArrowSelection } from './gridSelection'
 import styles from './ResultsGrid.module.css'
@@ -143,6 +143,7 @@ export default function ResultsGrid(): JSX.Element {
         }
         onDuplicateRows={editable ? (indices): void => duplicateRows(tab.id, indices) : undefined}
         onQuickFilter={onQuickFilter}
+        overrides={tab.columnWidths}
       />
     </div>
   )
@@ -167,7 +168,8 @@ function Grid({
   onRemoveInsert,
   onStageDeleteMany,
   onDuplicateRows,
-  onQuickFilter
+  onQuickFilter,
+  overrides
 }: {
   result: QueryResult
   sort: TableSort | null
@@ -188,6 +190,7 @@ function Grid({
   onStageDeleteMany?: (entries: { rowKey: string; pkValues: Record<string, unknown> }[]) => void
   onDuplicateRows?: (indices: number[]) => void
   onQuickFilter?: (column: string, operator: FilterOperator, value: unknown) => void
+  overrides: Record<string, number>
 }): JSX.Element {
   const { t, tPlural } = useT()
   const [editing, setEditing] = useState<{ rowKey: string; column: string } | null>(null)
@@ -259,22 +262,28 @@ function Grid({
 
   // カラム幅を内容から実測して固定する（仮想化でスクロール時に max-content が再計算され
   // 幅がガタつくのを防ぐ）。canvas measureText を注入し、estimateColumnWidths は純関数のまま保つ。
-  const colWidths = useMemo(() => {
+  const autoWidths = useMemo(() => {
     const family =
       typeof document !== 'undefined'
         ? getComputedStyle(document.body).fontFamily || 'sans-serif'
         : 'sans-serif'
     const ctx = document.createElement('canvas').getContext('2d')
-    // セルは .grid の font-size: 12px で描画される
     const font = `12px ${family}`
     const measure = ctx
       ? (text: string): number => {
           ctx.font = font
           return ctx.measureText(text).width
         }
-      : (text: string): number => text.length * 7 // canvas 不可時の粗い近似
+      : (text: string): number => text.length * 7
     return estimateColumnWidths(result.columns, result.rows as Row[], measure)
   }, [result.columns, result.rows])
+
+  const columnNames = useMemo(() => result.columns.map((c) => c.name), [result.columns])
+
+  const colWidths = useMemo(
+    () => mergeColumnWidths(autoWidths, columnNames, overrides),
+    [autoWidths, columnNames, overrides]
+  )
 
   const totalWidth = useMemo(() => colWidths.reduce((sum, w) => sum + w, 0), [colWidths])
 
