@@ -113,6 +113,20 @@ describe('buildInsertStatements', () => {
   it('inserts が空なら空配列', () => {
     expect(buildInsertStatements('users', [])).toEqual([])
   })
+
+  it('null 値は param が null（明示 NULL）', () => {
+    const inserts: PendingInsert[] = [{ localId: 'ins-0', values: { name: '太郎', note: null } }]
+    const r = buildInsertStatements('users', inserts)
+    expect(r[0].sql).toBe('INSERT INTO `users` (`name`, `note`) VALUES (?, ?)')
+    expect(r[0].params).toEqual(['太郎', null])
+  })
+
+  it('空文字の列は除外し、null の列は残す', () => {
+    const inserts: PendingInsert[] = [{ localId: 'ins-0', values: { a: '', b: null, c: '1' } }]
+    const r = buildInsertStatements('t', inserts)
+    expect(r[0].sql).toBe('INSERT INTO `t` (`b`, `c`) VALUES (?, ?)')
+    expect(r[0].params).toEqual([null, '1'])
+  })
 })
 
 describe('buildDeleteStatements', () => {

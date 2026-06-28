@@ -200,7 +200,7 @@ interface AppState {
   discardEdits: (tabId: string) => void
   commitEdits: (tabId: string) => Promise<void>
   addInsertRow: (tabId: string) => void
-  updateInsertCell: (tabId: string, localId: string, column: string, value: string) => void
+  updateInsertCell: (tabId: string, localId: string, column: string, value: string | null) => void
   removeInsertRow: (tabId: string, localId: string) => void
   setSelectedRows: (tabId: string, indices: number[], anchor: number | null) => void
   stageDeleteMany: (

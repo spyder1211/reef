@@ -178,7 +178,7 @@ function Grid({
   onSetSelection?: (indices: number[], anchor: number | null) => void
   onEdit?: (row: Row, column: string, value: string) => void
   onNull?: (row: Row, column: string) => void
-  onUpdateInsert?: (localId: string, column: string, value: string) => void
+  onUpdateInsert?: (localId: string, column: string, value: string | null) => void
   onRemoveInsert?: (localId: string) => void
   onStageDeleteMany?: (entries: { rowKey: string; pkValues: Record<string, unknown> }[]) => void
   onDuplicateRows?: (indices: number[]) => void
