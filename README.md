@@ -1,10 +1,44 @@
+<div align="center">
+
+<img src="docs/assets/icon.png" alt="Reef" width="120" height="120" />
+
 # Reef
+
+**A fast, tab-unlimited MySQL client for macOS**
+
+Connection management · table browsing · record editing · SQL execution · dump import/export — in one lightweight desktop app.
 
 [English](README.md) · [日本語](README.ja.md)
 
-A fast, tab-unlimited MySQL client for macOS. Reef is a lightweight desktop app that covers connection management, table browsing, record editing, SQL execution, and dump import/export.
+<br/>
 
-Built with Electron + React + TypeScript.
+[![Download](https://img.shields.io/github/v/release/spyder1211/reef?label=download&logo=apple&logoColor=white&color=1f6feb)](https://github.com/spyder1211/reef/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+![Platform: macOS arm64](https://img.shields.io/badge/platform-macOS%20arm64-000000?logo=apple&logoColor=white)
+![Electron 31](https://img.shields.io/badge/Electron-31-47848F?logo=electron&logoColor=white)
+![React 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+
+</div>
+
+Reef is a lightweight desktop app built with **Electron + React + TypeScript**. It covers connection management, table browsing, record editing, SQL execution, and dump import/export.
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/assets/screenshots/en/table.png" alt="Browse and edit table records with a row-detail pane" width="100%" />
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/screenshots/en/home.png" alt="Connection list grouped by environment" /></td>
+    <td width="50%"><img src="docs/assets/screenshots/en/sql.png" alt="SQL editor with a live result grid" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Connections grouped by environment</sub></td>
+    <td align="center"><sub>SQL editor with a live result grid</sub></td>
+  </tr>
+</table>
 
 ## Features
 
