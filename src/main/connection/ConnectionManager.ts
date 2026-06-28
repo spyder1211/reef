@@ -6,6 +6,7 @@ import { SqlStatementSplitter } from '../import/sqlStatementSplitter'
 import { maybeApplyAutoLimit } from './autoLimit'
 import { extractTableNames } from './extractTableNames'
 import { fieldTypeName } from './mysqlTypes'
+import { extractRows } from './resultRows'
 import { isQueryInterrupted, QueryCancelledError } from './queryCancellation'
 
 export class ConnectionManager {
@@ -46,7 +47,7 @@ export class ConnectionManager {
     const start = Date.now()
     const [rows, fields] = await execer.query(sql, params)
     const durationMs = Date.now() - start
-    const dataRows = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
+    const { dataRows, affectedRows } = extractRows(rows)
     const columns = (fields ?? []).map((f) => {
       const ff = f as { name: string; type?: number }
       return {
@@ -54,7 +55,9 @@ export class ConnectionManager {
         type: typeof ff.type === 'number' ? fieldTypeName(ff.type) : undefined
       }
     })
-    return { columns, rows: dataRows, rowCount: dataRows.length, durationMs }
+    const result: QueryResult = { columns, rows: dataRows, rowCount: dataRows.length, durationMs }
+    if (affectedRows !== undefined) result.affectedRows = affectedRows
+    return result
   }
 
   // tabId 付きクエリを pool の専用接続で実行し、threadId を登録する。
