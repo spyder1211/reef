@@ -10,6 +10,8 @@ import styles from './ConnectionRow.module.css'
 export default function ConnectionRow({ profile }: { profile: ConnectionProfile }): JSX.Element {
   const { t } = useT()
   const connect = useAppStore((s) => s.connect)
+  const status = useAppStore((s) => s.status)
+  const connecting = status === 'connecting'
   const openForm = useAppStore((s) => s.openForm)
   const deleteProfile = useAppStore((s) => s.deleteProfile)
   const duplicateProfile = useAppStore((s) => s.duplicateProfile)
@@ -25,7 +27,9 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
         e.dataTransfer.setData('application/x-reef-conn', profile.id)
         e.dataTransfer.effectAllowed = 'move'
       }}
-      onDoubleClick={() => void connect(profile)}
+      onDoubleClick={() => {
+        if (!connecting) void connect(profile)
+      }}
       onContextMenu={(e) => {
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })
@@ -64,9 +68,10 @@ export default function ConnectionRow({ profile }: { profile: ConnectionProfile 
         <button
           type="button"
           className={styles.connect}
+          disabled={connecting}
           onClick={(e) => {
             e.stopPropagation()
-            void connect(profile)
+            if (!connecting) void connect(profile)
           }}
         >
           {t('common.connect')}
