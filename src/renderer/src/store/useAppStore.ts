@@ -200,7 +200,7 @@ interface AppState {
   discardEdits: (tabId: string) => void
   commitEdits: (tabId: string) => Promise<void>
   addInsertRow: (tabId: string) => void
-  updateInsertCell: (tabId: string, localId: string, column: string, value: string) => void
+  updateInsertCell: (tabId: string, localId: string, column: string, value: string | null) => void
   removeInsertRow: (tabId: string, localId: string) => void
   setSelectedRows: (tabId: string, indices: number[], anchor: number | null) => void
   stageDeleteMany: (
@@ -479,6 +479,8 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     async connect(profile) {
+      // 接続処理中の再入（ダブルクリック/ボタン連打）を弾く。
+      if (get().status === 'connecting') return
       // 本番環境は誤操作の影響が大きいため、テーブル一覧を開く前に毎回確認を挟む。
       // キャンセルされたら接続自体を行わず、接続一覧にとどまる。
       if (isProductionProfile(profile)) {

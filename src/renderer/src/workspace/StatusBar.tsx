@@ -1,6 +1,7 @@
 import { useT } from '../i18n/useT'
 import { TAG_COLORS } from '../lib/tags'
 import { useAppStore } from '../store/useAppStore'
+import { isAffectedResult } from './resultStatus'
 import styles from './StatusBar.module.css'
 
 export default function StatusBar(): JSX.Element {
@@ -13,7 +14,12 @@ export default function StatusBar(): JSX.Element {
     <div className={styles.status}>
       <span>
         {r
-          ? t('workspace.statusRow', { count: String(r.rowCount), ms: String(r.durationMs) })
+          ? isAffectedResult(r)
+            ? t('workspace.statusAffected', {
+                count: String(r.affectedRows),
+                ms: String(r.durationMs)
+              })
+            : t('workspace.statusRow', { count: String(r.rowCount), ms: String(r.durationMs) })
           : '—'}
       </span>
       <span className={styles.right}>

@@ -128,6 +128,8 @@ export const en = {
   'workspace.deleteCount': 'DELETE {count} rows',
   'workspace.discard': 'Discard',
   'workspace.commit': 'Commit ⌘S',
+  'workspace.affectedRows': '✓ {count} rows affected',
+  'workspace.statusAffected': '{count} affected · {ms} ms',
   'workspace.statusRow': '{count} rows · {ms} ms',
   'workspace.detailTitle': 'Record detail',
   'workspace.detailInsertHint': 'Edit new rows in the grid',
@@ -219,5 +221,6 @@ export const en = {
   'dialog.opSqlExportDump': 'Export SQL Dump',
   'dialog.opSqlQuery': 'Run SQL',
   'dialog.opApplyChanges': 'Apply changes (commit)',
-  'dialog.opSqlImport': 'Import / Restore SQL Dump'
+  'dialog.opSqlImport': 'Import / Restore SQL Dump',
+  'workspace.readOnlyNoPk': 'No primary key — this table is read-only'
 } as const

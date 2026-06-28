@@ -2,6 +2,25 @@
 
 [English](RELEASE_NOTES.md) · [日本語](RELEASE_NOTES.ja.md)
 
+## v1.0.1 (2026-06-28) — UX papercuts: DML feedback, NULL insertion, keyboard editing, and connection guard
+
+A focused patch that addresses four small but frequently-noticed friction points in everyday use.
+
+### DML/DDL results now show affected-row count (U5)
+- UPDATE, INSERT, DELETE, and DDL statements now display "✓ N rows affected" in the result pane and status bar, instead of the misleading "no results (0 rows)" that appeared before.
+
+### NULL button in the INSERT row editor (U8)
+- When adding a new row, each cell in the editor now has a **NULL** button, making it possible to set an explicit `NULL` (distinct from an empty string or DB default) before committing the INSERT.
+
+### Enter to edit + read-only banner for tables without a primary key (U9)
+- Pressing **Enter** on a selected row now starts editing its first editable column, consistent with how most grid-based apps behave.
+- Tables without a primary key now show a read-only banner explaining why cell editing is disabled, rather than silently ignoring edit attempts.
+
+### Connection double-fire guard
+- The Connect button and double-click are disabled while a connection is already in progress, preventing a second simultaneous connection attempt from being triggered accidentally.
+
+---
+
 ## v1.0.0 (2026-06-24) — The Reef debut: open source, internationalization, and overlay accessibility
 
 This is the first release under the new name **Reef** (formerly Table++), and the project's debut as **open source**. Alongside the rename it bundles the long-deferred follow-up batch — UI internationalization, tab keyboard shortcuts, and accessibility for modals and context menus — plus a development foundation (Biome) and behavior-preserving internal cleanups.
