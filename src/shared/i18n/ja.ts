@@ -225,5 +225,6 @@ export const ja: Record<TranslationKey, string> = {
   'dialog.opSqlExportDump': 'SQL ダンプのエクスポート',
   'dialog.opSqlQuery': 'SQL の実行',
   'dialog.opApplyChanges': '変更の適用（コミット）',
-  'dialog.opSqlImport': 'SQL ダンプの import / restore'
+  'dialog.opSqlImport': 'SQL ダンプの import / restore',
+  'workspace.readOnlyNoPk': '主キーがないため編集できません（読み取り専用）'
 }

@@ -221,5 +221,6 @@ export const en = {
   'dialog.opSqlExportDump': 'Export SQL Dump',
   'dialog.opSqlQuery': 'Run SQL',
   'dialog.opApplyChanges': 'Apply changes (commit)',
-  'dialog.opSqlImport': 'Import / Restore SQL Dump'
+  'dialog.opSqlImport': 'Import / Restore SQL Dump',
+  'workspace.readOnlyNoPk': 'No primary key — this table is read-only'
 } as const

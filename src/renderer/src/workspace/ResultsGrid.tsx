@@ -114,6 +114,9 @@ export default function ResultsGrid(): JSX.Element {
 
   return (
     <div className={styles.wrapper}>
+      {isTable && tab.primaryKey.length === 0 && (
+        <div className={styles.readOnlyNotice}>{t('workspace.readOnlyNoPk')}</div>
+      )}
       {notice}
       <Grid
         result={tab.result}
