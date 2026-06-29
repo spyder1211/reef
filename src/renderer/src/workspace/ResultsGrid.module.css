@@ -10,6 +10,8 @@
   min-width: 100%;
 }
 .grid th {
+  /* position は .resizeHandle(position:absolute) の包含ブロックを兼ねる。
+     sticky/relative など non-static を維持すること（static にするとハンドルの右端配置が崩れる）。 */
   position: sticky;
   top: 0;
   z-index: 1;
@@ -21,6 +23,18 @@
   border-bottom: 1px solid var(--border);
   border-right: 1px solid var(--border-soft);
   white-space: nowrap;
+}
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+}
+.resizeHandle:hover {
+  background: var(--border, #d0d0d0);
 }
 .grid td {
   height: 25px; /* = ROW_HEIGHT (columnWidths.ts)。仮想化のスペーサ計算と一致必須 */
