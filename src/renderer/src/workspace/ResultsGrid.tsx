@@ -133,18 +133,20 @@ export default function ResultsGrid(): JSX.Element {
         <div className={styles.readOnlyNotice}>{t('workspace.readOnlyNoPk')}</div>
       )}
       {notice}
-      <div className={styles.colBar}>
-        <button
-          type="button"
-          className={styles.colBarBtn}
-          onClick={(e) => {
-            const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-            setColsAnchor({ x: r.left, y: r.bottom })
-          }}
-        >
-          {t('workspace.columns')} ▾
-        </button>
-      </div>
+      {tab.result.columns.length > 0 && (
+        <div className={styles.colBar}>
+          <button
+            type="button"
+            className={styles.colBarBtn}
+            onClick={(e) => {
+              const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+              setColsAnchor({ x: r.left, y: r.bottom })
+            }}
+          >
+            {t('workspace.columns')} ▾
+          </button>
+        </div>
+      )}
       <Grid
         result={tab.result}
         sort={sort}
@@ -559,7 +561,7 @@ function Grid({
                   <tr>
                     <td
                       className={styles.spacer}
-                      colSpan={result.columns.length}
+                      colSpan={orderedCols.length}
                       style={{ height: paddingTop }}
                     />
                   </tr>
@@ -687,7 +689,7 @@ function Grid({
                   <tr>
                     <td
                       className={styles.spacer}
-                      colSpan={result.columns.length}
+                      colSpan={orderedCols.length}
                       style={{ height: paddingBottom }}
                     />
                   </tr>

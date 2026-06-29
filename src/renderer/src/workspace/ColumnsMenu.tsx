@@ -78,6 +78,8 @@ export default function ColumnsMenu({
                 className={isPinned ? styles.pinOn : styles.pin}
                 onClick={() => onTogglePinned(name)}
                 title={isPinned ? t('workspace.colUnpin') : t('workspace.colPin')}
+                aria-pressed={isPinned}
+                aria-label={isPinned ? t('workspace.colUnpin') : t('workspace.colPin')}
               >
                 📌
               </button>
