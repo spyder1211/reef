@@ -229,5 +229,7 @@ export const ja: Record<TranslationKey, string> = {
   'workspace.readOnlyNoPk': '主キーがないため編集できません（読み取り専用）',
   'workspace.columns': '列',
   'workspace.colShowAll': 'すべて表示',
-  'workspace.colHide': 'この列を非表示'
+  'workspace.colHide': 'この列を非表示',
+  'workspace.colPin': 'ピン留め',
+  'workspace.colUnpin': 'ピン解除'
 }

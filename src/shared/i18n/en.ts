@@ -225,5 +225,7 @@ export const en = {
   'workspace.readOnlyNoPk': 'No primary key — this table is read-only',
   'workspace.columns': 'Columns',
   'workspace.colShowAll': 'Show all',
-  'workspace.colHide': 'Hide column'
+  'workspace.colHide': 'Hide column',
+  'workspace.colPin': 'Pin column',
+  'workspace.colUnpin': 'Unpin column'
 } as const

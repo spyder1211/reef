@@ -26,10 +26,46 @@
 .row:hover {
   background: var(--row-alt);
 }
+.row:has(input:disabled) {
+  cursor: default;
+}
+/* Inner label wrapping checkbox + column name — takes remaining width */
+.checkLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  cursor: inherit;
+  min-width: 0;
+}
 .colName {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* Pin toggle button */
+.pin {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  opacity: 0.3;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.pin:hover {
+  opacity: 0.75;
+}
+.pinOn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  opacity: 1;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 .showAll {
   width: 100%;
