@@ -226,5 +226,8 @@ export const ja: Record<TranslationKey, string> = {
   'dialog.opSqlQuery': 'SQL の実行',
   'dialog.opApplyChanges': '変更の適用（コミット）',
   'dialog.opSqlImport': 'SQL ダンプの import / restore',
-  'workspace.readOnlyNoPk': '主キーがないため編集できません（読み取り専用）'
+  'workspace.readOnlyNoPk': '主キーがないため編集できません（読み取り専用）',
+  'workspace.columns': '列',
+  'workspace.colShowAll': 'すべて表示',
+  'workspace.colHide': 'この列を非表示'
 }

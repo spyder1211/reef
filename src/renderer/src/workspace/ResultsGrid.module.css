@@ -239,3 +239,21 @@
   background: #f3f4f6;
   border-bottom: 1px solid #e5e7eb;
 }
+.colBar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.colBarBtn {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: none;
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.colBarBtn:hover {
+  background: var(--row-alt);
+}

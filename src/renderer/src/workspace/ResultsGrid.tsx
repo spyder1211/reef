@@ -15,6 +15,7 @@ import { toTsv } from '../lib/csv'
 import { pkValuesOf, rowKeyOf } from '../store/rowKey'
 import { useAppStore } from '../store/useAppStore'
 import ContextMenu from '../ui/ContextMenu'
+import ColumnsMenu from './ColumnsMenu'
 import { orderColumns } from './columnView'
 import {
   clampManualWidth,
@@ -38,6 +39,7 @@ type CtxMenu =
       value: unknown
     }
   | { kind: 'insert'; x: number; y: number; localId: string }
+  | { kind: 'column'; x: number; y: number; column: string }
 
 export default function ResultsGrid(): JSX.Element {
   const { t } = useT()
@@ -55,6 +57,9 @@ export default function ResultsGrid(): JSX.Element {
   const rerunWithoutAutoLimit = useAppStore((s) => s.rerunWithoutAutoLimit)
   const setColumnWidth = useAppStore((s) => s.setColumnWidth)
   const clearColumnWidth = useAppStore((s) => s.clearColumnWidth)
+  const toggleColumnHidden = useAppStore((s) => s.toggleColumnHidden)
+  const showAllColumns = useAppStore((s) => s.showAllColumns)
+  const [colsAnchor, setColsAnchor] = useState<{ x: number; y: number } | null>(null)
 
   if (!tab) return <div className={styles.placeholder} />
   if (tab.running)
@@ -127,6 +132,18 @@ export default function ResultsGrid(): JSX.Element {
         <div className={styles.readOnlyNotice}>{t('workspace.readOnlyNoPk')}</div>
       )}
       {notice}
+      <div className={styles.colBar}>
+        <button
+          type="button"
+          className={styles.colBarBtn}
+          onClick={(e) => {
+            const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+            setColsAnchor({ x: r.left, y: r.bottom })
+          }}
+        >
+          {t('workspace.columns')} ▾
+        </button>
+      </div>
       <Grid
         result={tab.result}
         sort={sort}
@@ -156,7 +173,21 @@ export default function ResultsGrid(): JSX.Element {
         onAutoFit={(col) => clearColumnWidth(tab.id, col)}
         hiddenColumns={tab.hiddenColumns}
         pinnedColumns={tab.pinnedColumns}
+        onToggleHidden={(col) => toggleColumnHidden(tab.id, col)}
+        onShowAll={() => showAllColumns(tab.id)}
       />
+      {colsAnchor && (
+        <ColumnsMenu
+          anchor={colsAnchor}
+          columns={tab.result.columns.map((c) => c.name)}
+          hiddenColumns={tab.hiddenColumns}
+          onToggleHidden={(col) => toggleColumnHidden(tab.id, col)}
+          onShowAll={() => {
+            showAllColumns(tab.id)
+          }}
+          onClose={() => setColsAnchor(null)}
+        />
+      )}
     </div>
   )
 }
@@ -185,7 +216,9 @@ function Grid({
   onResize,
   onAutoFit,
   hiddenColumns,
-  pinnedColumns
+  pinnedColumns,
+  onToggleHidden,
+  onShowAll
 }: {
   result: QueryResult
   sort: TableSort | null
@@ -211,6 +244,8 @@ function Grid({
   onAutoFit?: (column: string) => void
   hiddenColumns: string[]
   pinnedColumns: string[]
+  onToggleHidden?: (column: string) => void
+  onShowAll?: () => void
 }): JSX.Element {
   const { t, tPlural } = useT()
   const [editing, setEditing] = useState<{ rowKey: string; column: string } | null>(null)
@@ -452,6 +487,14 @@ function Grid({
                     key={h.id}
                     className={onSort ? styles.sortable : undefined}
                     onClick={onSort ? () => onSort(name) : undefined}
+                    onContextMenu={
+                      onToggleHidden
+                        ? (e) => {
+                            e.preventDefault()
+                            setCtxMenu({ kind: 'column', x: e.clientX, y: e.clientY, column: name })
+                          }
+                        : undefined
+                    }
                   >
                     {primaryKey.includes(name) && <span className={styles.pkIcon}>🔑 </span>}
                     {flexRender(h.column.columnDef.header, h.getContext())}
@@ -468,6 +511,7 @@ function Grid({
                         onAutoFit?.(name)
                       }}
                       onClick={(e) => e.stopPropagation()}
+                      onContextMenu={(e) => e.stopPropagation()}
                     />
                   </th>
                 )
@@ -855,6 +899,33 @@ function Grid({
             >
               {t('workspace.discardInsertRow')}
             </button>
+          )}
+          {ctxMenu.kind === 'column' && (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                className={styles.ctxItem}
+                disabled={orderedCols.length <= 1}
+                onClick={() => {
+                  onToggleHidden?.(ctxMenu.column)
+                  setCtxMenu(null)
+                }}
+              >
+                {t('workspace.colHide')}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className={styles.ctxItem}
+                onClick={() => {
+                  onShowAll?.()
+                  setCtxMenu(null)
+                }}
+              >
+                {t('workspace.colShowAll')}
+              </button>
+            </>
           )}
         </ContextMenu>
       )}

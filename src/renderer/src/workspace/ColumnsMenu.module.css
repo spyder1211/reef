@@ -1,0 +1,45 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+.panel {
+  position: fixed;
+  z-index: 1001;
+  min-width: 200px;
+  max-height: 60vh;
+  overflow: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  padding: 4px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.row:hover {
+  background: var(--row-alt);
+}
+.colName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.showAll {
+  width: 100%;
+  text-align: left;
+  padding: 6px 8px;
+  margin-top: 4px;
+  border: none;
+  border-top: 1px solid var(--border-soft);
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 12px;
+}
