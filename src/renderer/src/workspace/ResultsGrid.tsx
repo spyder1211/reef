@@ -15,6 +15,7 @@ import { toTsv } from '../lib/csv'
 import { pkValuesOf, rowKeyOf } from '../store/rowKey'
 import { useAppStore } from '../store/useAppStore'
 import ContextMenu from '../ui/ContextMenu'
+import { orderColumns } from './columnView'
 import {
   clampManualWidth,
   estimateColumnWidths,
@@ -153,6 +154,8 @@ export default function ResultsGrid(): JSX.Element {
         overrides={tab.columnWidths}
         onResize={(col, w) => setColumnWidth(tab.id, col, w)}
         onAutoFit={(col) => clearColumnWidth(tab.id, col)}
+        hiddenColumns={tab.hiddenColumns}
+        pinnedColumns={tab.pinnedColumns}
       />
     </div>
   )
@@ -180,7 +183,9 @@ function Grid({
   onQuickFilter,
   overrides,
   onResize,
-  onAutoFit
+  onAutoFit,
+  hiddenColumns,
+  pinnedColumns
 }: {
   result: QueryResult
   sort: TableSort | null
@@ -204,6 +209,8 @@ function Grid({
   overrides: Record<string, number>
   onResize?: (column: string, width: number) => void
   onAutoFit?: (column: string) => void
+  hiddenColumns: string[]
+  pinnedColumns: string[]
 }): JSX.Element {
   const { t, tPlural } = useT()
   const [editing, setEditing] = useState<{ rowKey: string; column: string } | null>(null)
@@ -257,14 +264,24 @@ function Grid({
     }
   }
 
+  const orderedCols = useMemo(
+    () =>
+      orderColumns(
+        result.columns.map((c) => c.name),
+        hiddenColumns,
+        pinnedColumns
+      ),
+    [result.columns, hiddenColumns, pinnedColumns]
+  )
+
   const columns = useMemo<ColumnDef<Row>[]>(
     () =>
-      result.columns.map((c) => ({
+      orderedCols.map((c) => ({
         id: c.name,
         header: c.name,
         accessorFn: (row) => row[c.name]
       })),
-    [result.columns]
+    [orderedCols]
   )
 
   const table = useReactTable({
@@ -288,10 +305,10 @@ function Grid({
           return ctx.measureText(text).width
         }
       : (text: string): number => text.length * 7
-    return estimateColumnWidths(result.columns, result.rows as Row[], measure)
-  }, [result.columns, result.rows])
+    return estimateColumnWidths(orderedCols, result.rows as Row[], measure)
+  }, [orderedCols, result.rows])
 
-  const columnNames = useMemo(() => result.columns.map((c) => c.name), [result.columns])
+  const columnNames = useMemo(() => orderedCols.map((c) => c.name), [orderedCols])
 
   const colWidths = useMemo(
     () => mergeColumnWidths(autoWidths, columnNames, overrides),
@@ -403,7 +420,7 @@ function Grid({
           // 単一行選択中に Enter で先頭編集可能列の編集を開始（編集中は冒頭で return 済み）。
           if (!editable) return
           if (selectedRowIndices.length !== 1) return
-          const column = firstEditableColumn(result.columns)
+          const column = firstEditableColumn(orderedCols)
           if (column == null) return
           e.preventDefault()
           const idx = selectedRowIndices[0]
@@ -420,7 +437,7 @@ function Grid({
     >
       <table className={styles.grid} style={{ width: effectiveTotal }}>
         <colgroup>
-          {result.columns.map((c, i) => (
+          {orderedCols.map((c, i) => (
             <col key={c.name} style={{ width: effectiveWidths[i] }} />
           ))}
         </colgroup>
@@ -628,7 +645,7 @@ function Grid({
                 setCtxMenu({ kind: 'insert', x: e.clientX, y: e.clientY, localId: insert.localId })
               }}
             >
-              {result.columns.map((col) => {
+              {orderedCols.map((col) => {
                 const value = insert.values[col.name]
                 const colId = col.name
                 const isEditingThis =
