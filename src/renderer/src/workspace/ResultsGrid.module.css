@@ -10,6 +10,8 @@
   min-width: 100%;
 }
 .grid th {
+  /* position は .resizeHandle(position:absolute) の包含ブロックを兼ねる。
+     sticky/relative など non-static を維持すること（static にするとハンドルの右端配置が崩れる）。 */
   position: sticky;
   top: 0;
   z-index: 1;

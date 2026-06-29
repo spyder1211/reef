@@ -318,10 +318,12 @@ function Grid({
     e.preventDefault()
     e.stopPropagation()
     const startX = e.clientX
+    let moved = false
     setDrag({ col, width: startWidth })
     document.body.style.userSelect = 'none'
     document.body.style.cursor = 'col-resize'
     const onMove = (ev: MouseEvent): void => {
+      moved = true
       setDrag({ col, width: clampManualWidth(startWidth + (ev.clientX - startX)) })
     }
     const onUp = (ev: MouseEvent): void => {
@@ -331,7 +333,8 @@ function Grid({
       document.body.style.userSelect = ''
       document.body.style.cursor = ''
       setDrag(null)
-      onResize?.(col, w)
+      // ドラッグせず境界をクリックしただけのときは override を作らない（自動幅のまま維持）。
+      if (moved) onResize?.(col, w)
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
@@ -424,7 +427,7 @@ function Grid({
         <thead>
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
-              {hg.headers.map((h) => {
+              {hg.headers.map((h, i) => {
                 const name = h.column.id
                 const active = sort?.column === name
                 return (
@@ -442,9 +445,7 @@ function Grid({
                     {/* biome-ignore lint/a11y/useKeyWithClickEvents: onClick はヘッダのソート誤発火を止める stopPropagation のみで、キーボード等価操作は持たない */}
                     <span
                       className={styles.resizeHandle}
-                      onMouseDown={(e) =>
-                        startResize(e, name, effectiveWidths[columnNames.indexOf(name)] ?? 100)
-                      }
+                      onMouseDown={(e) => startResize(e, name, effectiveWidths[i])}
                       onDoubleClick={(e) => {
                         e.stopPropagation()
                         onAutoFit?.(name)

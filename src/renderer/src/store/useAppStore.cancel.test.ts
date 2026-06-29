@@ -1,22 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { SqlTab } from './useAppStore'
 import { useAppStore } from './useAppStore'
 
 function resetStore(): void {
-  useAppStore.setState({
-    tabs: [
-      {
-        kind: 'sql',
-        id: 'tab-1',
-        title: 'Q',
-        sql: 'SELECT SLEEP(9)',
-        result: null,
-        error: null,
-        running: true,
-        canceling: false
-      }
-    ] as never,
-    activeTabId: 'tab-1'
-  })
+  const tab: SqlTab = {
+    kind: 'sql',
+    id: 'tab-1',
+    title: 'Q',
+    sql: 'SELECT SLEEP(9)',
+    result: null,
+    error: null,
+    running: true,
+    canceling: false,
+    columnWidths: {}
+  }
+  useAppStore.setState({ tabs: [tab], activeTabId: 'tab-1' })
 }
 
 describe('cancelTab', () => {
