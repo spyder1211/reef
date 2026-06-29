@@ -15,7 +15,12 @@ import { toTsv } from '../lib/csv'
 import { pkValuesOf, rowKeyOf } from '../store/rowKey'
 import { useAppStore } from '../store/useAppStore'
 import ContextMenu from '../ui/ContextMenu'
-import { estimateColumnWidths, mergeColumnWidths, ROW_HEIGHT } from './columnWidths'
+import {
+  clampManualWidth,
+  estimateColumnWidths,
+  mergeColumnWidths,
+  ROW_HEIGHT
+} from './columnWidths'
 import { firstEditableColumn } from './gridEditing'
 import { deriveLead, nextArrowSelection } from './gridSelection'
 import styles from './ResultsGrid.module.css'
@@ -47,6 +52,8 @@ export default function ResultsGrid(): JSX.Element {
   const quickFilter = useAppStore((s) => s.quickFilter)
   const cancelTab = useAppStore((s) => s.cancelTab)
   const rerunWithoutAutoLimit = useAppStore((s) => s.rerunWithoutAutoLimit)
+  const setColumnWidth = useAppStore((s) => s.setColumnWidth)
+  const clearColumnWidth = useAppStore((s) => s.clearColumnWidth)
 
   if (!tab) return <div className={styles.placeholder} />
   if (tab.running)
@@ -144,6 +151,8 @@ export default function ResultsGrid(): JSX.Element {
         onDuplicateRows={editable ? (indices): void => duplicateRows(tab.id, indices) : undefined}
         onQuickFilter={onQuickFilter}
         overrides={tab.columnWidths}
+        onResize={(col, w) => setColumnWidth(tab.id, col, w)}
+        onAutoFit={(col) => clearColumnWidth(tab.id, col)}
       />
     </div>
   )
@@ -169,7 +178,9 @@ function Grid({
   onStageDeleteMany,
   onDuplicateRows,
   onQuickFilter,
-  overrides
+  overrides,
+  onResize,
+  onAutoFit
 }: {
   result: QueryResult
   sort: TableSort | null
@@ -191,6 +202,8 @@ function Grid({
   onDuplicateRows?: (indices: number[]) => void
   onQuickFilter?: (column: string, operator: FilterOperator, value: unknown) => void
   overrides: Record<string, number>
+  onResize?: (column: string, width: number) => void
+  onAutoFit?: (column: string) => void
 }): JSX.Element {
   const { t, tPlural } = useT()
   const [editing, setEditing] = useState<{ rowKey: string; column: string } | null>(null)
@@ -285,7 +298,44 @@ function Grid({
     [autoWidths, columnNames, overrides]
   )
 
-  const totalWidth = useMemo(() => colWidths.reduce((sum, w) => sum + w, 0), [colWidths])
+  const [drag, setDrag] = useState<{ col: string; width: number } | null>(null)
+
+  // ドラッグ中の列はライブ幅で上書きした実効幅。
+  const effectiveWidths = useMemo(() => {
+    if (!drag) return colWidths
+    const i = columnNames.indexOf(drag.col)
+    if (i < 0) return colWidths
+    const next = [...colWidths]
+    next[i] = drag.width
+    return next
+  }, [colWidths, columnNames, drag])
+  const effectiveTotal = useMemo(
+    () => effectiveWidths.reduce((sum, w) => sum + w, 0),
+    [effectiveWidths]
+  )
+
+  const startResize = (e: React.MouseEvent, col: string, startWidth: number): void => {
+    e.preventDefault()
+    e.stopPropagation()
+    const startX = e.clientX
+    setDrag({ col, width: startWidth })
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'col-resize'
+    const onMove = (ev: MouseEvent): void => {
+      setDrag({ col, width: clampManualWidth(startWidth + (ev.clientX - startX)) })
+    }
+    const onUp = (ev: MouseEvent): void => {
+      const w = clampManualWidth(startWidth + (ev.clientX - startX))
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
+      setDrag(null)
+      onResize?.(col, w)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
 
   const rowVirtualizer = useVirtualizer({
     count: result.rows.length,
@@ -365,10 +415,10 @@ function Grid({
         }
       }}
     >
-      <table className={styles.grid} style={{ width: totalWidth }}>
+      <table className={styles.grid} style={{ width: effectiveTotal }}>
         <colgroup>
           {result.columns.map((c, i) => (
-            <col key={c.name} style={{ width: colWidths[i] }} />
+            <col key={c.name} style={{ width: effectiveWidths[i] }} />
           ))}
         </colgroup>
         <thead>
@@ -388,6 +438,19 @@ function Grid({
                     {active && (
                       <span className={styles.sortInd}>{sort.dir === 'asc' ? '▲' : '▼'}</span>
                     )}
+                    {/* biome-ignore lint/a11y/noStaticElementInteractions: ポインタ専用の列リサイズハンドル（キーボード操作の対象外） */}
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: onClick はヘッダのソート誤発火を止める stopPropagation のみで、キーボード等価操作は持たない */}
+                    <span
+                      className={styles.resizeHandle}
+                      onMouseDown={(e) =>
+                        startResize(e, name, effectiveWidths[columnNames.indexOf(name)] ?? 100)
+                      }
+                      onDoubleClick={(e) => {
+                        e.stopPropagation()
+                        onAutoFit?.(name)
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   </th>
                 )
               })}

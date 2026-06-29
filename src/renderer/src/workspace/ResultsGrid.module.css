@@ -22,6 +22,18 @@
   border-right: 1px solid var(--border-soft);
   white-space: nowrap;
 }
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+}
+.resizeHandle:hover {
+  background: var(--border, #d0d0d0);
+}
 .grid td {
   height: 25px; /* = ROW_HEIGHT (columnWidths.ts)。仮想化のスペーサ計算と一致必須 */
   box-sizing: border-box;
