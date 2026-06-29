@@ -12,7 +12,9 @@ function sqlTab(id: string): SqlTab {
     error: null,
     running: false,
     canceling: false,
-    columnWidths: {}
+    columnWidths: {},
+    hiddenColumns: [],
+    pinnedColumns: []
   }
 }
 

@@ -12,7 +12,9 @@ function resetStore(): void {
     error: null,
     running: true,
     canceling: false,
-    columnWidths: {}
+    columnWidths: {},
+    hiddenColumns: [],
+    pinnedColumns: []
   }
   useAppStore.setState({ tabs: [tab], activeTabId: 'tab-1' })
 }

@@ -12,7 +12,9 @@ function seedSqlTab(): void {
     error: null,
     running: false,
     canceling: false,
-    columnWidths: {}
+    columnWidths: {},
+    hiddenColumns: [],
+    pinnedColumns: []
   }
   useAppStore.setState({ tabs: [tab], activeTabId: 'tab-1' })
 }

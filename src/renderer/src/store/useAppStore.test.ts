@@ -44,6 +44,8 @@ function seedTableTab(partial: Partial<TableTab> = {}): string {
     running: false,
     canceling: false,
     columnWidths: {},
+    hiddenColumns: [],
+    pinnedColumns: [],
     ...partial
   }
   useAppStore.setState({ tabs: [base], activeTabId: id })
