@@ -2,6 +2,24 @@
 
 [English](RELEASE_NOTES.md) · [日本語](RELEASE_NOTES.ja.md)
 
+## v1.0.2 (2026-07-01) — Result grid: column resize, show/hide, and pinning
+
+Everyday result-grid ergonomics. This release makes the columns in the result grid directly manipulable — resize them, hide the ones you don't need, and pin the ones you do to the left. All settings are per-tab and last for the session (no persistence across restarts).
+
+### Drag to resize columns (#59)
+- Drag a column border to set its width, or **double-click** the border to snap back to the auto-fit width. Widths are keyed by column name, so they survive sorting and reordering.
+
+### Show/hide columns (#60)
+- A **Columns ▾** toolbar panel lets you toggle individual columns, or reveal everything at once with **Show all**.
+- Right-click a column header for **Hide this column / Show all columns**.
+- The last remaining visible column can't be hidden (guarded in both the store and the UI), so you never end up with an empty grid.
+
+### Pin columns to the left (#60)
+- Pin a column from the header right-click menu or the 📌 button in the Columns panel. Pinned columns move to the left edge and stay put (`position: sticky`) while you scroll horizontally, with the pin offset following along as you resize earlier pinned columns.
+- The detail pane, CSV/TSV export, and row copy still use the full, original column set — hiding and pinning only affect the on-screen grid.
+
+---
+
 ## v1.0.1 (2026-06-28) — UX papercuts: DML feedback, NULL insertion, keyboard editing, and connection guard
 
 A focused patch that addresses four small but frequently-noticed friction points in everyday use.

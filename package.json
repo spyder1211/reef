@@ -1,7 +1,7 @@
 {
   "name": "reef",
   "productName": "Reef",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A fast, tab-unlimited MySQL client for macOS",
   "main": "./out/main/index.js",
   "author": "spyder1211",
