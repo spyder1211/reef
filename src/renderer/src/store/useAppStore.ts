@@ -43,6 +43,8 @@ interface BaseTab {
   running: boolean
   canceling: boolean // 停止要求送信中（停止ボタンの「停止中…」表示用）
   columnWidths: Record<string, number> // 列名→手動幅(px)。未設定列は自動幅。タブ単位・非永続
+  hiddenColumns: string[] // 非表示の列名。タブ単位・非永続
+  pinnedColumns: string[] // 左ピンの列名（ピンした順）。タブ単位・非永続
 }
 export interface SqlTab extends BaseTab {
   kind: 'sql'
@@ -94,7 +96,9 @@ function makeSqlTab(index: number): SqlTab {
     error: null,
     running: false,
     canceling: false,
-    columnWidths: {}
+    columnWidths: {},
+    hiddenColumns: [],
+    pinnedColumns: []
   }
 }
 
@@ -126,7 +130,9 @@ function makeTableTab(name: string): TableTab {
     // 開いた直後は初回クエリ実行中とみなし、結果ペインのプレースホルダ点滅を防ぐ
     running: true,
     canceling: false,
-    columnWidths: {}
+    columnWidths: {},
+    hiddenColumns: [],
+    pinnedColumns: []
   }
 }
 
@@ -214,6 +220,9 @@ interface AppState {
   duplicateRows: (tabId: string, rowIndices: number[]) => void
   setColumnWidth: (tabId: string, column: string, width: number) => void
   clearColumnWidth: (tabId: string, column: string) => void
+  toggleColumnHidden: (tabId: string, column: string) => void
+  toggleColumnPinned: (tabId: string, column: string) => void
+  showAllColumns: (tabId: string) => void
   exportCsv: (
     tabId: string,
     opts: { scope: 'page' | 'all'; target: 'file' | 'clipboard' }
@@ -1116,6 +1125,43 @@ export const useAppStore = create<AppState>((set, get) => {
           delete next[column]
           return { ...t, columnWidths: next }
         })
+      }))
+    },
+
+    toggleColumnHidden(tabId, column) {
+      set((s) => ({
+        tabs: s.tabs.map((t) => {
+          if (t.id !== tabId) return t
+          if (t.hiddenColumns.includes(column)) {
+            return { ...t, hiddenColumns: t.hiddenColumns.filter((c) => c !== column) }
+          }
+          const allNames = (t.result?.columns ?? []).map((c) => c.name)
+          const nextHidden = [...t.hiddenColumns, column]
+          const visibleCount = allNames.filter((n) => !nextHidden.includes(n)).length
+          if (visibleCount < 1) return t // 最後の可視列は隠さない
+          return { ...t, hiddenColumns: nextHidden }
+        })
+      }))
+    },
+
+    toggleColumnPinned(tabId, column) {
+      set((s) => ({
+        tabs: s.tabs.map((t) =>
+          t.id === tabId
+            ? {
+                ...t,
+                pinnedColumns: t.pinnedColumns.includes(column)
+                  ? t.pinnedColumns.filter((c) => c !== column)
+                  : [...t.pinnedColumns, column]
+              }
+            : t
+        )
+      }))
+    },
+
+    showAllColumns(tabId) {
+      set((s) => ({
+        tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, hiddenColumns: [] } : t))
       }))
     },
 

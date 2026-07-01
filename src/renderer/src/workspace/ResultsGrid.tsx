@@ -15,6 +15,8 @@ import { toTsv } from '../lib/csv'
 import { pkValuesOf, rowKeyOf } from '../store/rowKey'
 import { useAppStore } from '../store/useAppStore'
 import ContextMenu from '../ui/ContextMenu'
+import ColumnsMenu from './ColumnsMenu'
+import { orderColumns, pinnedLeftOffsets } from './columnView'
 import {
   clampManualWidth,
   estimateColumnWidths,
@@ -37,6 +39,7 @@ type CtxMenu =
       value: unknown
     }
   | { kind: 'insert'; x: number; y: number; localId: string }
+  | { kind: 'column'; x: number; y: number; column: string }
 
 export default function ResultsGrid(): JSX.Element {
   const { t } = useT()
@@ -54,6 +57,10 @@ export default function ResultsGrid(): JSX.Element {
   const rerunWithoutAutoLimit = useAppStore((s) => s.rerunWithoutAutoLimit)
   const setColumnWidth = useAppStore((s) => s.setColumnWidth)
   const clearColumnWidth = useAppStore((s) => s.clearColumnWidth)
+  const toggleColumnHidden = useAppStore((s) => s.toggleColumnHidden)
+  const showAllColumns = useAppStore((s) => s.showAllColumns)
+  const toggleColumnPinned = useAppStore((s) => s.toggleColumnPinned)
+  const [colsAnchor, setColsAnchor] = useState<{ x: number; y: number } | null>(null)
 
   if (!tab) return <div className={styles.placeholder} />
   if (tab.running)
@@ -126,6 +133,20 @@ export default function ResultsGrid(): JSX.Element {
         <div className={styles.readOnlyNotice}>{t('workspace.readOnlyNoPk')}</div>
       )}
       {notice}
+      {tab.result.columns.length > 0 && (
+        <div className={styles.colBar}>
+          <button
+            type="button"
+            className={styles.colBarBtn}
+            onClick={(e) => {
+              const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+              setColsAnchor({ x: r.left, y: r.bottom })
+            }}
+          >
+            {t('workspace.columns')} ▾
+          </button>
+        </div>
+      )}
       <Grid
         result={tab.result}
         sort={sort}
@@ -153,7 +174,27 @@ export default function ResultsGrid(): JSX.Element {
         overrides={tab.columnWidths}
         onResize={(col, w) => setColumnWidth(tab.id, col, w)}
         onAutoFit={(col) => clearColumnWidth(tab.id, col)}
+        hiddenColumns={tab.hiddenColumns}
+        pinnedColumns={tab.pinnedColumns}
+        onToggleHidden={(col) => toggleColumnHidden(tab.id, col)}
+        onShowAll={() => showAllColumns(tab.id)}
+        onTogglePinned={(col) => toggleColumnPinned(tab.id, col)}
       />
+      {colsAnchor && (
+        <ColumnsMenu
+          anchor={colsAnchor}
+          columns={tab.result.columns.map((c) => c.name)}
+          hiddenColumns={tab.hiddenColumns}
+          pinnedColumns={tab.pinnedColumns}
+          onToggleHidden={(col) => toggleColumnHidden(tab.id, col)}
+          onTogglePinned={(col) => toggleColumnPinned(tab.id, col)}
+          onShowAll={() => {
+            showAllColumns(tab.id)
+            setColsAnchor(null)
+          }}
+          onClose={() => setColsAnchor(null)}
+        />
+      )}
     </div>
   )
 }
@@ -180,7 +221,12 @@ function Grid({
   onQuickFilter,
   overrides,
   onResize,
-  onAutoFit
+  onAutoFit,
+  hiddenColumns,
+  pinnedColumns,
+  onToggleHidden,
+  onTogglePinned,
+  onShowAll
 }: {
   result: QueryResult
   sort: TableSort | null
@@ -204,6 +250,11 @@ function Grid({
   overrides: Record<string, number>
   onResize?: (column: string, width: number) => void
   onAutoFit?: (column: string) => void
+  hiddenColumns: string[]
+  pinnedColumns: string[]
+  onToggleHidden?: (column: string) => void
+  onTogglePinned?: (column: string) => void
+  onShowAll?: () => void
 }): JSX.Element {
   const { t, tPlural } = useT()
   const [editing, setEditing] = useState<{ rowKey: string; column: string } | null>(null)
@@ -257,14 +308,24 @@ function Grid({
     }
   }
 
+  const orderedCols = useMemo(
+    () =>
+      orderColumns(
+        result.columns.map((c) => c.name),
+        hiddenColumns,
+        pinnedColumns
+      ),
+    [result.columns, hiddenColumns, pinnedColumns]
+  )
+
   const columns = useMemo<ColumnDef<Row>[]>(
     () =>
-      result.columns.map((c) => ({
+      orderedCols.map((c) => ({
         id: c.name,
         header: c.name,
         accessorFn: (row) => row[c.name]
       })),
-    [result.columns]
+    [orderedCols]
   )
 
   const table = useReactTable({
@@ -288,10 +349,10 @@ function Grid({
           return ctx.measureText(text).width
         }
       : (text: string): number => text.length * 7
-    return estimateColumnWidths(result.columns, result.rows as Row[], measure)
-  }, [result.columns, result.rows])
+    return estimateColumnWidths(orderedCols, result.rows as Row[], measure)
+  }, [orderedCols, result.rows])
 
-  const columnNames = useMemo(() => result.columns.map((c) => c.name), [result.columns])
+  const columnNames = useMemo(() => orderedCols.map((c) => c.name), [orderedCols])
 
   const colWidths = useMemo(
     () => mergeColumnWidths(autoWidths, columnNames, overrides),
@@ -313,6 +374,18 @@ function Grid({
     () => effectiveWidths.reduce((sum, w) => sum + w, 0),
     [effectiveWidths]
   )
+
+  // ピン列の left(px) を列名 → オフセットで引けるマップ。
+  // effectiveWidths（ドラッグ中もライブ更新）を使うので resize 追従も自動。
+  const pinLeftByName = useMemo(() => {
+    const offsets = pinnedLeftOffsets(orderedCols, effectiveWidths)
+    const m = new Map<string, number>()
+    orderedCols.forEach((c, i) => {
+      const off = offsets[i]
+      if (off != null) m.set(c.name, off)
+    })
+    return m
+  }, [orderedCols, effectiveWidths])
 
   const startResize = (e: React.MouseEvent, col: string, startWidth: number): void => {
     e.preventDefault()
@@ -403,7 +476,7 @@ function Grid({
           // 単一行選択中に Enter で先頭編集可能列の編集を開始（編集中は冒頭で return 済み）。
           if (!editable) return
           if (selectedRowIndices.length !== 1) return
-          const column = firstEditableColumn(result.columns)
+          const column = firstEditableColumn(orderedCols)
           if (column == null) return
           e.preventDefault()
           const idx = selectedRowIndices[0]
@@ -420,7 +493,7 @@ function Grid({
     >
       <table className={styles.grid} style={{ width: effectiveTotal }}>
         <colgroup>
-          {result.columns.map((c, i) => (
+          {orderedCols.map((c, i) => (
             <col key={c.name} style={{ width: effectiveWidths[i] }} />
           ))}
         </colgroup>
@@ -430,11 +503,25 @@ function Grid({
               {hg.headers.map((h, i) => {
                 const name = h.column.id
                 const active = sort?.column === name
+                const pinLeft = pinLeftByName.get(name)
                 return (
                   <th
                     key={h.id}
-                    className={onSort ? styles.sortable : undefined}
+                    className={
+                      [onSort ? styles.sortable : '', pinLeft != null ? styles.pinned : '']
+                        .filter(Boolean)
+                        .join(' ') || undefined
+                    }
+                    style={pinLeft != null ? { left: pinLeft } : undefined}
                     onClick={onSort ? () => onSort(name) : undefined}
+                    onContextMenu={
+                      onToggleHidden
+                        ? (e) => {
+                            e.preventDefault()
+                            setCtxMenu({ kind: 'column', x: e.clientX, y: e.clientY, column: name })
+                          }
+                        : undefined
+                    }
                   >
                     {primaryKey.includes(name) && <span className={styles.pkIcon}>🔑 </span>}
                     {flexRender(h.column.columnDef.header, h.getContext())}
@@ -451,6 +538,7 @@ function Grid({
                         onAutoFit?.(name)
                       }}
                       onClick={(e) => e.stopPropagation()}
+                      onContextMenu={(e) => e.stopPropagation()}
                     />
                   </th>
                 )
@@ -473,7 +561,7 @@ function Grid({
                   <tr>
                     <td
                       className={styles.spacer}
-                      colSpan={result.columns.length}
+                      colSpan={orderedCols.length}
                       style={{ height: paddingTop }}
                     />
                   </tr>
@@ -528,8 +616,13 @@ function Grid({
                           setEditing(null)
                         }
 
+                        const pinLeft = pinLeftByName.get(colId)
                         const cls =
-                          [isDirty ? styles.dirty : '', isEditingThis ? styles.editing : '']
+                          [
+                            isDirty ? styles.dirty : '',
+                            isEditingThis ? styles.editing : '',
+                            pinLeft != null ? styles.pinned : ''
+                          ]
                             .filter(Boolean)
                             .join(' ') || undefined
 
@@ -537,6 +630,7 @@ function Grid({
                           <td
                             key={cell.id}
                             className={cls}
+                            style={pinLeft != null ? { left: pinLeft } : undefined}
                             onDoubleClick={editable && !isDeleted ? startEdit : undefined}
                             onContextMenu={
                               onQuickFilter
@@ -595,7 +689,7 @@ function Grid({
                   <tr>
                     <td
                       className={styles.spacer}
-                      colSpan={result.columns.length}
+                      colSpan={orderedCols.length}
                       style={{ height: paddingBottom }}
                     />
                   </tr>
@@ -628,7 +722,7 @@ function Grid({
                 setCtxMenu({ kind: 'insert', x: e.clientX, y: e.clientY, localId: insert.localId })
               }}
             >
-              {result.columns.map((col) => {
+              {orderedCols.map((col) => {
                 const value = insert.values[col.name]
                 const colId = col.name
                 const isEditingThis =
@@ -649,9 +743,18 @@ function Grid({
                   setEditing(null)
                 }
 
-                const cls = isEditingThis ? styles.editing : undefined
+                const pinLeft = pinLeftByName.get(colId)
+                const cls =
+                  [isEditingThis ? styles.editing : '', pinLeft != null ? styles.pinned : '']
+                    .filter(Boolean)
+                    .join(' ') || undefined
                 return (
-                  <td key={colId} className={cls} onDoubleClick={editable ? startEdit : undefined}>
+                  <td
+                    key={colId}
+                    className={cls}
+                    style={pinLeft != null ? { left: pinLeft } : undefined}
+                    onDoubleClick={editable ? startEdit : undefined}
+                  >
                     {isEditingThis ? (
                       <span className={styles.editWrap}>
                         <input
@@ -838,6 +941,46 @@ function Grid({
             >
               {t('workspace.discardInsertRow')}
             </button>
+          )}
+          {ctxMenu.kind === 'column' && (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                className={styles.ctxItem}
+                disabled={orderedCols.length <= 1}
+                onClick={() => {
+                  onToggleHidden?.(ctxMenu.column)
+                  setCtxMenu(null)
+                }}
+              >
+                {t('workspace.colHide')}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className={styles.ctxItem}
+                onClick={() => {
+                  onTogglePinned?.(ctxMenu.column)
+                  setCtxMenu(null)
+                }}
+              >
+                {pinnedColumns.includes(ctxMenu.column)
+                  ? t('workspace.colUnpin')
+                  : t('workspace.colPin')}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className={styles.ctxItem}
+                onClick={() => {
+                  onShowAll?.()
+                  setCtxMenu(null)
+                }}
+              >
+                {t('workspace.colShowAll')}
+              </button>
+            </>
           )}
         </ContextMenu>
       )}

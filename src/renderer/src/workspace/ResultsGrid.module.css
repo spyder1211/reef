@@ -239,3 +239,47 @@
   background: #f3f4f6;
   border-bottom: 1px solid #e5e7eb;
 }
+.colBar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.colBarBtn {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: none;
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.colBarBtn:hover {
+  background: var(--row-alt);
+}
+
+/* ── Pinned (sticky-left) columns ─────────────────────────────────── */
+.grid td.pinned,
+.grid th.pinned {
+  position: sticky;
+  z-index: 2;
+}
+.grid th.pinned {
+  /* top-sticky header (z-index:1) + left-sticky: needs to sit above body pinned cells */
+  z-index: 3;
+}
+/* Opaque backgrounds so scrolled content doesn't bleed through the sticky cell.
+   Only normal and alt rows have transparent <td>; all other states use !important
+   rules that already paint the td opaque (deleteRow, insertRow, dirty, editing).
+   Selected rows are covered by the existing .grid tbody tr.selected td rule
+   (specificity 0,2,3) which beats .grid td.pinned (0,2,1), EXCEPT when combined
+   with .rowAlt — handle that explicitly. */
+.grid td.pinned {
+  background: var(--bg);
+}
+.grid tr.rowAlt td.pinned {
+  background: var(--row-alt);
+}
+.grid tbody tr.selected td.pinned {
+  background: var(--selected-bg);
+}
