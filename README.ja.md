@@ -130,7 +130,7 @@ npm run preview      # ビルド済みアプリのプレビュー
 npm run dist:mac     # electron-vite build && electron-builder --mac --arm64
 ```
 
-成果物は `dist/` に出力されます。配布物は署名なし（ad-hoc 署名）のため、`build/afterPack.cjs` でパック後にバンドル全体を ad-hoc 署名し直し、未署名配布時の「壊れている / 開けない」エラーを緩和しています。初回起動はアプリを右クリックして「開く」を選んでください。
+成果物は `dist/` に出力されます。ビルドは2経路あります。`npm run dist:mac` はローカル確認用の**未署名**（ad-hoc 署名）ビルドで、初回起動はアプリを右クリックして「開く」を選びます。`npm run release:mac` は配布用の **Developer ID 署名 + Apple 公証**ビルドで、ダブルクリックで起動できます。リリース手順と必要な認証情報は [docs/RELEASING.md](docs/RELEASING.md) を参照してください。
 
 ## プロジェクト構成
 
