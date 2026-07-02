@@ -9,8 +9,14 @@ Reef ships as an arm64 macOS DMG attached to a GitHub Release. There are two bui
 | `npm run dist:mac` | `dist/Reef-<ver>-arm64.dmg` | Unsigned (ad-hoc). For local checks. First launch needs right-click → Open. |
 | `npm run release:mac` | `dist/Reef-<ver>-arm64.dmg` | Developer ID signed + Apple notarized. Double-click launch. For distribution. |
 
-`release:mac` requires four secrets to be present in the environment. If `APPLE_IDENTITY`
-is unset the build silently falls back to the unsigned path (`afterPack.cjs` re-applies ad-hoc signing).
+`release:mac` requires the four secrets below and sets `REEF_SIGN=1` so `afterPack.cjs` skips its
+ad-hoc signing and lets electron-builder apply the real Developer ID signature. `dist:mac` never sets
+`REEF_SIGN`, so it always ad-hoc signs — even in a shell that has already sourced `release.env`.
+`release:mac` does not degrade gracefully: with an empty `APPLE_IDENTITY` it fails loudly rather than
+producing an unsigned build.
+
+Both paths emit an identically-named `Reef-<ver>-arm64.dmg`; the filename alone does not distinguish
+signed from unsigned, so only ever upload the `release:mac` output to a public release.
 
 ## One-time setup (per machine)
 
