@@ -15,9 +15,15 @@ mac:
     - dmg
   # アプリアイコン。build/ は buildResources なので自動検出もされるが明示する。
   icon: build/icon.icns
-  # 署名なし。arm64 でローカル実行できるよう electron-builder が ad-hoc 署名を行う。
-  identity: null
   category: public.app-category.developer-tools
+  # デフォルトは未署名（開発ビルド）。release:mac が CLI で Developer ID に上書きする。
+  identity: null
+  # 公証の必須要件。署名するときだけ意味を持つ（未署名ビルドには影響しない）。
+  hardenedRuntime: true
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  # デフォルトは公証しない。release:mac が --config.mac.notarize=true で上書きする。
+  notarize: false
 # 未署名 .app の Gatekeeper 隔離属性を付けない（ローカル起動時の警告を軽減）
 dmg:
   writeUpdateInfo: false

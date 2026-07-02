@@ -19,6 +19,7 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "dist:mac": "electron-vite build && electron-builder --mac --arm64",
+    "release:mac": "electron-vite build && electron-builder --mac --arm64 --config.mac.identity=\"$APPLE_IDENTITY\" --config.mac.notarize=true",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
     "test:watch": "vitest",
