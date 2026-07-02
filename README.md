@@ -130,7 +130,7 @@ npm run preview      # preview the built app
 npm run dist:mac     # electron-vite build && electron-builder --mac --arm64
 ```
 
-Artifacts are written to `dist/`. Distribution builds are unsigned (ad-hoc signed): `build/afterPack.cjs` re-applies an ad-hoc signature to the whole bundle after packing, to reduce the "damaged / can't be opened" Gatekeeper error on unsigned distribution. On first launch, right-click the app and choose "Open".
+Artifacts are written to `dist/`. There are two build paths: `npm run dist:mac` produces an **unsigned** (ad-hoc signed) build for local checks — on first launch, right-click the app and choose "Open"; `npm run release:mac` produces a **Developer ID signed + Apple notarized** build for distribution, which launches with a double-click. See [docs/RELEASING.md](docs/RELEASING.md) for the release workflow and required credentials.
 
 ## Project layout
 
