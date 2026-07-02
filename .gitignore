@@ -8,3 +8,8 @@ dist/
 out/
 *.dmg
 *.tsbuildinfo
+
+# 署名・公証の秘密情報（絶対にコミットしない。実体はリポジトリ外の ~/.private/reef/）
+*.p8
+.env*
+*.env
